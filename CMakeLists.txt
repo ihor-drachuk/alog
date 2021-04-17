@@ -9,4 +9,6 @@ target_include_directories(alog PUBLIC headers)
 
 if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
     target_compile_definitions(alog PUBLIC ALOG_MACOSX)
+elseif(UNIX)
+    target_compile_definitions(alog PUBLIC ALOG_LINUX)
 endif()

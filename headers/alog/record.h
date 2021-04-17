@@ -4,6 +4,7 @@
 #include <optional>
 #include <limits>
 #include <cstring>
+#include <cinttypes>
 #include <alog/tools.h>
 
 namespace ALog {
@@ -117,7 +118,7 @@ inline ALog::Record&& operator<< (ALog::Record&& record, bool value)
 
 namespace ALog {
 namespace Internal {
-#ifdef ALOG_MACOSX
+#if defined(ALOG_MACOSX) || defined(ALOG_LINUX)
     void itoa(int value, char* dst, int radix) {
         assert(radix == 10);
         sprintf(dst, "%d", value);
@@ -205,7 +206,7 @@ inline ALog::Record&& operator<< (ALog::Record&& record, uint64_t value)
     char str[bufSz];
     size_t len;
 
-    len = sprintf(str, "%llu", value);
+    len = sprintf(str, "%" PRIu64, value);
 
     record.appendMessage(str, len);
     return std::move(record);
@@ -217,7 +218,7 @@ inline ALog::Record&& operator<< (ALog::Record&& record, int64_t value)
     char str[bufSz];
     size_t len;
 
-    len = sprintf(str, "%lld", value);
+    len = sprintf(str, "%" PRId64, value);
 
     record.appendMessage(str, len);
     return std::move(record);
