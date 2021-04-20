@@ -22,6 +22,7 @@ Record Record::create(Severity severity, int line, const char* file, const char*
     record.flags = 0;
     record.steadyTp = std::chrono::steady_clock::now();
     record.systemTp = std::chrono::system_clock::now();
+    record.msgBuf[0] = 0;
 
     return record;
 }
@@ -72,6 +73,7 @@ Record::Record()
     threadTitle = nullptr;
     module = nullptr;
     flags = 0;
+    msgBuf[0] = 0;
 }
 
 void Record::makeLong()
