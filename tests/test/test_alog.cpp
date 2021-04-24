@@ -1,6 +1,8 @@
 #define QT_DISABLE_DEPRECATED_BEFORE 0x0A0000
 
 #include <thread>
+#include <mutex>
+#include <condition_variable>
 #include <chrono>
 #include <numeric>
 #include <gtest/gtest.h>

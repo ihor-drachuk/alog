@@ -120,17 +120,17 @@ inline ALog::Record&& operator<< (ALog::Record&& record, bool value)
 namespace ALog {
 namespace Internal {
 #if defined(ALOG_MACOSX) || defined(ALOG_LINUX)
-    void itoa(int value, char* dst, int radix) {
+    inline void itoa(int value, char* dst, int radix) {
         assert(radix == 10);
         sprintf(dst, "%d", value);
     }
 
-    void ltoa(long value, char* dst, int radix) {
+    inline void ltoa(long value, char* dst, int radix) {
         assert(radix == 10);
         sprintf(dst, "%ld", value);
     }
 
-    void ultoa(unsigned long value, char* dst, int radix) {
+    inline void ultoa(unsigned long value, char* dst, int radix) {
         assert(radix == 10);
         sprintf(dst, "%lu", value);
     }

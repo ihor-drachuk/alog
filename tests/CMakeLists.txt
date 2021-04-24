@@ -15,11 +15,13 @@ if (ALOG_ENABLE_BENCHMARK)
 endif()
 
 if (ALOG_NEED_GTEST AND NOT TARGET gtest)
-    find_package(GTest)
+    find_package(GTest QUIET)
 
     if (GTest_FOUND)
         message("GTest found!")
     else()
+        message("GTest NOT found! Going to download...")
+
         set(INSTALL_GTEST OFF CACHE BOOL "Do not install gtest" FORCE)
         set(INSTALL_GMOCK OFF CACHE BOOL "Do not install gmock" FORCE)
         set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
@@ -53,11 +55,13 @@ if (ALOG_NEED_GTEST AND NOT TARGET gtest)
 endif()
 
 if (ALOG_NEED_BENCHMARK AND NOT TARGET benchmark)
-    find_package(benchmark)
+    find_package(benchmark QUIET)
     
     if (benchmark_FOUND)
         message("Google benchmark found!")
     else()
+        message("Google benchmark NOT found! Going to download...")
+
         set(BENCHMARK_ENABLE_TESTING OFF CACHE BOOL "" FORCE)
         set(BENCHMARK_ENABLE_INSTALL OFF CACHE BOOL "" FORCE)
         set(BENCHMARK_ENABLE_GTEST_TESTS OFF CACHE BOOL "" FORCE)
