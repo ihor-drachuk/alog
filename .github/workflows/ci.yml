@@ -1,0 +1,54 @@
+name: Build
+
+on:
+  push:
+    branches:
+      - master
+      - dev
+  pull_request:
+    types: [opened, edited, synchronize]
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        build_type: [Release, Debug]
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+    - name: "Set OS-specific values (Linux)"
+      if: ${{ matrix.os == 'ubuntu-latest' }}
+      shell: bash
+      run: |
+       echo "GENERATOR=Unix Makefiles" >> $GITHUB_ENV
+       echo "CORES=$(nproc --all)" >> $GITHUB_ENV
+
+    - name: "Set OS-specific values (Mac)"
+      if: ${{ matrix.os == 'macos-latest' }}
+      shell: bash
+      run: |
+       echo "GENERATOR=Unix Makefiles" >> $GITHUB_ENV
+       echo "CORES=$(sysctl -n hw.ncpu)" >> $GITHUB_ENV
+
+    - name: "Set OS-specific values (Win)"
+      if: ${{ matrix.os == 'windows-latest' }}
+      shell: bash
+      run: |
+       echo "GENERATOR=Visual Studio 16 2019" >> $GITHUB_ENV
+       echo "CORES=$NUMBER_OF_PROCESSORS" >> $GITHUB_ENV
+
+    - uses: actions/checkout@v2
+      with:
+        path: src
+
+    - name: Build
+      env:
+        BUILD_TYPE: ${{ matrix.build_type }}
+      working-directory: ${{github.workspace}}/src
+      shell: bash
+      run: |
+       cmake -DALOG_ENABLE_TESTS=ON -DALOG_ENABLE_BENCHMARK=ON -DCMAKE_BUILD_TYPE="${{env.BUILD_TYPE}}" -G "${{env.GENERATOR}}" -S "${{github.workspace}}/src" -B "${{github.workspace}}/build"
+       cmake --build "${{github.workspace}}/build" --config "${{env.BUILD_TYPE}}" -j "${{env.CORES}}"
+       ctest --rerun-failed --output-on-failure -C "${{env.BUILD_TYPE}}" --test-dir "${{github.workspace}}/build/tests"

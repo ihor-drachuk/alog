@@ -212,7 +212,7 @@ TEST(ALog, test_sort)
     if (strict) {
         ASSERT_EQ(unsortedCount, 0);
     } else {
-        ASSERT_LT(unsortedCount, 20);
+        ASSERT_LT(unsortedCount, 40);
     }
 }
 
