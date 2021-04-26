@@ -1,4 +1,4 @@
-name: Build
+name: Build & test
 
 on:
   push:
@@ -44,11 +44,9 @@ jobs:
         path: src
 
     - name: Build
-      env:
-        BUILD_TYPE: ${{ matrix.build_type }}
       working-directory: ${{github.workspace}}/src
       shell: bash
       run: |
-       cmake -DALOG_ENABLE_TESTS=ON -DALOG_ENABLE_BENCHMARK=ON -DCMAKE_BUILD_TYPE="${{env.BUILD_TYPE}}" -G "${{env.GENERATOR}}" -S "${{github.workspace}}/src" -B "${{github.workspace}}/build"
-       cmake --build "${{github.workspace}}/build" --config "${{env.BUILD_TYPE}}" -j "${{env.CORES}}"
-       ctest --rerun-failed --output-on-failure -C "${{env.BUILD_TYPE}}" --test-dir "${{github.workspace}}/build/tests"
+       cmake -DALOG_ENABLE_TESTS=ON -DALOG_ENABLE_BENCHMARK=ON -DCMAKE_BUILD_TYPE="${{matrix.build_type}}" -G "${{env.GENERATOR}}" -S "${{github.workspace}}/src" -B "${{github.workspace}}/build"
+       cmake --build "${{github.workspace}}/build" --config "${{matrix.build_type}}" -j "${{env.CORES}}"
+       ctest --rerun-failed --output-on-failure -C "${{matrix.build_type}}" --test-dir "${{github.workspace}}/build/tests"
