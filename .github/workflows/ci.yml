@@ -49,4 +49,4 @@ jobs:
       run: |
        cmake -DALOG_ENABLE_TESTS=ON -DALOG_ENABLE_BENCHMARK=ON -DCMAKE_BUILD_TYPE="${{matrix.build_type}}" -G "${{env.GENERATOR}}" -S "${{github.workspace}}/src" -B "${{github.workspace}}/build"
        cmake --build "${{github.workspace}}/build" --config "${{matrix.build_type}}" -j "${{env.CORES}}"
-       ctest --rerun-failed --output-on-failure -C "${{matrix.build_type}}" --test-dir "${{github.workspace}}/build/tests"
+       ctest --rerun-failed --output-on-failure --timeout 20 -C "${{matrix.build_type}}" --test-dir "${{github.workspace}}/build/tests"
