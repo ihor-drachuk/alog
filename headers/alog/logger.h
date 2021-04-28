@@ -119,7 +119,7 @@ inline ALog::MockRecord&& operator<< (ALog::MockRecord&& r, const T&) { return s
 #define ACCESS_ALOGGER_MODULE          ACCESS_ALOGGER_MODULE_N(0)
 
 
-#define _ALOG_RECORD(Severity)          ALog::Record::create(Severity, __LINE__, __FILE__, __FUNCTION__)
+#define _ALOG_RECORD(Severity)          ALog::Record::create(Severity, __LINE__, __FILE__, ALog::extractFileNameOnly(__FILE__), __func__)
 #define _ALOG(Logger, Severity)         Logger += _ALOG_RECORD(Severity)
 
 

@@ -2,6 +2,7 @@
 #include <cassert>
 #include <vector>
 #include <cstdint>
+#include <cstring>
 #include <utility>
 #include <memory>
 #include <alog/tools_fwd.h>
@@ -34,6 +35,146 @@ template<typename, typename> class QHash;
 template<typename, int> class QVarLengthArray;
 
 namespace ALog {
+
+using Buffer = std::vector<uint8_t>;
+
+constexpr const char* extractFileNameOnly(const char* str) {
+    auto it = str;
+    auto lastSlash = str;
+
+    while (*it) {
+        if (*it == '/' || *it == '\\') lastSlash = it + 1;
+        ++it;
+    }
+
+    return lastSlash;
+}
+
+template<size_t sso_limit = 79>
+class LongSSO {
+public:
+    inline LongSSO() {
+        m_buf[0] = 0;
+    }
+
+    inline LongSSO(Buffer& cache) {
+        m_buf[0] = 0;
+        m_longBuf = &cache;
+    }
+
+    inline LongSSO(LongSSO&& rhs) {
+        *this = std::move(rhs);
+    }
+
+    inline LongSSO& operator=(LongSSO&& rhs) {
+        if (this == &rhs) return *this;
+
+        m_isShortBuf = rhs.m_isShortBuf;
+        m_deleteLongBuf = rhs.m_deleteLongBuf;
+        m_longBuf = rhs.m_longBuf;
+
+        if (m_isShortBuf) {
+            m_sz = rhs.m_sz;
+            memcpy(m_buf, rhs.m_buf, m_sz+1);
+        }
+
+        rhs.m_deleteLongBuf = false;
+        return *this;
+    }
+
+    inline LongSSO(const LongSSO& rhs): LongSSO() {
+        *this = rhs;
+    }
+
+    inline LongSSO& operator=(const LongSSO& rhs) { // TODO: Remove operator= ?
+        if (this == &rhs) return *this;
+        appendString(rhs.getString(), rhs.getStringLen());
+        return *this;
+    }
+
+    inline ~LongSSO() {
+        if (m_deleteLongBuf)
+            delete m_longBuf;
+    }
+
+    inline uint8_t* allocate_copy(size_t sz, const char* str = nullptr) {
+        if (m_isShortBuf) {
+            // Short buffer
+            size_t newSz = m_sz + sz;
+            if (newSz <= sso_limit) {
+                uint8_t* target = m_buf + m_sz;
+                memcpy(target, str, str ? sz : 0); // It's 20x faster, than doing memcpy in `appendString`
+                m_sz += sz;
+                m_buf[m_sz] = 0;
+                return target;
+            } else {
+                auto target = makeLong(sz);
+                memcpy(target, str, str ? sz : 0);
+                return target;
+            }
+        } else {
+            // Long buffer
+            size_t oldSz = m_longBuf->size() - 1;
+            size_t newSz = oldSz + sz;
+            m_longBuf->resize(newSz + 1);
+            uint8_t* target = m_longBuf->data() + oldSz;
+            memcpy(target, str, str ? sz : 0);
+            *(m_longBuf->data() + newSz) = 0;
+            return target;
+        }
+    }
+
+    inline void appendString(const char* str, size_t sz) {
+        allocate_copy(sz, str);
+    }
+
+    inline void appendString(const char* str) {
+        appendString(str, strlen(str));
+    }
+
+    static_assert (sizeof(uint8_t) == sizeof(char), "Cast validity verification - failed");
+    inline const char* getString() const { return reinterpret_cast<const char*>(m_isShortBuf ? m_buf : m_longBuf->data()); }
+    inline size_t getStringLen() const { return m_isShortBuf ? m_sz : (m_longBuf->size() - 1); }
+
+    inline size_t getSsoLimit() const { return sso_limit; }
+    inline bool isShortString() const { return m_isShortBuf; }
+
+    template<typename... Args>
+    inline void appendFmtString(const char* format, Args&&... args) {
+        size_t sz = snprintf(nullptr, 0, format, std::forward<Args>(args)...);
+        auto target = allocate_copy(sz);
+        auto result = snprintf((char*)target, sz+1, format, std::forward<Args>(args)...);
+        assert(result == sz);
+    }
+
+private:
+    inline uint8_t* makeLong(size_t addSz) {
+        size_t newSz = m_sz + addSz;
+
+        if (m_longBuf) {
+            m_longBuf->resize(newSz+1);
+        } else {
+            m_longBuf = new Buffer(newSz+1);
+            m_deleteLongBuf = true;
+        }
+
+        memcpy(m_longBuf->data(), m_buf, m_sz);
+        *(m_longBuf->data() + newSz) = 0;
+
+        m_isShortBuf = false;
+
+        return m_longBuf->data() + m_sz;
+    }
+
+private:
+    uint8_t m_buf[sso_limit+1];
+    size_t m_sz = 0;
+
+    Buffer* m_longBuf { nullptr };
+
+    bool m_isShortBuf { true };
+    bool m_deleteLongBuf { false };
+};
 
 template<class T>
 class Singleton
@@ -144,8 +285,6 @@ void setCurrentThreadName(const char* title); // Only literals
 const char* currentThreadName();
 
 } // namespace ThreadTools
-
-using Buffer = std::vector<uint8_t>;
 
 #pragma pack(push, 1)
 class optional_bool

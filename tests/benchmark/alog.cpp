@@ -1,7 +1,7 @@
 #include <benchmark/benchmark.h>
 #include "alog/logger.h"
 
-DEFINE_ALOGGER_MODULE(ALogerTest);
+DEFINE_ALOGGER_MODULE(ALogTest);
 
 class ALogFixture : public ::benchmark::Fixture {
 public:

@@ -332,7 +332,7 @@ TEST(ALog, test_defaultFormatter)
     str2.resize(str1.size());
     memcpy(str2.data(), str1.data(), str1.size());
 
-    ASSERT_EQ(str2, "[    0.014] T#0  [Info    ]  Test");
+    ASSERT_EQ(str2, "[    0.014] T#0  [Info    ] [::TestBody:327]  Test");
 
     // #2
     record = _ALOG_RECORD(ALog::Severity::Info) << "Test";
@@ -342,7 +342,7 @@ TEST(ALog, test_defaultFormatter)
 
     str2.resize(str1.size());
     memcpy(str2.data(), str1.data(), str1.size());
-    ASSERT_EQ(str2, "[    0.014] T#0  (Worker) [Info    ]  Test");
+    ASSERT_EQ(str2, "[    0.014] T#0  (Worker) [Info    ] [::TestBody:338]  Test");
 
     // #3
     record = _ALOG_RECORD(ALog::Severity::Info) << "Test";
@@ -352,7 +352,7 @@ TEST(ALog, test_defaultFormatter)
 
     str2.resize(str1.size());
     memcpy(str2.data(), str1.data(), str1.size());
-    ASSERT_EQ(str2, "[    0.014] T#0  [Info    ] [Module]  Test");
+    ASSERT_EQ(str2, "[    0.014] T#0  [Info    ] [Module               ] [::TestBody:348]  Test");
 
     // #4
     record = _ALOG_RECORD(ALog::Severity::Info) << "Test";
@@ -363,7 +363,7 @@ TEST(ALog, test_defaultFormatter)
 
     str2.resize(str1.size());
     memcpy(str2.data(), str1.data(), str1.size());
-    ASSERT_EQ(str2, "[   13.014] T#0  (Worker) [Info    ] [Module]  Test");
+    ASSERT_EQ(str2, "[   13.014] T#0  (Worker) [Info    ] [Module               ] [::TestBody:358]  Test");
 
     // #5
     record.flags |= (int)ALog::Record::Flags::Abort;
@@ -371,9 +371,7 @@ TEST(ALog, test_defaultFormatter)
 
     str2.resize(str1.size());
     memcpy(str2.data(), str1.data(), str1.size());
-    ASSERT_NE(strstr(str2.data(), "Line:"), nullptr);
-    ASSERT_NE(strstr(str2.data(), "File:"), nullptr);
-    ASSERT_NE(strstr(str2.data(), "Function:"), nullptr);
+    ASSERT_NE(strstr(str2.data(), "test3_alog.cpp"), nullptr);
 }
 
 TEST(ALog, test_defaultFormatterLate)
@@ -397,16 +395,12 @@ TEST(ALog, test_defaultFormatterLate)
 
     str2.resize(str1.size());
     memcpy(str2.data(), str1.data(), str1.size());
-    ASSERT_NE(strstr(str2.data(), "Line:"), nullptr);
-    ASSERT_NE(strstr(str2.data(), "File:"), nullptr);
-    ASSERT_NE(strstr(str2.data(), "Function:"), nullptr);
+    ASSERT_NE(strstr(str2.data(), "test3_alog.cpp"), nullptr);
 
     str1 = formatter.format(record[1]);
     str2.resize(str1.size());
     memcpy(str2.data(), str1.data(), str1.size());
-    ASSERT_EQ(strstr(str2.data(), "Line:"), nullptr);
-    ASSERT_EQ(strstr(str2.data(), "File:"), nullptr);
-    ASSERT_EQ(strstr(str2.data(), "Function:"), nullptr);
+    ASSERT_EQ(strstr(str2.data(), "test3_alog.cpp"), nullptr);
     ASSERT_NE(strstr(str2.data(), "Just trigger"), nullptr);
 }
 

@@ -53,8 +53,8 @@ struct Record
 
     // -----
 
-    static constexpr size_t sso_str_len = 80;
-    [[nodiscard]] static Record create(Severity severity, int line, const char* file, const char* func);
+    static constexpr size_t sso_str_len = 79;
+    [[nodiscard]] static Record create(Severity severity, int line, const char* file, const char* fileOnly, const char* func);
     [[nodiscard]] static Record create(Flags flags);
 
     Record();
@@ -63,12 +63,13 @@ struct Record
     void appendMessage(const char* msg, size_t len);
     void appendMessage(const wchar_t* msg, size_t len);
 
-    inline const char* getMessage() const { return longMsg ? longMsg->data() : msgBuf; }
-    inline size_t getMessageLen() const { return longMsg ? longMsg->size() : msgLen; }
+    inline const char* getMessage() const { return str.getString(); }
+    inline size_t getMessageLen() const { return str.getStringLen(); }
 
     Severity severity;
     int line;
-    const char* file;
+    const char* filenameFull;
+    const char* filenameOnly;
     const char* func;
     int threadNum;
     const char* threadTitle; // Literal ptr
@@ -78,13 +79,9 @@ struct Record
     std::chrono::time_point<std::chrono::steady_clock> steadyTp;
     std::chrono::time_point<std::chrono::system_clock> systemTp;
 
-    char msgBuf[sso_str_len];
-    unsigned int msgLen { 0 };
-    std::optional<std::string> longMsg;
+    LongSSO<sso_str_len> str;
 
 private:
-    void makeLong();
-
     inline void handleSeparators() {
         if (flags & (int)Flags::NeedSeparator) {
             flags ^= (int)Flags::NeedSeparator;

@@ -2,6 +2,7 @@
 #include <alog/exceptions.h>
 
 #include <algorithm>
+#include <memory>
 #include <mutex>
 #include <thread>
 #include <condition_variable>
@@ -87,13 +88,11 @@ void Logger::addRecord(Record&& record)
     } else {
         // Add to queue
 
-        Record throwMe (Record::uninitialized_tag{});
-        bool throwMeValid { false };
+        std::unique_ptr<std::string> throwText;
         bool abort = (record.flags & (int)Record::Flags::Abort) && !(record.flags & (int)Record::Flags::Queued);
 
         if ((record.flags & (int)Record::Flags::Throw) && !(record.flags & (int)Record::Flags::Queued)) {
-            throwMe = record;
-            throwMeValid = true;
+            throwText = std::make_unique<std::string>(record.getMessage(), record.getMessageLen());
         }
 
         std::unique_lock<std::mutex> lck(impl().queueMutex);
@@ -113,8 +112,8 @@ void Logger::addRecord(Record&& record)
         if (abort)
             alog_abort();
 
-        if (throwMeValid)
-            alog_exception(throwMe.getMessage(), throwMe.getMessageLen());
+        if (throwText)
+            alog_exception(throwText->c_str(), throwText->size());
     }
 }
 

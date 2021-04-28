@@ -17,7 +17,12 @@ using IFormatterPtr = std::shared_ptr<IFormatter>;
 class DefaultFormatter : public IFormatter
 {
 public:
+    DefaultFormatter();
+    ~DefaultFormatter() override;
     Buffer format(const Record& record) const override;
+
+private:
+    ALOG_DECLARE_PIMPL
 };
 
 } // namespace ALog

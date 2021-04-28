@@ -10,11 +10,12 @@
 
 namespace ALog {
 
-Record Record::create(Severity severity, int line, const char* file, const char* func) {
+Record Record::create(Severity severity, int line, const char* file, const char* fileOnly, const char* func) {
     Record record { uninitialized_tag() };
     record.severity = severity;
     record.line = line;
-    record.file = file;
+    record.filenameFull = file;
+    record.filenameOnly = fileOnly;
     record.func = func;
     record.threadNum = ThreadTools::currentThreadId();
     record.threadTitle = ThreadTools::currentThreadName();
@@ -22,9 +23,8 @@ Record Record::create(Severity severity, int line, const char* file, const char*
     record.flags = 0;
     record.steadyTp = std::chrono::steady_clock::now();
     record.systemTp = std::chrono::system_clock::now();
-    record.msgBuf[0] = 0;
 
-    return record;
+    return std::move(record);
 }
 
 Record Record::create(Record::Flags flags)
@@ -38,18 +38,7 @@ void Record::appendMessage(const char* msg, size_t len)
 {
     handleSeparators();
 
-    if (longMsg) {
-        longMsg->append(msg, len);
-    } else {
-        if (msgLen + len + 1 > sso_str_len) {
-            makeLong();
-            longMsg->append(msg, len);
-        } else {
-            memcpy(&msgBuf[msgLen], msg, len * sizeof(char));
-            msgLen += len;
-            msgBuf[msgLen] = 0;
-        }
-    }
+    str.appendString(msg, len);
 }
 
 static std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>,wchar_t>& utf8_utf16_converter() {
@@ -67,20 +56,13 @@ Record::Record()
 {
     severity = Severity::Minimal;
     line = 0;
-    file = nullptr;
+    filenameFull = nullptr;
+    filenameOnly = nullptr;
     func = nullptr;
     threadNum = 0;
     threadTitle = nullptr;
     module = nullptr;
     flags = 0;
-    msgBuf[0] = 0;
-}
-
-void Record::makeLong()
-{
-    longMsg = std::string(msgBuf, msgBuf + msgLen);
-    msgLen = 0;
-    msgBuf[0] = 0;
 }
 
 Record::RawData Record::RawData::create(const void* ptr, size_t sz)
