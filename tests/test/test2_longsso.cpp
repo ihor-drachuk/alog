@@ -89,6 +89,7 @@ TEST(ALog_LongSSO, copy)
         ASSERT_STREQ(sso.getString(), model);
         ASSERT_TRUE(sso.isShortString());
 
+        sso2.appendString("111");
         sso2 = sso;
         ASSERT_EQ(sso2.getStringLen(), sso.getStringLen());
         ASSERT_STREQ(sso2.getString(), model);
@@ -104,6 +105,7 @@ TEST(ALog_LongSSO, copy)
         ASSERT_STREQ(sso.getString(), model);
         ASSERT_FALSE(sso.isShortString());
 
+        sso2.appendString("111");
         sso2 = sso;
         ASSERT_EQ(sso.getStringLen(), sso2.getStringLen());
         ASSERT_STREQ(sso2.getString(), model);
@@ -124,6 +126,7 @@ TEST(ALog_LongSSO, move)
         ASSERT_STREQ(sso.getString(), model);
         ASSERT_TRUE(sso.isShortString());
 
+        sso2.appendString("111");
         sso2 = std::move(sso);
         ASSERT_EQ(sso2.getStringLen(), strlen(model));
         ASSERT_STREQ(sso2.getString(), model);
@@ -137,9 +140,17 @@ TEST(ALog_LongSSO, move)
         ASSERT_STREQ(sso.getString(), model);
         ASSERT_FALSE(sso.isShortString());
 
+        sso2.appendString("111");
         sso2 = std::move(sso);
         ASSERT_EQ(sso2.getStringLen(), strlen(model));
         ASSERT_STREQ(sso2.getString(), model);
         ASSERT_FALSE(sso2.isShortString());
     }
+}
+
+TEST(ALog_LongSSO, string_constructor)
+{
+    ALog::LongSSO sso("1");
+    ASSERT_EQ(sso.getStringLen(), 1);
+    ASSERT_STREQ(sso.getString(), "1");
 }

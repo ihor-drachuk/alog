@@ -57,6 +57,11 @@ public:
         m_buf[0] = 0;
     }
 
+    template<size_t N>
+    inline LongSSO (const char(&value)[N]) {
+        appendString(value, N-1);
+    }
+
     inline LongSSO(Buffer& cache) {
         m_buf[0] = 0;
         m_longBuf = &cache;
@@ -68,6 +73,9 @@ public:
 
     inline LongSSO& operator=(LongSSO&& rhs) {
         if (this == &rhs) return *this;
+
+        if (m_deleteLongBuf)
+            delete m_longBuf;
 
         m_isShortBuf = rhs.m_isShortBuf;
         m_deleteLongBuf = rhs.m_deleteLongBuf;
@@ -88,6 +96,7 @@ public:
 
     inline LongSSO& operator=(const LongSSO& rhs) { // TODO: Remove operator= ?
         if (this == &rhs) return *this;
+        clear();
         appendString(rhs.getString(), rhs.getStringLen());
         return *this;
     }
@@ -96,6 +105,8 @@ public:
         if (m_deleteLongBuf)
             delete m_longBuf;
     }
+
+    inline operator bool() const { return getStringLen() != 0; }
 
     inline uint8_t* allocate_copy(size_t sz, const char* str = nullptr) {
         if (m_isShortBuf) {
@@ -147,6 +158,12 @@ public:
         assert(result == sz);
     }
 
+    inline void clear() {
+        m_sz = 0;
+        m_buf[0] = 0;
+        m_isShortBuf = true;
+    }
+
 private:
     inline uint8_t* makeLong(size_t addSz) {
         size_t newSz = m_sz + addSz;
@@ -168,7 +185,7 @@ private:
 
 private:
     uint8_t m_buf[sso_limit+1];
-    size_t m_sz = 0;
+    size_t m_sz { 0 };
 
     Buffer* m_longBuf { nullptr };
 
