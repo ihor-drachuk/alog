@@ -34,18 +34,6 @@ Record Record::create(Record::Flags flags)
     return record;
 }
 
-void Record::appendMessage(const char* msg, size_t len)
-{
-    handleSeparators();
-
-    str.appendString(msg, len);
-}
-
-void Record::appendMessageAL(const char* msg)
-{
-    appendMessage(msg, strlen(msg));
-}
-
 static std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>,wchar_t>& utf8_utf16_converter() {
     static thread_local std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>,wchar_t> converter;
     return converter;
@@ -70,14 +58,6 @@ Record::Record()
     flags = 0;
 }
 
-Record::RawData Record::RawData::create(const void* ptr, size_t sz)
-{
-    RawData data;
-    data.ptr = ptr;
-    data.sz = sz;
-    return data;
-}
-
 } // namespace ALog
 
 ALog::Record&& operator<<(ALog::Record&& record, const ALog::Record::RawData& value)
@@ -85,6 +65,10 @@ ALog::Record&& operator<<(ALog::Record&& record, const ALog::Record::RawData& va
     constexpr size_t bufSz = 64;
     char str[bufSz+1];
     size_t len;
+
+    const auto sepBckp = record.separator;
+    ALog::Finally _f([sepBckp, &record](){ record.separator = sepBckp; });
+    record.separator.clear();
 
     if (!value.sz) {
         len = sprintf(str, "{Buffer; Size: 0, Ptr = 0x%p. No data}", value.ptr);

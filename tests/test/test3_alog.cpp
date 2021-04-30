@@ -5,6 +5,16 @@
 #include <condition_variable>
 #include <chrono>
 #include <numeric>
+
+#include <string>
+#include <vector>
+#include <list>
+#include <set>
+#include <unordered_set>
+#include <map>
+#include <unordered_map>
+#include <utility>
+
 #include <gtest/gtest.h>
 #include "alog/logger.h"
 #include "alog/formatter.h"
@@ -342,7 +352,7 @@ TEST(ALog, test_defaultFormatter)
     str2.resize(str1.size());
     memcpy(str2.data(), str1.data(), str1.size());
 
-    ASSERT_EQ(str2, "[    0.014] T#0  [Info    ] [::TestBody:337]  Test");
+    ASSERT_EQ(str2, "[    0.014] T#0  [Info    ] [::TestBody:347]  Test");
 
     // #2
     record = _ALOG_RECORD(ALog::Severity::Info) << "Test";
@@ -352,7 +362,7 @@ TEST(ALog, test_defaultFormatter)
 
     str2.resize(str1.size());
     memcpy(str2.data(), str1.data(), str1.size());
-    ASSERT_EQ(str2, "[    0.014] T#0  (Worker) [Info    ] [::TestBody:348]  Test");
+    ASSERT_EQ(str2, "[    0.014] T#0  (Worker) [Info    ] [::TestBody:358]  Test");
 
     // #3
     record = _ALOG_RECORD(ALog::Severity::Info) << "Test";
@@ -362,7 +372,7 @@ TEST(ALog, test_defaultFormatter)
 
     str2.resize(str1.size());
     memcpy(str2.data(), str1.data(), str1.size());
-    ASSERT_EQ(str2, "[    0.014] T#0  [Info    ] [Module               ] [::TestBody:358]  Test");
+    ASSERT_EQ(str2, "[    0.014] T#0  [Info    ] [Module               ] [::TestBody:368]  Test");
 
     // #4
     record = _ALOG_RECORD(ALog::Severity::Info) << "Test";
@@ -373,7 +383,7 @@ TEST(ALog, test_defaultFormatter)
 
     str2.resize(str1.size());
     memcpy(str2.data(), str1.data(), str1.size());
-    ASSERT_EQ(str2, "[   13.014] T#0  (Worker) [Info    ] [Module               ] [::TestBody:368]  Test");
+    ASSERT_EQ(str2, "[   13.014] T#0  (Worker) [Info    ] [Module               ] [::TestBody:378]  Test");
 
     // #5
     record.flags |= (int)ALog::Record::Flags::Abort;
@@ -435,4 +445,103 @@ TEST(ALog, test_flags)
     ASSERT_EQ(record.flags, (int)ALog::Record::Flags::AbortSync);
     record -= ABORT;
     ASSERT_EQ(record.flags, 0);
+}
+
+TEST(ALog, test_separators)
+{
+    auto record = _ALOG_RECORD(ALog::Severity::Info);
+    record << ABORT;
+    ASSERT_EQ(record.flags, (int)ALog::Record::Flags::AbortSync);
+    record -= ABORT;
+    ASSERT_EQ(record.flags, 0);
+
+    std::vector<ALog::Record> records;
+
+    DEFINE_MAIN_ALOGGER;
+    auto sink2 = std::make_shared<ALog::SinkFunctor2>([&records](const ALog::Record& rec){ records.push_back(rec); });
+    ALOGGER_DIRECT->setSink(sink2);
+    MARK_ALOGGER_READY;
+
+    LOGMD << SEPARATOR(" ") << "String-1" << 1 << "String-2";
+    LOGMD <<                   "String-1" << 1 << "String-2";
+    LOGMD << NO_SEPARATOR   << "String-1" << 1 << "String-2";
+    LOGMD << SEPARATOR(", ")<< "String-1" << 1 << "String-2";
+
+    LOGMD                         << "Test" << "Test"                              << "(Test)" << "(Test)";
+    LOGMD << ALOG_SEPARATOR_FORCE << "Test" << "Test"                              << "(Test)" << "(Test)";
+    LOGMD                         << "Test" << "Test" << ALOG_SEPARATOR_FORCE_ONCE << "(Test)" << "(Test)";
+
+    LOGMD <<                         SEPARATOR(", ") << "()" << "()" << "()";
+    LOGMD << ALOG_SEPARATOR_FORCE << SEPARATOR(", ") << "()" << "()" << "()";
+    LOGMD << ALOG_SEPARATOR_FORCE << ALOG_SEPARATOR_FORCE_ONCE << SEPARATOR(", ") << "()" << "()" << "()";
+
+    MainALogger_0->flush();
+
+    ASSERT_EQ(records.size(), 10);
+    ASSERT_STREQ(records[0].str.getString(), "String-1 1 String-2");
+    ASSERT_STREQ(records[1].str.getString(), "String-1 1 String-2");
+    ASSERT_STREQ(records[2].str.getString(), "String-11String-2");
+    ASSERT_STREQ(records[3].str.getString(), "String-1, 1, String-2");
+    ASSERT_STREQ(records[4].str.getString(), "Test Test(Test)(Test)");
+    ASSERT_STREQ(records[5].str.getString(), "Test Test (Test) (Test)");
+    ASSERT_STREQ(records[6].str.getString(), "Test Test (Test)(Test)");
+    ASSERT_STREQ(records[7].str.getString(), "()()()");
+    ASSERT_STREQ(records[8].str.getString(), "(), (), ()");
+    ASSERT_STREQ(records[9].str.getString(), "(), ()()");
+}
+
+TEST(ALog, test_separators_advanced)
+{
+    std::vector<ALog::Record> records;
+
+    DEFINE_MAIN_ALOGGER;
+    auto sink2 = std::make_shared<ALog::SinkFunctor2>([&records](const ALog::Record& rec){ records.push_back(rec); });
+    ALOGGER_DIRECT->setSink(sink2);
+    MARK_ALOGGER_READY;
+
+    LOGMD << "Literal string" << "SSS" << "(SSS)";
+    LOGMD << L"Literal string (wide)";
+    LOGMD << std::string("String");
+    LOGMD << std::wstring(L"String (wide)");
+    LOGMD << std::pair<int, std::string>(11, "Hi") << "SSS";
+    LOGMD << std::pair<std::string, int>("Hi", 11) << "SSS";
+    LOGMD << NO_SEPARATOR << std::pair<int, std::string>(11, "Hi") << "SSS-no-sep";
+    LOGMD << std::pair<int, std::pair<int, std::string>>(11, {12, "Hi"}) ;
+
+    LOGMD << std::pair<std::pair<std::string, std::string>, std::pair<std::string, std::string>>({"1", "2"}, {"3", "4"});
+
+    LOGMD << std::vector<int>{1, 2, 3, 4} << "SSS";
+    LOGMD << std::list<int>{1, 2, 3, 4};
+    LOGMD << std::set<int>{1, 2, 3, 4};
+    LOGMD << std::unordered_set<int>{1, 2, 3, 4};
+    LOGMD << std::map<int, std::string>{{1, "1"}, {2, "2"}, {3, "3"}, {4, "4"}};
+    LOGMD << std::unordered_map<int, std::string>{{1, "1"}, {2, "2"}, {3, "3"}, {4, "4"}} << "SSS";
+
+    LOGMD << std::vector<std::pair<int, const char*>>{{1, "1"}, {2, "2"}, {3, "3"}};
+
+    LOGMD << std::vector<std::vector<std::pair<int, const char*>>> {
+        {{1, "1"}, {2, "2"}, {3, "3"}},
+        {{4, "4"}, {5, "5"}},
+    };
+
+    MainALogger_0->flush();
+
+    ASSERT_EQ(records.size(), 17);
+    ASSERT_STREQ(records[0].str.getString(), "Literal string SSS(SSS)");
+    ASSERT_STREQ(records[1].str.getString(), "Literal string (wide)");
+    ASSERT_STREQ(records[2].str.getString(), "\"String\"");
+    ASSERT_STREQ(records[3].str.getString(), "\"String (wide)\"");
+    ASSERT_STREQ(records[4].str.getString(), "(11, \"Hi\") SSS");
+    ASSERT_STREQ(records[5].str.getString(), "(\"Hi\", 11) SSS");
+    ASSERT_STREQ(records[6].str.getString(), "(11, \"Hi\")SSS-no-sep");
+    ASSERT_STREQ(records[7].str.getString(), "(11, (12, \"Hi\"))");
+    ASSERT_STREQ(records[8].str.getString(), "((\"1\", \"2\"), (\"3\", \"4\"))");
+    ASSERT_STREQ(records[9].str.getString(), "{Container; Size: 4; Data = 1, 2, 3, 4} SSS");
+    ASSERT_STREQ(records[10].str.getString(), "{Container; Size: 4; Data = 1, 2, 3, 4}");
+    ASSERT_STREQ(records[11].str.getString(), "{Container; Size: 4; Data = 1, 2, 3, 4}");
+    //ASSERT_STREQ(records[12].str.getString(), "{Container; Size: 4; Data = 1, 2, 3, 4}");
+    ASSERT_STREQ(records[13].str.getString(), "{Container; Size: 4; Data = (1, \"1\"), (2, \"2\"), (3, \"3\"), (4, \"4\")}");
+    //ASSERT_STREQ(records[14].str.getString(), "{Container; Size: 4; Data = (1, \"1\"), (2, \"2\"), (3, \"3\"), (4, \"4\")} SSS");
+    ASSERT_STREQ(records[15].str.getString(), "{Container; Size: 3; Data = (1, \"1\"), (2, \"2\"), (3, \"3\")}");
+    ASSERT_STREQ(records[16].str.getString(), "{Container; Size: 2; Data = {Container; Size: 3; Data = (1, \"1\"), (2, \"2\"), (3, \"3\")}, {Container; Size: 2; Data = (4, \"4\"), (5, \"5\")}}");
 }

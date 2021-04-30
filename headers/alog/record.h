@@ -1,8 +1,6 @@
 #pragma once
 #include <string>
-#include <sstream>
 #include <chrono>
-#include <optional>
 #include <limits>
 #include <cstring>
 #include <cinttypes>
@@ -34,41 +32,52 @@ struct Record
 {
     friend inline void onStringQuote1(Record& record, bool preferOnly);
     friend inline void onStringQuote2(Record& record, bool preferOnly);
+    static constexpr size_t msg_sso_len = 79;
+    static constexpr size_t separator_sso_len = 8;
 
     struct uninitialized_tag {};
 
     enum class Flags {
         Flush = 1,                   // 1
         Drop = 2,                    // 2
-        FlushAndDrop = Flush | Drop, //    1 | 2
+        FlushAndDrop = Flush | Drop, // 3 = 1 | 2
         Throw = 4,                   // 4
-        ThrowSync = Flush | Throw,   //    1 | 4
+        ThrowSync = Flush | Throw,   // 5 = 1 | 4
         Abort = 8,                   // 8
-        AbortSync = Flush | Abort,   //    1 | 8
-        NeedSeparator = 16,          // 16
-        Queued = 32,                 // 32
-        NoAutoQuote = 64,            // 64
-        SkipAutoQuote = 128,         // 128
-        PreferAutoQuoteLitStr = 256, // 256
+        AbortSync = Flush | Abort,   // 9 = 1 | 8
+        //Separators = 16,             // 16
+        Separators_OneTime = 32,     // 32
+        Separators_Force = 64,       // 64
+        Separators_Force_Once = 128, // 128
+        Queued = 256,                // 256
+        NoAutoQuote = 512,           // 512
+        SkipAutoQuote = 1024,        // 1024
+        PreferAutoQuoteLitStr = 2048,// 2048
     };
 
     struct RawData {
-        [[nodiscard]] static RawData create(const void* ptr, size_t sz);
+        [[nodiscard]] static inline RawData create(const void* ptr, size_t sz) { RawData r; r.ptr = ptr; r.sz = sz; return r; };
         const void* ptr;
         size_t sz;
     };
 
+    struct Separator {
+        [[nodiscard]] static inline Separator create() { Separator r; r.oneTime = false; return r; };
+        [[nodiscard]] static inline Separator create(const char* separator, bool oneTime) { Separator r; r.separator.appendString(separator, strlen(separator)); r.oneTime = oneTime; return r; };
+        LongSSO<separator_sso_len> separator;
+        bool oneTime;
+    };
+
     // -----
 
-    static constexpr size_t sso_str_len = 79;
     [[nodiscard]] static Record create(Severity severity, int line, const char* file, const char* fileOnly, const char* func);
     [[nodiscard]] static Record create(Flags flags);
 
     Record();
-    Record(uninitialized_tag) { }
+    inline Record(uninitialized_tag) { }
 
-    void appendMessage(const char* msg, size_t len);
-    void appendMessageAL(const char* msg);
+    inline void appendMessage(const char* msg, size_t len) { handleSeparators(len ? *msg : 0); str.appendString(msg, len); }
+    inline void appendMessageAL(const char* msg) { appendMessage(msg, strlen(msg)); }
     void appendMessage(const wchar_t* msg, size_t len);
 
     inline const char* getMessage() const { return str.getString(); }
@@ -87,13 +96,29 @@ struct Record
     std::chrono::time_point<std::chrono::steady_clock> steadyTp;
     std::chrono::time_point<std::chrono::system_clock> systemTp;
 
-    LongSSO<sso_str_len> str;
+    LongSSO<msg_sso_len> str;
+    LongSSO<separator_sso_len> separator {" "};
 
 private:
-    inline void handleSeparators() {
-        if (flags & (int)Flags::NeedSeparator) {
-            flags ^= (int)Flags::NeedSeparator;
-            appendMessage(". ", 2);
+    inline void handleSeparators(char nextSymbol) {
+        if (!separator) return;
+        if (!str.getStringLen()) return;
+
+        const auto force = (flags & (int)Flags::Separators_Force);
+        const auto forceOnce = (flags & (int)Flags::Separators_Force_Once);
+
+        if (!force && !forceOnce) {
+            if (isSeparatorSymbol(*(str.getString()+str.getStringLen()-1))) return;
+            if (isSeparatorSymbol(nextSymbol)) return;
+        } else {
+            flags &= ~(int)Flags::Separators_Force_Once;
+        }
+
+        str.appendString(separator.getString(), separator.getStringLen());
+
+        if (flags & (int)Flags::Separators_OneTime) {
+            separator.clear();
+            flags &= ~(int)Flags::Separators_OneTime;
         }
     }
 
@@ -134,6 +159,10 @@ inline void onStringQuote2(Record& record, bool preferOnly = false) {
 inline ALog::Record& operator<< (ALog::Record& record, ALog::Record::Flags flag)
 {
     record.flags |= (int)flag;
+
+    if ((int)flag & (int)ALog::Record::Flags::Separators_Force_Once)
+        record.flags &= ~(int)ALog::Record::Flags::Separators_Force;
+
     return record;
 }
 
@@ -447,6 +476,14 @@ inline ALog::Record&& operator<< (ALog::Record&& record, T value) { return (std:
 
 ALog::Record&& operator<< (ALog::Record&& record, const ALog::Record::RawData& value);
 
+inline ALog::Record&& operator<< (ALog::Record&& record, const ALog::Record::Separator& value)
+{
+    record.separator = std::move(value.separator);
+    record.flags &= ~(int)ALog::Record::Flags::Separators_OneTime;
+    record.flags |= value.oneTime ? (int)ALog::Record::Flags::Separators_OneTime : 0;
+    return std::move(record);
+}
+
 template<typename T>
 inline typename std::enable_if_t<std::is_same<T, QString>::value, ALog::Record>&& operator<< (ALog::Record&& record, const T& value)
 {
@@ -485,11 +522,15 @@ inline typename std::enable_if_t<std::is_same<T, QByteArray>::value, ALog::Recor
 template<typename T1, typename T2>
 inline ALog::Record&& operator<< (ALog::Record&& record, const std::pair<T1, T2>& value)
 {
+
     std::move(record) << ALog::Record::Flags::SkipAutoQuote << "(";
     std::move(record) << value.first;
+    std::move(record) -= ALog::Record::Flags::Separators_Force_Once;
     std::move(record) << ALog::Record::Flags::SkipAutoQuote << ", ";
     std::move(record) << value.second;
+    std::move(record) -= ALog::Record::Flags::Separators_Force_Once;
     std::move(record) << ALog::Record::Flags::SkipAutoQuote << ")";
+    std::move(record) << ALog::Record::Flags::Separators_Force_Once;
     return std::move(record);
 }
 
@@ -499,6 +540,14 @@ namespace Internal {
 template<typename Iter>
 void logArray(Record& record, size_t sz, Iter begin, Iter end)
 {
+    const auto flagsBckp = record.flags;
+    Finally _f([flagsBckp, &record](){
+        record.flags = flagsBckp;
+        record.flags |= (int)Record::Flags::Separators_Force_Once;
+    });
+
+    std::move(record) -= Record::Flags::PreferAutoQuoteLitStr;
+
     if (!sz) {
         std::move(record) << "{Container; Size: 0; No data}";
         return;
@@ -509,9 +558,11 @@ void logArray(Record& record, size_t sz, Iter begin, Iter end)
 
     auto it = begin;
     std::move(record) << *it++;
+    std::move(record) -= ALog::Record::Flags::Separators_Force_Once;
 
     while (it != end) {
         std::move(record) << Record::Flags::SkipAutoQuote << ", " << *it++;
+        std::move(record) -= ALog::Record::Flags::Separators_Force_Once;
     }
 
     std::move(record) << Record::Flags::SkipAutoQuote << "}";

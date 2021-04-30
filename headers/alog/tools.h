@@ -50,6 +50,18 @@ constexpr const char* extractFileNameOnly(const char* str) {
     return lastSlash;
 }
 
+bool isSeparatorSymbol(char c);
+
+template<typename Functor>
+class Finally {
+public:
+    Finally(Functor f): f(f) {}
+    ~Finally() { f(); }
+
+private:
+    Functor f;
+};
+
 template<size_t sso_limit = 79>
 class LongSSO {
 public:

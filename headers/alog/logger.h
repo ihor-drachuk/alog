@@ -142,14 +142,19 @@ inline ALog::MockRecord&& operator<< (ALog::MockRecord&& r, const T&) { return s
 #define ALOG_FL_PREFER_QUOTES         ALog::Record::Flags::PreferAutoQuoteLitStr
 
 #define ALOG_BUFFER(ptr, sz)          ALog::Record::RawData::create(ptr, sz)
+#define ALOG_SEPARATOR(separ)         ALog::Record::Separator::create(separ, false)
+#define ALOG_SEPARATOR_ONCE(separ)    ALog::Record::Separator::create(separ, true)
+#define ALOG_NO_SEPARATOR             ALog::Record::Separator::create()
+#define ALOG_SEPARATOR_FORCE          ALog::Record::Flags::Separators_Force
+#define ALOG_SEPARATOR_FORCE_ONCE     ALog::Record::Flags::Separators_Force_Once
 
-#define ALOG_ASSERT(cond)             ALOGF_IF(!(cond)) << ALOG_FL_ABORT << "Assertion failed: " << #cond << ALog::Record::Flags::NeedSeparator
+#define ALOG_ASSERT(cond)             ALOGF_IF(!(cond)) << ALOG_FL_ABORT << "Assertion failed: " << #cond << ALOG_SEPARATOR_ONCE("; ")
 #ifdef NDEBUG
 #define ALOG_ASSERT_D(cond)           ALog::MockRecord()
 #else
 #define ALOG_ASSERT_D(cond)           ALOG_ASSERT(cond)
 #endif
-#define ALOG_ASSERT_THROW(cond)       ALOGE_IF(!(cond)) << ALOG_FL_THROW << "Exception. Assertion failed: " << #cond << ALog::Record::Flags::NeedSeparator
+#define ALOG_ASSERT_THROW(cond)       ALOGE_IF(!(cond)) << ALOG_FL_THROW << "Exception. Assertion failed: " << #cond << ALOG_SEPARATOR_ONCE("; ")
 
 // Main macros
 #define ALOGV                         ALOG_MODULE(ALog::Severity::Verbose)
@@ -223,6 +228,11 @@ inline ALog::MockRecord&& operator<< (ALog::MockRecord&& r, const T&) { return s
 #define PREFER_QUOTES              ALOG_FL_PREFER_QUOTES
 
 #define BUFFER(ptr, sz)            ALOG_BUFFER(ptr, sz)
+#define SEPARATOR(separ)           ALOG_SEPARATOR(separ)
+#define SEPARATOR_ONCE(separ)      ALOG_SEPARATOR_ONCE(separ)
+#define NO_SEPARATOR               ALOG_NO_SEPARATOR
+#define SEPARATOR_FORCE            ALOG_SEPARATOR_FORCE
+#define SEPARATOR_FORCE_ONCE       ALOG_SEPARATOR_FORCE_ONCE
 
 #define LOG_ASSERT(cond)           ALOG_ASSERT(cond)
 #define LOG_ASSERT_D(cond)         ALOG_ASSERT_D(cond)

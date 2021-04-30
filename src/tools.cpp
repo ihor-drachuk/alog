@@ -43,4 +43,28 @@ const char* currentThreadName()
 
 } // namespace ThreadTools
 
+bool isSeparatorSymbol(char c)
+{
+    static bool isSeparator[256] {false};
+    static bool isReady {false};
+
+    if (!isReady) {
+        for (int i = 32; i <= 47; i++)
+            isSeparator[i] = true;
+
+        for (int i = 58; i <= 64; i++)
+            isSeparator[i] = true;
+
+        for (int i = 91; i <= 96; i++)
+            isSeparator[i] = true;
+
+        for (int i = 123; i <= 126; i++)
+            isSeparator[i] = true;
+
+        isReady = true;
+    }
+
+    return isSeparator[(int)c];
+}
+
 } // namespace ALog
