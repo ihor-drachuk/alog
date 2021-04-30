@@ -19,9 +19,12 @@ TEST(ALog_DataTypes, test_various_types)
     MARK_ALOGGER_READY;
 
     DEFINE_ALOGGER_MODULE(ALogerTest);
+    const int* p = (const int*)this;
+    const void* p2 = p;
 
     LOGD;
-    LOGD << this;
+    LOGD << p;
+    LOGD << p2;
     LOGD << 1;
     LOGD << (uint8_t)1;
     LOGD << ( int8_t)1;

@@ -6,6 +6,7 @@
 #include <limits>
 #include <cstring>
 #include <cinttypes>
+#include <typeinfo>
 #include <alog/tools.h>
 
 namespace ALog {
@@ -67,6 +68,7 @@ struct Record
     Record(uninitialized_tag) { }
 
     void appendMessage(const char* msg, size_t len);
+    void appendMessageAL(const char* msg);
     void appendMessage(const wchar_t* msg, size_t len);
 
     inline const char* getMessage() const { return str.getString(); }
@@ -387,6 +389,23 @@ inline ALog::Record&& operator<< (ALog::Record&& record, const std::wstring& val
     ALog::onStringQuote1(record);
     record.appendMessage(value.data(), value.size());
     ALog::onStringQuote2(record);
+    return std::move(record);
+}
+
+template<typename T>
+inline ALog::Record&& operator<< (ALog::Record&& record, const T* value)
+{
+    record.appendMessage("(", 1);
+    record.appendMessageAL(typeid(T).name());
+    record.appendMessage("*)", 2);
+
+    constexpr size_t bufSz = 16+4;
+    char str[bufSz];
+    size_t len;
+
+    len = sprintf(str, "0x%p", value);
+
+    record.appendMessage(str, len);
     return std::move(record);
 }
 

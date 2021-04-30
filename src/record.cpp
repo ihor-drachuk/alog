@@ -41,6 +41,11 @@ void Record::appendMessage(const char* msg, size_t len)
     str.appendString(msg, len);
 }
 
+void Record::appendMessageAL(const char* msg)
+{
+    appendMessage(msg, strlen(msg));
+}
+
 static std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>,wchar_t>& utf8_utf16_converter() {
     static thread_local std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>,wchar_t> converter;
     return converter;
