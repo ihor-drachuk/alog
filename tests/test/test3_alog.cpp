@@ -312,11 +312,21 @@ TEST(ALog, test_operatorPutStream)
     records.clear();
     LOGD << "Test";
     LOGD << L"Test";
-    LOGD << std::string("Test");
-    LOGD << std::wstring(L"Test");
+    LOGD << NO_AUTO_QUOTES << std::string("Test");
+    LOGD << SKIP_AUTO_QUOTES << std::wstring(L"Test");
     logger->flush();
     for (const auto& x : records)
         ASSERT_EQ(std::string(x.getMessage()), "Test");
+
+    records.clear();
+    LOGD << PREFER_QUOTES << "Test";
+    LOGD << PREFER_QUOTES << L"Test";
+    LOGD << std::string("Test");
+    LOGD << std::wstring(L"Test");
+    logger->flush();
+
+    for (const auto& x : records)
+        ASSERT_EQ(std::string(x.getMessage()), "\"Test\"");
 }
 
 TEST(ALog, test_defaultFormatter)
@@ -332,7 +342,7 @@ TEST(ALog, test_defaultFormatter)
     str2.resize(str1.size());
     memcpy(str2.data(), str1.data(), str1.size());
 
-    ASSERT_EQ(str2, "[    0.014] T#0  [Info    ] [::TestBody:327]  Test");
+    ASSERT_EQ(str2, "[    0.014] T#0  [Info    ] [::TestBody:337]  Test");
 
     // #2
     record = _ALOG_RECORD(ALog::Severity::Info) << "Test";
@@ -342,7 +352,7 @@ TEST(ALog, test_defaultFormatter)
 
     str2.resize(str1.size());
     memcpy(str2.data(), str1.data(), str1.size());
-    ASSERT_EQ(str2, "[    0.014] T#0  (Worker) [Info    ] [::TestBody:338]  Test");
+    ASSERT_EQ(str2, "[    0.014] T#0  (Worker) [Info    ] [::TestBody:348]  Test");
 
     // #3
     record = _ALOG_RECORD(ALog::Severity::Info) << "Test";
@@ -352,7 +362,7 @@ TEST(ALog, test_defaultFormatter)
 
     str2.resize(str1.size());
     memcpy(str2.data(), str1.data(), str1.size());
-    ASSERT_EQ(str2, "[    0.014] T#0  [Info    ] [Module               ] [::TestBody:348]  Test");
+    ASSERT_EQ(str2, "[    0.014] T#0  [Info    ] [Module               ] [::TestBody:358]  Test");
 
     // #4
     record = _ALOG_RECORD(ALog::Severity::Info) << "Test";
@@ -363,7 +373,7 @@ TEST(ALog, test_defaultFormatter)
 
     str2.resize(str1.size());
     memcpy(str2.data(), str1.data(), str1.size());
-    ASSERT_EQ(str2, "[   13.014] T#0  (Worker) [Info    ] [Module               ] [::TestBody:358]  Test");
+    ASSERT_EQ(str2, "[   13.014] T#0  (Worker) [Info    ] [Module               ] [::TestBody:368]  Test");
 
     // #5
     record.flags |= (int)ALog::Record::Flags::Abort;
@@ -410,10 +420,19 @@ TEST(ALog, test_hex)
     char buffer2[1024];
 
     auto record = _ALOG_RECORD(ALog::Severity::Info) << BUFFER(buffer, sizeof(buffer));
-    sprintf(buffer2, "{Buffer; Size: 6, Ptr = 0x%p, Data = 010203040506}", buffer);
+    sprintf(buffer2, "{Buffer; Size: 6, Ptr = 0x%p, Data = 0x010203040506}", buffer);
     ASSERT_EQ(strcmp(record.getMessage(), buffer2), 0);
 
     record = _ALOG_RECORD(ALog::Severity::Info) << BUFFER(buffer, 0);
     sprintf(buffer2, "{Buffer; Size: 0, Ptr = 0x%p. No data}", buffer);
     ASSERT_EQ(strcmp(record.getMessage(), buffer2), 0);
+}
+
+TEST(ALog, test_flags)
+{
+    auto record = _ALOG_RECORD(ALog::Severity::Info);
+    record << ABORT;
+    ASSERT_EQ(record.flags, (int)ALog::Record::Flags::AbortSync);
+    record -= ABORT;
+    ASSERT_EQ(record.flags, 0);
 }

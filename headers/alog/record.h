@@ -31,6 +31,9 @@ enum Severity {
 
 struct Record
 {
+    friend inline void onStringQuote1(Record& record, bool preferOnly);
+    friend inline void onStringQuote2(Record& record, bool preferOnly);
+
     struct uninitialized_tag {};
 
     enum class Flags {
@@ -43,6 +46,9 @@ struct Record
         AbortSync = Flush | Abort,   //    1 | 8
         NeedSeparator = 16,          // 16
         Queued = 32,                 // 32
+        NoAutoQuote = 64,            // 64
+        SkipAutoQuote = 128,         // 128
+        PreferAutoQuoteLitStr = 256, // 256
     };
 
     struct RawData {
@@ -88,7 +94,38 @@ private:
             appendMessage(". ", 2);
         }
     }
+
+    inline void onStringQuote1(bool preferOnly) {
+        if (flags & (int)Flags::NoAutoQuote) return;
+        if (flags & (int)Flags::SkipAutoQuote) return;
+
+        const auto p = (flags & (int)Flags::PreferAutoQuoteLitStr);
+        if (preferOnly && !p) return;
+
+        appendMessage("\"", 1);
+    }
+
+    inline void onStringQuote2(bool preferOnly) {
+        if (flags & (int)Flags::NoAutoQuote) return;
+
+        const auto skip = flags & (int)Flags::SkipAutoQuote;
+        const auto p = (flags & (int)Flags::PreferAutoQuoteLitStr);
+
+        if (!skip && (!preferOnly || p)) {
+            appendMessage("\"", 1);
+        }
+
+        flags &= ~(int)Flags::SkipAutoQuote;
+    }
 };
+
+inline void onStringQuote1(Record& record, bool preferOnly = false) {
+    record.onStringQuote1(preferOnly);
+}
+
+inline void onStringQuote2(Record& record, bool preferOnly = false) {
+    record.onStringQuote2(preferOnly);
+}
 
 } // namespace ALog
 
@@ -101,6 +138,17 @@ inline ALog::Record& operator<< (ALog::Record& record, ALog::Record::Flags flag)
 inline ALog::Record&& operator<< (ALog::Record&& record, ALog::Record::Flags flag)
 {
     return (std::move(static_cast<ALog::Record&>(record) << flag));
+}
+
+inline ALog::Record& operator-= (ALog::Record& record, ALog::Record::Flags flag)
+{
+    record.flags &= ~(int)flag;
+    return record;
+}
+
+inline ALog::Record&& operator-= (ALog::Record&& record, ALog::Record::Flags flag)
+{
+    return (std::move(static_cast<ALog::Record&>(record) -= flag));
 }
 
 inline ALog::Record&& operator<< (ALog::Record&& record, bool value)
@@ -299,13 +347,17 @@ inline ALog::Record&& operator<< (ALog::Record&& record, T value)
 #else
 inline ALog::Record&& operator<< (ALog::Record&& record, const char* value)
 {
+    ALog::onStringQuote1(record, true);
     record.appendMessage(value, strlen(value));
+    ALog::onStringQuote2(record, true);
     return std::move(record);
 }
 
 inline ALog::Record&& operator<< (ALog::Record&& record, const wchar_t* value)
 {
+    ALog::onStringQuote1(record, true);
     record.appendMessage(value, wcslen(value));
+    ALog::onStringQuote2(record, true);
     return std::move(record);
 }
 #endif
@@ -324,13 +376,17 @@ inline ALog::Record&& operator<< (ALog::Record&& record, wchar_t value)
 
 inline ALog::Record&& operator<< (ALog::Record&& record, const std::string& value)
 {
+    ALog::onStringQuote1(record);
     record.appendMessage(value.data(), value.size());
+    ALog::onStringQuote2(record);
     return std::move(record);
 }
 
 inline ALog::Record&& operator<< (ALog::Record&& record, const std::wstring& value)
 {
+    ALog::onStringQuote1(record);
     record.appendMessage(value.data(), value.size());
+    ALog::onStringQuote2(record);
     return std::move(record);
 }
 
@@ -376,14 +432,18 @@ template<typename T>
 inline typename std::enable_if_t<std::is_same<T, QString>::value, ALog::Record>&& operator<< (ALog::Record&& record, const T& value)
 {
     const auto buffer = value.toUtf8();
+    ALog::onStringQuote1(record);
     record.appendMessage(buffer.data(), buffer.size());
+    ALog::onStringQuote2(record);
     return std::move(record);
 }
 
 template<typename T>
 inline typename std::enable_if_t<std::is_same<T, QLatin1String>::value, ALog::Record>&& operator<< (ALog::Record&& record, const T& value)
 {
+    ALog::onStringQuote1(record);
     record.appendMessage(value.data(), value.size());
+    ALog::onStringQuote2(record);
     return std::move(record);
 }
 
@@ -391,7 +451,9 @@ template<typename T>
 inline typename std::enable_if_t<std::is_same<T, QStringRef>::value, ALog::Record>&& operator<< (ALog::Record&& record, const T& value)
 {
     const auto buffer = value.toString().toUtf8();
+    ALog::onStringQuote1(record);
     record.appendMessage(buffer.data(), buffer.size());
+    ALog::onStringQuote2(record);
     return std::move(record);
 }
 
@@ -404,11 +466,11 @@ inline typename std::enable_if_t<std::is_same<T, QByteArray>::value, ALog::Recor
 template<typename T1, typename T2>
 inline ALog::Record&& operator<< (ALog::Record&& record, const std::pair<T1, T2>& value)
 {
-    std::move(record) << "(";
+    std::move(record) << ALog::Record::Flags::SkipAutoQuote << "(";
     std::move(record) << value.first;
-    std::move(record) << ", ";
+    std::move(record) << ALog::Record::Flags::SkipAutoQuote << ", ";
     std::move(record) << value.second;
-    std::move(record) << ")";
+    std::move(record) << ALog::Record::Flags::SkipAutoQuote << ")";
     return std::move(record);
 }
 
@@ -424,15 +486,16 @@ void logArray(Record& record, size_t sz, Iter begin, Iter end)
     }
 
     std::move(record) << "{Container; Size: " << sz << "; Data = ";
+    std::move(record) << Record::Flags::PreferAutoQuoteLitStr;
 
     auto it = begin;
     std::move(record) << *it++;
 
     while (it != end) {
-        std::move(record) << ", " << *it++;
+        std::move(record) << Record::Flags::SkipAutoQuote << ", " << *it++;
     }
 
-    std::move(record) << "}";
+    std::move(record) << Record::Flags::SkipAutoQuote << "}";
 }
 
 } // namespace Internal

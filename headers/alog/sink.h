@@ -89,7 +89,7 @@ public:
         StdErr
     };
 
-    SinkStdStream(Stream stream);
+    SinkStdStream(Stream stream = Stream::StdOut);
 
 protected:
     void writeBuffer(const Buffer& buffer) override;

@@ -137,6 +137,9 @@ inline ALog::MockRecord&& operator<< (ALog::MockRecord&& r, const T&) { return s
 #define ALOG_FL_FLUSH                 ALog::Record::Flags::Flush
 #define ALOG_FL_THROW                 ALog::Record::Flags::ThrowSync
 #define ALOG_FL_ABORT                 ALog::Record::Flags::AbortSync
+#define ALOG_FL_NO_AUTO_QUOTES        ALog::Record::Flags::NoAutoQuote
+#define ALOG_FL_SKIP_AUTO_QUOTES      ALog::Record::Flags::SkipAutoQuote
+#define ALOG_FL_PREFER_QUOTES         ALog::Record::Flags::PreferAutoQuoteLitStr
 
 #define ALOG_BUFFER(ptr, sz)          ALog::Record::RawData::create(ptr, sz)
 
@@ -215,6 +218,9 @@ inline ALog::MockRecord&& operator<< (ALog::MockRecord&& r, const T&) { return s
 #define FLUSH                      ALOG_FL_FLUSH
 #define THROW                      ALOG_FL_THROW
 #define ABORT                      ALOG_FL_ABORT
+#define NO_AUTO_QUOTES             ALOG_FL_NO_AUTO_QUOTES
+#define SKIP_AUTO_QUOTES           ALOG_FL_SKIP_AUTO_QUOTES
+#define PREFER_QUOTES              ALOG_FL_PREFER_QUOTES
 
 #define BUFFER(ptr, sz)            ALOG_BUFFER(ptr, sz)
 

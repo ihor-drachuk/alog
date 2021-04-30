@@ -24,7 +24,7 @@ Record Record::create(Severity severity, int line, const char* file, const char*
     record.steadyTp = std::chrono::steady_clock::now();
     record.systemTp = std::chrono::system_clock::now();
 
-    return std::move(record);
+    return record;
 }
 
 Record Record::create(Record::Flags flags)
@@ -87,7 +87,7 @@ ALog::Record&& operator<<(ALog::Record&& record, const ALog::Record::RawData& va
         return std::move(record);
     }
 
-    len = sprintf(str, "{Buffer; Size: %zu, Ptr = 0x%p, Data = ", value.sz, value.ptr);
+    len = sprintf(str, "{Buffer; Size: %zu, Ptr = 0x%p, Data = 0x", value.sz, value.ptr);
     record.appendMessage(str, len);
 
     size_t len2 = value.sz;
