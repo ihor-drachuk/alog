@@ -64,4 +64,11 @@ Buffer DefaultFormatter::format(const Record& record) const
     return resultBuffer;
 }
 
+Buffer MinimalFormatter::format(const Record& record) const
+{
+    Buffer resultBuffer(record.getMessageLen());
+    memcpy(resultBuffer.data(), record.getMessage(), record.getMessageLen());
+    return resultBuffer;
+}
+
 } // namespace ALog

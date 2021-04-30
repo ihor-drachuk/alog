@@ -25,4 +25,10 @@ private:
     ALOG_DECLARE_PIMPL
 };
 
+class MinimalFormatter : public IFormatter
+{
+public:
+    Buffer format(const Record& record) const override;
+};
+
 } // namespace ALog
