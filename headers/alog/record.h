@@ -519,6 +519,27 @@ inline typename std::enable_if_t<std::is_same<T, QByteArray>::value, ALog::Recor
     return ( std::move(record) << ALog::Record::RawData::create(value.data(), value.size()) );
 }
 
+// --- Forward declarations specially for clang compiler (Mac OS) ---
+namespace ALog {
+namespace Internal {
+template<typename Iter>
+void logArray(Record& record, size_t sz, Iter begin, Iter end);
+} // namespace Internal
+} // namespace ALog
+
+template <typename T>
+inline typename std::enable_if_t<ALog::is_container<T>::value && ALog::has_key<T>::value && ALog::is_qt_container<T>::value, ALog::Record>&& operator<< (ALog::Record&& record, const T& value);
+
+template <typename T>
+inline typename std::enable_if_t<ALog::is_container<T>::value && ALog::has_key<T>::value && !ALog::is_qt_container<T>::value, ALog::Record>&& operator<< (ALog::Record&& record, const T& value);
+
+template <typename T>
+inline typename std::enable_if_t<ALog::is_container<T>::value && !ALog::has_key<T>::value, ALog::Record>&& operator<< (ALog::Record&& record, const T& value);
+
+template <typename T>
+inline typename std::enable_if_t<std::is_array<T>::value, ALog::Record>&& operator<< (ALog::Record&& record, const T& value);
+// -----
+
 template<typename T1, typename T2>
 inline ALog::Record&& operator<< (ALog::Record&& record, const std::pair<T1, T2>& value)
 {
