@@ -56,11 +56,19 @@ template<typename Functor>
 class Finally {
 public:
     Finally(Functor f): f(f) {}
+    Finally(const Finally&) = delete;
+    Finally(Finally&&) = default;
     ~Finally() { f(); }
+
+    Finally<Functor>& operator=(const Finally<Functor>&) = delete;
+    Finally<Functor>& operator=(Finally<Functor>&&) = default;
 
 private:
     Functor f;
 };
+
+template<typename Functor>
+Finally<Functor> CreateFinally(Functor f) { return Finally<Functor>(f); }
 
 template<size_t sso_limit = 79>
 class LongSSO {

@@ -12,28 +12,35 @@ jobs:
   build:
     strategy:
       matrix:
-        os: [ubuntu-latest, macos-latest, windows-latest]
+        os: [ubuntu-18.04, ubuntu-20.04, macos-10.15, windows-2016, windows-2019]
         build_type: [Release, Debug]
 
     runs-on: ${{ matrix.os }}
 
     steps:
     - name: "Set OS-specific values (Linux)"
-      if: ${{ matrix.os == 'ubuntu-latest' }}
+      if: ${{ runner.os == 'Linux' }}
       shell: bash
       run: |
        echo "GENERATOR=Unix Makefiles" >> $GITHUB_ENV
        echo "CORES=$(nproc --all)" >> $GITHUB_ENV
 
     - name: "Set OS-specific values (Mac)"
-      if: ${{ matrix.os == 'macos-latest' }}
+      if: ${{ runner.os == 'macOS' }}
       shell: bash
       run: |
        echo "GENERATOR=Unix Makefiles" >> $GITHUB_ENV
        echo "CORES=$(sysctl -n hw.ncpu)" >> $GITHUB_ENV
 
-    - name: "Set OS-specific values (Win)"
-      if: ${{ matrix.os == 'windows-latest' }}
+    - name: "Set OS-specific values (Win; 2017)"
+      if: ${{ matrix.os == 'windows-2016' }}
+      shell: bash
+      run: |
+       echo "GENERATOR=Visual Studio 15 2017" >> $GITHUB_ENV
+       echo "CORES=$NUMBER_OF_PROCESSORS" >> $GITHUB_ENV
+
+    - name: "Set OS-specific values (Win; 2019)"
+      if: ${{ matrix.os == 'windows-2019' }}
       shell: bash
       run: |
        echo "GENERATOR=Visual Studio 16 2019" >> $GITHUB_ENV

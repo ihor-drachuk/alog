@@ -66,8 +66,7 @@ ALog::Record&& operator<<(ALog::Record&& record, const ALog::Record::RawData& va
     char str[bufSz+1];
     size_t len;
 
-    const auto sepBckp = record.separator;
-    ALog::Finally _f([sepBckp, &record](){ record.separator = sepBckp; });
+    auto _f = ALog::CreateFinally([sepBckp = record.separator, &record](){ record.separator = sepBckp; });
     record.separator.clear();
 
     if (!value.sz) {

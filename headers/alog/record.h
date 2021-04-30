@@ -561,8 +561,7 @@ namespace Internal {
 template<typename Iter>
 void logArray(Record& record, size_t sz, Iter begin, Iter end)
 {
-    const auto flagsBckp = record.flags;
-    Finally _f([flagsBckp, &record](){
+    auto _f = ALog::CreateFinally([flagsBckp = record.flags, &record](){
         record.flags = flagsBckp;
         record.flags |= (int)Record::Flags::Separators_Force_Once;
     });
