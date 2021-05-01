@@ -366,44 +366,37 @@ private:
 };
 #pragma pack(pop)
 
-template<typename T>
-struct has_const_iterator
-{
+template<typename C>
+struct is_container {
 private:
-    typedef char                      yes;
-    typedef struct { char array[2]; } no;
+    template<typename T>
+    static constexpr auto has_cbegin(T*)
+    -> typename
+        std::is_same<
+            decltype( std::declval<T>().cbegin() ),
+            typename T::const_iterator
+        >::type;
 
-    template<typename C> static yes test(typename C::const_iterator*);
-    template<typename C> static no  test(...);
+    template<typename>
+    static constexpr std::false_type has_cbegin(...);
+
+    template<typename T>
+    static constexpr auto has_cend(T*)
+    -> typename
+        std::is_same<
+            decltype( std::declval<T>().cend() ),
+            typename T::const_iterator
+        >::type;
+
+    template<typename>
+    static constexpr std::false_type has_cend(...);
+
+    using cbegin_ret_type = decltype(has_cbegin<C>(0));
+    using cend_ret_type = decltype(has_cend<C>(0));
+
 public:
-    static const bool value = sizeof(test<T>(0)) == sizeof(yes);
-    typedef T type;
+    static constexpr bool value = cbegin_ret_type::value && cend_ret_type::value;
 };
-
-template <typename T>
-struct has_begin_end
-{
-    template<typename C> static char (&f(typename std::enable_if<
-      std::is_same<decltype(static_cast<typename C::const_iterator (C::*)() const>(&C::begin)),
-      typename C::const_iterator(C::*)() const>::value, void>::type*))[1];
-
-    template<typename C> static char (&f(...))[2];
-
-    template<typename C> static char (&g(typename std::enable_if<
-      std::is_same<decltype(static_cast<typename C::const_iterator (C::*)() const>(&C::end)),
-      typename C::const_iterator(C::*)() const>::value, void>::type*))[1];
-
-    template<typename C> static char (&g(...))[2];
-
-    static bool const beg_value = sizeof(f<T>(0)) == 1;
-    static bool const end_value = sizeof(g<T>(0)) == 1;
-    static bool const value = beg_value && end_value;
-};
-
-template <typename T>
-struct is_container : public std::integral_constant<bool,
-        has_const_iterator<T>::value &&
-        has_begin_end<T>::value> { };
 
 template <std::size_t N>
 struct is_container<char[N]> : std::false_type { };
