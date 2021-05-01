@@ -155,4 +155,31 @@ static void LongSSO_typical_fmt(benchmark::State& state)
 BENCHMARK(LongSSO_typical_fmt);
 
 
+static void LongSSO_copy(benchmark::State& state)
+{
+    ALog::LongSSO<> str;
+    str.appendString("Test");
+
+    while (state.KeepRunning()) {
+        ALog::LongSSO<> str2(str);
+    }
+}
+
+BENCHMARK(LongSSO_copy);
+
+
+static void LongSSO_move_x2(benchmark::State& state)
+{
+    ALog::LongSSO<> str;
+    str.appendString("Test");
+
+    while (state.KeepRunning()) {
+        ALog::LongSSO<> str2(std::move(str));
+        str = std::move(str2);
+    }
+}
+
+BENCHMARK(LongSSO_move_x2);
+
+
 BENCHMARK_MAIN();
