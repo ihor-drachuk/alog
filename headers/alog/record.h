@@ -478,7 +478,7 @@ ALog::Record&& operator<< (ALog::Record&& record, const ALog::Record::RawData& v
 
 inline ALog::Record&& operator<< (ALog::Record&& record, const ALog::Record::Separator& value)
 {
-    record.separator = std::move(value.separator);
+    record.separator = value.separator;
     record.flags &= ~(int)ALog::Record::Flags::Separators_OneTime;
     record.flags |= value.oneTime ? (int)ALog::Record::Flags::Separators_OneTime : 0;
     return std::move(record);

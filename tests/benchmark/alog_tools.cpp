@@ -86,10 +86,10 @@ static void ALog_Tools_construct_unique_ptr(benchmark::State& state)
 BENCHMARK(ALog_Tools_construct_unique_ptr);
 
 
-static void ALog_Tools_LongSSO_typical(benchmark::State& state)
+static void LongSSO_typical(benchmark::State& state)
 {
     while (state.KeepRunning()) {
-        ALog::LongSSO str;
+        ALog::LongSSO<> str;
         str.appendString("1234", 4);
         str.appendString("1234567890", 10);
         str.appendString("1234", 4);
@@ -97,7 +97,7 @@ static void ALog_Tools_LongSSO_typical(benchmark::State& state)
     }
 }
 
-BENCHMARK(ALog_Tools_LongSSO_typical);
+BENCHMARK(LongSSO_typical);
 
 
 static void LongSSO_std_typical(benchmark::State& state)
@@ -117,7 +117,7 @@ BENCHMARK(LongSSO_std_typical);
 BENCHMARK_F(ALogToolsFixture, LongSSO_long)(benchmark::State& state)
 {
     while (state.KeepRunning()) {
-        ALog::LongSSO str;
+        ALog::LongSSO<> str;
         str.appendString("1234", 4);
         str.appendString(m_str.data());
     }
@@ -127,7 +127,7 @@ BENCHMARK_F(ALogToolsFixture, LongSSO_long)(benchmark::State& state)
 BENCHMARK_F(ALogToolsFixture, LongSSO_long_opt)(benchmark::State& state)
 {
     while (state.KeepRunning()) {
-        ALog::LongSSO str(m_buffer);
+        ALog::LongSSO<> str(m_buffer);
         str.appendString("1234", 4);
         str.appendString(m_str.data());
     }
@@ -147,7 +147,7 @@ BENCHMARK_F(ALogToolsFixture, LongSSO_std_long)(benchmark::State& state)
 static void LongSSO_typical_fmt(benchmark::State& state)
 {
     while (state.KeepRunning()) {
-        ALog::LongSSO str;
+        ALog::LongSSO<> str;
         str.appendFmtString("%s %d %5d", "Test", 11, 7);
     }
 }

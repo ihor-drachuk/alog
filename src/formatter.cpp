@@ -34,7 +34,7 @@ Buffer DefaultFormatter::format(const Record& record) const
     unsigned long long secs = duration_cast<seconds>(currentTime).count();
     uint16_t msecs = duration_cast<milliseconds>(currentTime).count() - secs * 1000;
 
-    ALog::LongSSO result(impl().cache);
+    ALog::LongSSO<> result(impl().cache);
     result.appendFmtString("[%5llu.%03hu] T#%-2d ", secs, msecs, record.threadNum);
 
     if (record.threadTitle)
