@@ -10,6 +10,11 @@ add_library(alog STATIC ${SOURCES})
 set_property(TARGET alog PROPERTY CXX_STANDARD 17)
 target_include_directories(alog PUBLIC headers)
 
+if(MSVC)
+    target_link_options(alog PRIVATE "/ignore:4221")
+    set_target_properties(alog PROPERTIES STATIC_LIBRARY_OPTIONS "/ignore:4221")
+endif()
+
 if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
     target_compile_definitions(alog PUBLIC ALOG_MACOSX)
 elseif(UNIX)
