@@ -1,0 +1,17 @@
+configure_file(ALog-download.in
+    "${CMAKE_CURRENT_BINARY_DIR}/alog-download/CMakeLists.txt")
+
+execute_process(COMMAND "${CMAKE_COMMAND}" -G "${CMAKE_GENERATOR}" -S "${CMAKE_CURRENT_BINARY_DIR}/alog-download" -B "${CMAKE_CURRENT_BINARY_DIR}/alog-download2" RESULT_VARIABLE download_status)
+
+if (NOT "${download_status}" STREQUAL "0")
+    message(FATAL_ERROR "Preparing ALog download - failed")
+endif()
+
+execute_process(COMMAND "${CMAKE_COMMAND}" --build "${CMAKE_CURRENT_BINARY_DIR}/alog-download2" RESULT_VARIABLE download_status2)
+
+if (NOT "${download_status2}" STREQUAL "0")
+    message(FATAL_ERROR "ALog download - failed")
+endif()
+
+add_subdirectory(${CMAKE_CURRENT_BINARY_DIR}/alog-src
+    ${CMAKE_CURRENT_BINARY_DIR}/alog-build)
