@@ -19,6 +19,11 @@ if(MSVC)
         PUBLIC _CRT_SECURE_NO_WARNINGS _CRT_NONSTDC_NO_WARNINGS)
 endif()
 
+target_compile_options(alog PRIVATE
+    $<$<CXX_COMPILER_ID:MSVC>:/WX>
+    $<$<NOT:$<CXX_COMPILER_ID:MSVC>>:-Werror>
+)
+
 if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
     target_compile_definitions(alog PUBLIC ALOG_MACOSX)
 elseif(UNIX)

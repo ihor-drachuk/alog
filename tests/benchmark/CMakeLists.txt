@@ -8,4 +8,9 @@ foreach( testsourcefile ${SOURCES} )
     target_link_libraries(benchmark-${testname} gtest benchmark alog)
 
     add_test(NAME benchmark-${testname}-runner COMMAND benchmark-${testname})
+
+    target_compile_options(benchmark-${testname} PRIVATE
+        $<$<CXX_COMPILER_ID:MSVC>:/WX>
+        $<$<NOT:$<CXX_COMPILER_ID:MSVC>>:-Werror>
+    )
 endforeach( testsourcefile ${APP_SOURCES} )

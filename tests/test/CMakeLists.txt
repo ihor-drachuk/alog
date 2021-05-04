@@ -12,3 +12,8 @@ add_test(NAME ${PROJECT_TEST_NAME}-runner COMMAND ${PROJECT_TEST_NAME})
 if(ALOG_CI_SKIP_SORT_TEST)
     target_compile_definitions(${PROJECT_TEST_NAME} PRIVATE ALOG_CI_SKIP_SORT_TEST)
 endif()
+
+target_compile_options(${PROJECT_TEST_NAME} PRIVATE
+    $<$<CXX_COMPILER_ID:MSVC>:/WX>
+    $<$<NOT:$<CXX_COMPILER_ID:MSVC>>:-Werror>
+)
