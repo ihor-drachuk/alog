@@ -210,7 +210,9 @@ namespace Internal {
         assert(radix == 10);
         sprintf(dst, "%lu", value);
     }
-#endif
+
+namespace { }
+#endif // ALOG_LINUX || ALOG_MACOSX
 
 template<typename T>
 inline void addInteger(ALog::Record& record, T value)

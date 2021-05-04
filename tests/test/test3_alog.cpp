@@ -35,6 +35,20 @@ TEST(ALog, test0)
     }
 }
 
+TEST(ALog, test_simple_setup)
+{
+    SIMPLE_SETUP_ALOG;
+    LOGMD << "Test!";
+}
+
+
+TEST(ALog, test_unicode)
+{
+    SIMPLE_SETUP_ALOG;
+    LOGMD << "Привет!";
+}
+
+
 TEST(ALog, test_lateMaster)
 {
     DEFINE_ALOGGER_MODULE(ALogerTest);
@@ -354,7 +368,7 @@ TEST(ALog, test_defaultFormatter)
     str2.resize(str1.size());
     memcpy(str2.data(), str1.data(), str1.size());
 
-    ASSERT_EQ(str2, "[    0.014] T#0  [Info    ] [::TestBody:349]  Test");
+    ASSERT_EQ(str2, "[    0.014] T#0  [Info    ] [::TestBody:363]  Test");
 
     // #2
     record = _ALOG_RECORD(ALog::Severity::Info) << "Test";
@@ -364,7 +378,7 @@ TEST(ALog, test_defaultFormatter)
 
     str2.resize(str1.size());
     memcpy(str2.data(), str1.data(), str1.size());
-    ASSERT_EQ(str2, "[    0.014] T#0  (Worker) [Info    ] [::TestBody:360]  Test");
+    ASSERT_EQ(str2, "[    0.014] T#0  (Worker) [Info    ] [::TestBody:374]  Test");
 
     // #3
     record = _ALOG_RECORD(ALog::Severity::Info) << "Test";
@@ -374,7 +388,7 @@ TEST(ALog, test_defaultFormatter)
 
     str2.resize(str1.size());
     memcpy(str2.data(), str1.data(), str1.size());
-    ASSERT_EQ(str2, "[    0.014] T#0  [Info    ] [Module               ] [::TestBody:370]  Test");
+    ASSERT_EQ(str2, "[    0.014] T#0  [Info    ] [Module               ] [::TestBody:384]  Test");
 
     // #4
     record = _ALOG_RECORD(ALog::Severity::Info) << "Test";
@@ -385,7 +399,7 @@ TEST(ALog, test_defaultFormatter)
 
     str2.resize(str1.size());
     memcpy(str2.data(), str1.data(), str1.size());
-    ASSERT_EQ(str2, "[   13.014] T#0  (Worker) [Info    ] [Module               ] [::TestBody:380]  Test");
+    ASSERT_EQ(str2, "[   13.014] T#0  (Worker) [Info    ] [Module               ] [::TestBody:394]  Test");
 
     // #5
     record.flags |= (int)ALog::Record::Flags::Abort;

@@ -6,7 +6,7 @@
 
 #ifdef _MSC_VER
     #define snwprintf _snwprintf
-#endif
+#endif // _MSC_VER
 
 namespace ALog {
 
