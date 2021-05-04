@@ -98,6 +98,7 @@ enable_testing()
 
 if (ALOG_ENABLE_TESTS)
     add_subdirectory(test)
+    add_subdirectory(test2)
 endif()
 
 if (ALOG_ENABLE_BENCHMARK)
