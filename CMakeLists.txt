@@ -23,6 +23,7 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
     target_compile_definitions(alog PUBLIC ALOG_MACOSX)
 elseif(UNIX)
     target_compile_definitions(alog PUBLIC ALOG_LINUX)
+    target_link_libraries(alog PRIVATE pthread)
 endif()
 
 add_subdirectory(tests)
