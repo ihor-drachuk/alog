@@ -86,6 +86,32 @@ static void ALog_Tools_construct_unique_ptr(benchmark::State& state)
 BENCHMARK(ALog_Tools_construct_unique_ptr);
 
 
+static void ALog_Tools_optional_bool(benchmark::State& state)
+{
+    while (state.KeepRunning()) {
+        ALog::optional_bool opt;
+        opt = ((&state) + 1 != nullptr);
+        auto result = opt.value_or(false);
+        (void)result;
+    }
+}
+
+BENCHMARK(ALog_Tools_optional_bool);
+
+
+static void ALog_Tools_optional_bool_std(benchmark::State& state)
+{
+    while (state.KeepRunning()) {
+        std::optional<bool> opt;
+        opt = ((&state) + 1 != nullptr);
+        auto result = opt.value_or(false);
+        (void)result;
+    }
+}
+
+BENCHMARK(ALog_Tools_optional_bool_std);
+
+
 static void LongSSO_typical(benchmark::State& state)
 {
     while (state.KeepRunning()) {
