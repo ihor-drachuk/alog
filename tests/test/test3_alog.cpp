@@ -170,6 +170,7 @@ TEST(ALog, test_threadNames)
     ASSERT_EQ(records[1].threadTitle, thrName5);
 }
 
+#ifndef ALOG_CI_SKIP_SORT_TEST
 TEST(ALog, test_sort)
 {
     const auto strict = false;
@@ -222,9 +223,10 @@ TEST(ALog, test_sort)
     if (strict) {
         ASSERT_EQ(unsortedCount, 0);
     } else {
-        ASSERT_LT(unsortedCount, 40);
+        ASSERT_LT(unsortedCount, 20);
     }
 }
+#endif // ALOG_CI_SKIP_SORT_TEST
 
 TEST(ALog, test_flush)
 {
@@ -352,7 +354,7 @@ TEST(ALog, test_defaultFormatter)
     str2.resize(str1.size());
     memcpy(str2.data(), str1.data(), str1.size());
 
-    ASSERT_EQ(str2, "[    0.014] T#0  [Info    ] [::TestBody:347]  Test");
+    ASSERT_EQ(str2, "[    0.014] T#0  [Info    ] [::TestBody:349]  Test");
 
     // #2
     record = _ALOG_RECORD(ALog::Severity::Info) << "Test";
@@ -362,7 +364,7 @@ TEST(ALog, test_defaultFormatter)
 
     str2.resize(str1.size());
     memcpy(str2.data(), str1.data(), str1.size());
-    ASSERT_EQ(str2, "[    0.014] T#0  (Worker) [Info    ] [::TestBody:358]  Test");
+    ASSERT_EQ(str2, "[    0.014] T#0  (Worker) [Info    ] [::TestBody:360]  Test");
 
     // #3
     record = _ALOG_RECORD(ALog::Severity::Info) << "Test";
@@ -372,7 +374,7 @@ TEST(ALog, test_defaultFormatter)
 
     str2.resize(str1.size());
     memcpy(str2.data(), str1.data(), str1.size());
-    ASSERT_EQ(str2, "[    0.014] T#0  [Info    ] [Module               ] [::TestBody:368]  Test");
+    ASSERT_EQ(str2, "[    0.014] T#0  [Info    ] [Module               ] [::TestBody:370]  Test");
 
     // #4
     record = _ALOG_RECORD(ALog::Severity::Info) << "Test";
@@ -383,7 +385,7 @@ TEST(ALog, test_defaultFormatter)
 
     str2.resize(str1.size());
     memcpy(str2.data(), str1.data(), str1.size());
-    ASSERT_EQ(str2, "[   13.014] T#0  (Worker) [Info    ] [Module               ] [::TestBody:378]  Test");
+    ASSERT_EQ(str2, "[   13.014] T#0  (Worker) [Info    ] [Module               ] [::TestBody:380]  Test");
 
     // #5
     record.flags |= (int)ALog::Record::Flags::Abort;
