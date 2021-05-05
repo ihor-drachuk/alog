@@ -1,9 +1,9 @@
 cmake_minimum_required(VERSION 2.16)
 
-project(ALog-donwload)
+project(ALog-download)
 
 include(ExternalProject)
-ExternalProject_Add(ALog-donwload
+ExternalProject_Add(ALog-download
         GIT_REPOSITORY    https://github.com/ihor-drachuk/alog.git
         SOURCE_DIR        "${CMAKE_CURRENT_BINARY_DIR}/alog-src"
         BINARY_DIR        "${CMAKE_CURRENT_BINARY_DIR}/alog-build"
