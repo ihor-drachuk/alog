@@ -1,5 +1,6 @@
 #include <alog/sink.h>
 #include <alog/tools.h>
+#include <stdexcept>
 
 namespace ALog {
 
