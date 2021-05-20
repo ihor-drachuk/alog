@@ -78,6 +78,8 @@ struct Record
 
     inline void appendMessage(const char* msg, size_t len) { handleSeparators(len ? *msg : 0); str.appendString(msg, len); }
     inline void appendMessageAL(const char* msg) { appendMessage(msg, strlen(msg)); }
+    template<size_t N>
+    inline void appendMessage(const char(&msg)[N]) { appendMessage(msg, N-1); }
     void appendMessage(const wchar_t* msg, size_t len);
 
     inline const char* getMessage() const { return str.getString(); }
@@ -571,7 +573,7 @@ void logArray(Record& record, size_t sz, Iter begin, Iter end)
     std::move(record) -= Record::Flags::PreferAutoQuoteLitStr;
 
     if (!sz) {
-        std::move(record) << "{Container; Size: 0; No data}";
+        record.appendMessage("{Container; Size: 0; No data}");
         return;
     }
 
