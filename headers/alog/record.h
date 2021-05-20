@@ -523,6 +523,18 @@ inline typename std::enable_if_t<std::is_same<T, QByteArray>::value, ALog::Recor
     return ( std::move(record) << ALog::Record::RawData::create(value.data(), value.size()) );
 }
 
+template<typename T>
+inline typename std::enable_if_t<std::is_same<T, QPoint>::value, ALog::Record>&& operator<< (ALog::Record&& record, const T& value)
+{
+    record.appendMessage("QPoint(");
+    std::move(record) << value.x();
+    record.appendMessage(", ");
+    std::move(record) << value.y();
+    record.appendMessage(")");
+    std::move(record) << ALog::Record::Flags::Separators_Force_Once;
+    return std::move(record);
+}
+
 // --- Forward declarations specially for clang compiler (Mac OS) ---
 namespace ALog {
 namespace Internal {

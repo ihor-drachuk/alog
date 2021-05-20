@@ -61,6 +61,8 @@ bool isSeparatorSymbol(char c)
         for (int i = 123; i <= 126; i++)
             isSeparator[i] = true;
 
+        isSeparator[(int)':'] = false;
+
         isReady = true;
     }
 

@@ -23,6 +23,7 @@ class QString;
 class QLatin1String;
 class QStringRef;
 class QByteArray;
+class QPoint;
 template<typename> class QList;
 template<typename> class QLinkedList;
 template<typename> class QVector;
