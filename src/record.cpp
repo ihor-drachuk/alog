@@ -8,6 +8,22 @@
     #define snwprintf _snwprintf
 #endif // _MSC_VER
 
+
+#ifdef ALOG_ENABLE_DEF_SEPARATORS
+constexpr int defaultFlags_Separators = (int)ALog::Record::Flags::Separators;
+#else
+constexpr int defaultFlags_Separators = 0;
+#endif
+
+#ifdef ALOG_ENABLE_DEF_AUTO_QUOTES
+constexpr int defaultFlags_Quotes = (int)ALog::Record::Flags::AutoQuote;
+#else
+constexpr int defaultFlags_Quotes = 0;
+#endif
+
+constexpr int defaultFlags = defaultFlags_Separators + defaultFlags_Quotes;
+
+
 namespace ALog {
 
 Record Record::create(Severity severity, int line, const char* file, const char* fileOnly, const char* func) {
@@ -20,9 +36,10 @@ Record Record::create(Severity severity, int line, const char* file, const char*
     record.threadNum = ThreadTools::currentThreadId();
     record.threadTitle = ThreadTools::currentThreadName();
     record.module = nullptr;
-    record.flags = 0;
     record.steadyTp = std::chrono::steady_clock::now();
     record.systemTp = std::chrono::system_clock::now();
+    record.flags = defaultFlags;
+    record.skipSeparators = 0;
 
     return record;
 }
@@ -55,7 +72,8 @@ Record::Record()
     threadNum = 0;
     threadTitle = nullptr;
     module = nullptr;
-    flags = 0;
+    flags = defaultFlags;
+    skipSeparators = 0;
 }
 
 } // namespace ALog

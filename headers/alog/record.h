@@ -30,8 +30,8 @@ enum Severity {
 
 struct Record
 {
-    friend inline void onStringQuote1(Record& record, bool preferOnly);
-    friend inline void onStringQuote2(Record& record, bool preferOnly);
+    friend inline void onStringQuote1(Record& record, bool literal);
+    friend inline void onStringQuote2(Record& record);
     static constexpr size_t msg_sso_len = 79;
     static constexpr size_t separator_sso_len = 8;
 
@@ -45,15 +45,20 @@ struct Record
         ThrowSync = Flush | Throw,   // 5 = 1 | 4
         Abort = 8,                   // 8
         AbortSync = Flush | Abort,   // 9 = 1 | 8
-        //Separators = 16,             // 16
-        Separators_OneTime = 32,     // 32
-        Separators_Force = 64,       // 64
-        Separators_Force_Once = 128, // 128
-        Queued = 256,                // 256
-        NoAutoQuote = 512,           // 512
-        SkipAutoQuote = 1024,        // 1024
-        PreferAutoQuoteLitStr = 2048,// 2048
+
+        Separators = 16,             // 16
+        NoSeparators = 32,           // 32
+        AutoQuote = 64,              // 64
+        NoAutoQuote = 128,           // 128
+        QuoteLiterals = 256,         // 256
+
+        Internal_NoSeparators    = 512,  // 512
+        Internal_QuoteClose      = 1024, // 1024
+        Internal_Queued          = 2048, // 2048
+        Internal_QuoteLiterals   = 4096, // 4096
     };
+
+    struct Nothing { };
 
     struct RawData {
         [[nodiscard]] static inline RawData create(const void* ptr, size_t sz) { RawData r; r.ptr = ptr; r.sz = sz; return r; };
@@ -62,11 +67,23 @@ struct Record
     };
 
     struct Separator {
-        [[nodiscard]] static inline Separator create() { Separator r; r.oneTime = false; return r; };
-        [[nodiscard]] static inline Separator create(const char* separator, bool oneTime) { Separator r; r.separator.appendString(separator, strlen(separator)); r.oneTime = oneTime; return r; };
+        [[nodiscard]] static inline Separator create() { Separator r; return r; };
+        [[nodiscard]] static inline Separator create(const char* separator) { Separator r; r.separator.appendStringAL(separator); return r; };
+        template<size_t N>
+        [[nodiscard]] static inline Separator create(const char(&separator)[N]) { Separator r; r.separator.appendString(separator); return r; };
         LongSSO<separator_sso_len> separator;
-        bool oneTime;
     };
+
+    struct SkipSeparator {
+        inline SkipSeparator(): count(1) { }
+        inline SkipSeparator(int count): count(count) { }
+        [[nodiscard]] static inline SkipSeparator create(int count) { return SkipSeparator(count); };
+        int count { 0 };
+    };
+
+    using F = Flags;
+    using S = Separator;
+    using SS = SkipSeparator;
 
     // -----
 
@@ -76,14 +93,37 @@ struct Record
     Record();
     inline Record(uninitialized_tag) { }
 
-    inline void appendMessage(const char* msg, size_t len) { handleSeparators(len ? *msg : 0); str.appendString(msg, len); }
-    inline void appendMessageAL(const char* msg) { appendMessage(msg, strlen(msg)); }
+    inline void appendMessage(const char* msg, size_t len) { handleSeparators(len ? *msg : 0); message.appendString(msg, len); }
     template<size_t N>
     inline void appendMessage(const char(&msg)[N]) { appendMessage(msg, N-1); }
+    inline void appendMessageAL(const char* msg) { appendMessage(msg, strlen(msg)); }
+
     void appendMessage(const wchar_t* msg, size_t len);
 
-    inline const char* getMessage() const { return str.getString(); }
-    inline size_t getMessageLen() const { return str.getStringLen(); }
+    inline const char* getMessage() const { return message.getString(); }
+    inline size_t getMessageLen() const { return message.getStringLen(); }
+
+    [[nodiscard]] inline auto backupFlags() { return CreateFinally([this, fl = flags](){ flags = fl; }); }
+    inline bool hasFlags(Flags value) const { return (flags & (int)value) == (int)value; }
+    inline bool hasFlagsAny(Flags value) const { return (flags & (int)value); }
+    inline void flagsOn(Flags value)  { flags |=  (int)value; combineFlags(); }
+    inline void flagsOff(Flags value) { flags &= ~(int)value; }
+
+    template<typename... Ts> inline bool hasFlags(Ts... values) const { return (flags & combineInt(values...)) == combineInt(values...); }
+    template<typename... Ts> inline bool hasFlagsAny(Ts... values) const { return (flags & combineInt(values...)); }
+    template<typename... Ts> inline void flagsOn(Ts... values) { flags |= combineInt(values...); combineFlags(); }
+    template<typename... Ts> inline void flagsOff(Ts... values) { flags &= ~combineInt(values...); }
+
+#ifdef ALOG_ENABLE_DEBUG
+    [[nodiscard]] inline auto verifySkipSeparators(int delta = 0) { return CreateFinally([this, ss = ALog::max(skipSeparators + delta, 0)](){ assert(ss == skipSeparators); }); }
+    #define VERIFY_SKIP_SEPARATORS(record, num) auto _checkSS = record.verifySkipSeparators(num);
+#else
+    [[nodiscard]] inline Nothing verifySkipSeparators(int = 0) { return {}; }
+    #define VERIFY_SKIP_SEPARATORS(record, num)
+#endif
+
+    [[nodiscard]] inline auto updateSkipSeparators(int value) { auto r = verifySkipSeparators(); skipSeparators += value; return r; }
+    inline void updateSkipSeparatorsCF(int value) { skipSeparators += value; }
 
     Severity severity;
     int line;
@@ -93,78 +133,75 @@ struct Record
     int threadNum;
     const char* threadTitle; // Literal ptr
     const char* module;      // Literal ptr
-    int flags;
+
     std::chrono::time_point<std::chrono::steady_clock> startTp;
     std::chrono::time_point<std::chrono::steady_clock> steadyTp;
     std::chrono::time_point<std::chrono::system_clock> systemTp;
 
-    LongSSO<msg_sso_len> str;
+    LongSSO<msg_sso_len> message;
     LongSSO<separator_sso_len> separator {" "};
 
 private:
-    inline void handleSeparators(char nextSymbol) {
-        if (!separator) return;
-        if (!str.getStringLen()) return;
+    int flags;
+    int skipSeparators;
 
-        const auto force = (flags & (int)Flags::Separators_Force);
-        const auto forceOnce = (flags & (int)Flags::Separators_Force_Once);
-
-        if (!force && !forceOnce) {
-            if (isSeparatorSymbol(*(str.getString()+str.getStringLen()-1))) return;
-            if (isSeparatorSymbol(nextSymbol)) return;
-        } else {
-            flags &= ~(int)Flags::Separators_Force_Once;
+private:
+    inline void handleSeparators(char /*nextSymbol*/) {
+        if (skipSeparators) {
+            skipSeparators--;
+            return;
         }
 
-        str.appendString(separator.getString(), separator.getStringLen());
+        if (!hasFlags(Flags::Separators) || hasFlags(Flags::Internal_NoSeparators) || !separator || !message) return;
 
-        if (flags & (int)Flags::Separators_OneTime) {
-            separator.clear();
-            flags &= ~(int)Flags::Separators_OneTime;
-        }
+        message.appendString(separator);
     }
 
-    inline void onStringQuote1(bool preferOnly) {
-        if (flags & (int)Flags::NoAutoQuote) return;
-        if (flags & (int)Flags::SkipAutoQuote) return;
+    inline void onStringQuote1(bool literal) {
+        const bool quoteLiterals = hasFlagsAny(Flags::QuoteLiterals,
+                                               Flags::Internal_QuoteLiterals);
+        const bool autoQuote = hasFlags(Flags::AutoQuote);
 
-        const auto p = (flags & (int)Flags::PreferAutoQuoteLitStr);
-        if (preferOnly && !p) return;
+        if (!quoteLiterals && (literal || !autoQuote)) return;
+        flagsOn(Flags::Internal_QuoteClose);
+        appendMessage("\"", 1);
+        skipSeparators++;
+    }
 
+    inline void onStringQuote2() {
+        if (!hasFlags(Flags::Internal_QuoteClose)) return;
+        flagsOff(Flags::Internal_QuoteClose);
+        skipSeparators++;
         appendMessage("\"", 1);
     }
 
-    inline void onStringQuote2(bool preferOnly) {
-        if (flags & (int)Flags::NoAutoQuote) return;
-
-        const auto skip = flags & (int)Flags::SkipAutoQuote;
-        const auto p = (flags & (int)Flags::PreferAutoQuoteLitStr);
-
-        if (!skip && (!preferOnly || p)) {
-            appendMessage("\"", 1);
+    inline void combineFlags() {
+        if (hasFlags(ALog::Record::Flags::NoSeparators)) {
+            flagsOff(ALog::Record::Flags::NoSeparators, ALog::Record::Flags::Separators);
         }
 
-        flags &= ~(int)Flags::SkipAutoQuote;
+        if (hasFlags(ALog::Record::Flags::NoAutoQuote)) {
+            flagsOff(ALog::Record::Flags::NoAutoQuote, ALog::Record::Flags::AutoQuote);
+        }
     }
 };
 
-inline void onStringQuote1(Record& record, bool preferOnly = false) {
-    record.onStringQuote1(preferOnly);
+inline void onStringQuote1(Record& record, bool literal = false) {
+    record.onStringQuote1(literal);
 }
 
-inline void onStringQuote2(Record& record, bool preferOnly = false) {
-    record.onStringQuote2(preferOnly);
+inline void onStringQuote2(Record& record) {
+    record.onStringQuote2();
 }
+
+using R = Record;
 
 } // namespace ALog
 
+
 inline ALog::Record& operator<< (ALog::Record& record, ALog::Record::Flags flag)
 {
-    record.flags |= (int)flag;
-
-    if ((int)flag & (int)ALog::Record::Flags::Separators_Force_Once)
-        record.flags &= ~(int)ALog::Record::Flags::Separators_Force;
-
+    record.flagsOn(flag);
     return record;
 }
 
@@ -175,7 +212,7 @@ inline ALog::Record&& operator<< (ALog::Record&& record, ALog::Record::Flags fla
 
 inline ALog::Record& operator-= (ALog::Record& record, ALog::Record::Flags flag)
 {
-    record.flags &= ~(int)flag;
+    record.flagsOff(flag);
     return record;
 }
 
@@ -382,17 +419,19 @@ inline ALog::Record&& operator<< (ALog::Record&& record, T value)
 #else
 inline ALog::Record&& operator<< (ALog::Record&& record, const char* value)
 {
+    VERIFY_SKIP_SEPARATORS(record, -1);
     ALog::onStringQuote1(record, true);
     record.appendMessage(value, strlen(value));
-    ALog::onStringQuote2(record, true);
+    ALog::onStringQuote2(record);
     return std::move(record);
 }
 
 inline ALog::Record&& operator<< (ALog::Record&& record, const wchar_t* value)
 {
+    VERIFY_SKIP_SEPARATORS(record, -1);
     ALog::onStringQuote1(record, true);
     record.appendMessage(value, wcslen(value));
-    ALog::onStringQuote2(record, true);
+    ALog::onStringQuote2(record);
     return std::move(record);
 }
 #endif
@@ -411,6 +450,7 @@ inline ALog::Record&& operator<< (ALog::Record&& record, wchar_t value)
 
 inline ALog::Record&& operator<< (ALog::Record&& record, const std::string& value)
 {
+    VERIFY_SKIP_SEPARATORS(record, -1);
     ALog::onStringQuote1(record);
     record.appendMessage(value.data(), value.size());
     ALog::onStringQuote2(record);
@@ -419,6 +459,7 @@ inline ALog::Record&& operator<< (ALog::Record&& record, const std::string& valu
 
 inline ALog::Record&& operator<< (ALog::Record&& record, const std::wstring& value)
 {
+    VERIFY_SKIP_SEPARATORS(record, -1);
     ALog::onStringQuote1(record);
     record.appendMessage(value.data(), value.size());
     ALog::onStringQuote2(record);
@@ -428,6 +469,7 @@ inline ALog::Record&& operator<< (ALog::Record&& record, const std::wstring& val
 template<typename T>
 inline ALog::Record&& operator<< (ALog::Record&& record, const T* value)
 {
+    auto _checkSS = record.updateSkipSeparators(4);
     record.appendMessage("(", 1);
     record.appendMessageAL(typeid(T).name());
     record.appendMessage("*)", 2);
@@ -450,6 +492,7 @@ inline ALog::Record&& operator<< (ALog::Record&& record, const void* value)
 
     len = sprintf(str, "0x%p", value);
 
+    auto _checkSS = record.updateSkipSeparators(1);
     record.appendMessage(str, len);
     return std::move(record);
 }
@@ -480,11 +523,21 @@ inline ALog::Record&& operator<< (ALog::Record&& record, T value) { return (std:
 
 ALog::Record&& operator<< (ALog::Record&& record, const ALog::Record::RawData& value);
 
+inline ALog::Record& operator<< (ALog::Record& record, ALog::Record::SkipSeparator ss)
+{
+    record.updateSkipSeparatorsCF(ss.count);
+    return record;
+}
+
+inline ALog::Record&& operator<< (ALog::Record&& record, ALog::Record::SkipSeparator ss)
+{
+    return (std::move(static_cast<ALog::Record&>(record) << ss));
+}
+
 inline ALog::Record&& operator<< (ALog::Record&& record, const ALog::Record::Separator& value)
 {
     record.separator = value.separator;
-    record.flags &= ~(int)ALog::Record::Flags::Separators_OneTime;
-    record.flags |= value.oneTime ? (int)ALog::Record::Flags::Separators_OneTime : 0;
+    record << ALog::Record::Flags::Separators;
     return std::move(record);
 }
 
@@ -526,12 +579,15 @@ inline typename std::enable_if_t<std::is_same<T, QByteArray>::value, ALog::Recor
 template<typename T>
 inline typename std::enable_if_t<std::is_same<T, QPoint>::value, ALog::Record>&& operator<< (ALog::Record&& record, const T& value)
 {
+    auto _flagsRestorer = record.backupFlags();
+
     record.appendMessage("QPoint(");
+    record << ALog::Record::Flags::Internal_NoSeparators;
     std::move(record) << value.x();
     record.appendMessage(", ");
     std::move(record) << value.y();
     record.appendMessage(")");
-    std::move(record) << ALog::Record::Flags::Separators_Force_Once;
+
     return std::move(record);
 }
 
@@ -559,15 +615,21 @@ inline typename std::enable_if_t<std::is_array<T>::value, ALog::Record>&& operat
 template<typename T1, typename T2>
 inline ALog::Record&& operator<< (ALog::Record&& record, const std::pair<T1, T2>& value)
 {
+    auto _flagsRestorer = record.backupFlags();
+    VERIFY_SKIP_SEPARATORS(record, -1);
 
-    std::move(record) << ALog::Record::Flags::SkipAutoQuote << "(";
-    std::move(record) << value.first;
-    std::move(record) -= ALog::Record::Flags::Separators_Force_Once;
-    std::move(record) << ALog::Record::Flags::SkipAutoQuote << ", ";
+    record << ALog::R::F::Internal_QuoteLiterals;
+
+    record.appendMessage("(");
+    std::move(record) << ALog::R::SS() << value.first;
+
+    record.updateSkipSeparatorsCF(2);
+    record.appendMessage(", ");
     std::move(record) << value.second;
-    std::move(record) -= ALog::Record::Flags::Separators_Force_Once;
-    std::move(record) << ALog::Record::Flags::SkipAutoQuote << ")";
-    std::move(record) << ALog::Record::Flags::Separators_Force_Once;
+
+    record.updateSkipSeparatorsCF(1);
+    record.appendMessage(")");
+
     return std::move(record);
 }
 
@@ -577,31 +639,32 @@ namespace Internal {
 template<typename Iter>
 void logArray(Record& record, size_t sz, Iter begin, Iter end)
 {
-    auto _f = ALog::CreateFinally([flagsBckp = record.flags, &record](){
-        record.flags = flagsBckp;
-        record.flags |= (int)Record::Flags::Separators_Force_Once;
-    });
-
-    std::move(record) -= Record::Flags::PreferAutoQuoteLitStr;
-
     if (!sz) {
         record.appendMessage("{Container; Size: 0; No data}");
         return;
     }
 
-    std::move(record) << "{Container; Size: " << sz << "; Data = ";
-    std::move(record) << Record::Flags::PreferAutoQuoteLitStr;
+    auto _flagsRestorer = record.backupFlags();
+    VERIFY_SKIP_SEPARATORS(record, -1);
+
+    record << ALog::R::F::Internal_QuoteLiterals;
 
     auto it = begin;
-    std::move(record) << *it++;
-    std::move(record) -= ALog::Record::Flags::Separators_Force_Once;
+
+    record.appendMessage("{Container; Size: ");
+    std::move(record) << R::SS(2) << sz;
+    record.appendMessage("; Data = ");
+
+    std::move(record) << R::SS(1) << *it++;
 
     while (it != end) {
-        std::move(record) << Record::Flags::SkipAutoQuote << ", " << *it++;
-        std::move(record) -= ALog::Record::Flags::Separators_Force_Once;
+        std::move(record) << R::SS(2);
+        record.appendMessage(", ");
+        std::move(record) << *it++;
     }
 
-    std::move(record) << Record::Flags::SkipAutoQuote << "}";
+    std::move(record) << R::SS(1);
+    record.appendMessage("}");
 }
 
 } // namespace Internal

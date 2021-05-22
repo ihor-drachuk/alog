@@ -145,7 +145,7 @@ BENCHMARK_F(ALogToolsFixture, LongSSO_long)(benchmark::State& state)
     while (state.KeepRunning()) {
         ALog::LongSSO<> str;
         str.appendString("1234", 4);
-        str.appendString(m_str.data());
+        str.appendString(m_str.data(), m_str.size());
     }
 }
 
@@ -155,7 +155,7 @@ BENCHMARK_F(ALogToolsFixture, LongSSO_long_opt)(benchmark::State& state)
     while (state.KeepRunning()) {
         ALog::LongSSO<> str(m_buffer);
         str.appendString("1234", 4);
-        str.appendString(m_str.data());
+        str.appendString(m_str.data(), m_str.size());
     }
 }
 

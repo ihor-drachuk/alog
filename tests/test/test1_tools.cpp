@@ -21,3 +21,17 @@ TEST(ALog_Tools, Finally)
 
     ASSERT_TRUE(triggered);
 }
+
+TEST(ALog_Tools, CombineInt)
+{
+    enum class SE {
+        A = 1,
+        B = 2,
+        C = 4,
+        D = 8
+    };
+
+    ASSERT_EQ(ALog::combineInt(SE::A), 1);
+    ASSERT_EQ(ALog::combineInt(SE::A, SE::C), 5);
+    ASSERT_EQ(ALog::combineInt(SE::A, SE::B, SE::C, SE::D), 15);
+}

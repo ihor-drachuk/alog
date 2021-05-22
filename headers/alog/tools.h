@@ -160,8 +160,18 @@ public:
         allocate_copy(sz, str);
     }
 
-    inline void appendString(const char* str) {
+    inline void appendStringAL(const char* str) {
         appendString(str, strlen(str));
+    }
+
+    template<size_t N>
+    inline void appendString(const char(&str)[N]) {
+        appendString(str, N-1);
+    }
+
+    template<size_t N>
+    inline void appendString(const LongSSO<N>& str) {
+        appendString(str.getString(), str.getStringLen());
     }
 
     static_assert (sizeof(uint8_t) == sizeof(char), "Cast validity verification - failed");
@@ -486,5 +496,14 @@ public:
 private:
     Iter m_iter;
 };
+
+template<typename T>
+constexpr int combineInt(T value) { return (int)value; }
+
+template<typename T, typename... Ts>
+constexpr int combineInt(T value0, Ts... values) { return (int)value0 | combineInt(values...); }
+
+template<typename T>
+inline T max(T a, T b) { return a > b ? a : b; }
 
 } // namespace ALog

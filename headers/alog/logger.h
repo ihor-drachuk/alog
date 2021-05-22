@@ -51,16 +51,16 @@ public:
             bool throwMeValid { false };
             bool abort { false };
 
-            if (record.flags & (int)Record::Flags::Throw) {
+            if (record.hasFlags(Record::Flags::Throw)) {
                 throwMe = record;
                 throwMeValid = true;
             }
 
-            if (record.flags & (int)Record::Flags::Abort) {
+            if (record.hasFlags(Record::Flags::Abort)) {
                 abort = true;
             }
 
-            record.flags |= (int)Record::Flags::Queued;
+            record.flagsOn(Record::Flags::Internal_Queued);
             m_queue.emplace_back(std::move(record));
 
             if (this->available()) {
@@ -141,16 +141,16 @@ inline ALog::MockRecord&& operator<< (ALog::MockRecord&& r, const T&) { return s
 #define ALOG_FL_FLUSH                 ALog::Record::Flags::Flush
 #define ALOG_FL_THROW                 ALog::Record::Flags::ThrowSync
 #define ALOG_FL_ABORT                 ALog::Record::Flags::AbortSync
+
+#define ALOG_FL_SEPARATORS            ALog::Record::Flags::Separators
+#define ALOG_FL_NO_SEPARATORS         ALog::Record::Flags::NoSeparators
+#define ALOG_FL_AUTO_QUOTES           ALog::Record::Flags::AutoQuote
 #define ALOG_FL_NO_AUTO_QUOTES        ALog::Record::Flags::NoAutoQuote
-#define ALOG_FL_SKIP_AUTO_QUOTES      ALog::Record::Flags::SkipAutoQuote
-#define ALOG_FL_PREFER_QUOTES         ALog::Record::Flags::PreferAutoQuoteLitStr
+#define ALOG_FL_QUOTE_LITERALS        ALog::Record::Flags::QuoteLiterals
 
 #define ALOG_BUFFER(ptr, sz)          ALog::Record::RawData::create(ptr, sz)
-#define ALOG_SEPARATOR(separ)         ALog::Record::Separator::create(separ, false)
-#define ALOG_SEPARATOR_ONCE(separ)    ALog::Record::Separator::create(separ, true)
-#define ALOG_NO_SEPARATOR             ALog::Record::Separator::create()
-#define ALOG_SEPARATOR_FORCE          ALog::Record::Flags::Separators_Force
-#define ALOG_SEPARATOR_FORCE_ONCE     ALog::Record::Flags::Separators_Force_Once
+#define ALOG_SEPARATOR(separator)     ALog::Record::Separator::create(separator)
+#define ALOG_SKIP_SEPARATOR(count)    ALog::Record::SkipSeparator::create(count)
 
 #define ALOG_ASSERT(cond)             ALOGF_IF(!(cond)) << ALOG_FL_ABORT << "Assertion failed: " << #cond << ALOG_SEPARATOR_ONCE("; ")
 #ifdef NDEBUG
@@ -227,16 +227,16 @@ inline ALog::MockRecord&& operator<< (ALog::MockRecord&& r, const T&) { return s
 #define FLUSH                      ALOG_FL_FLUSH
 #define THROW                      ALOG_FL_THROW
 #define ABORT                      ALOG_FL_ABORT
+
+#define SEPARATORS                 ALOG_FL_SEPARATORS
+#define NO_SEPARATORS              ALOG_FL_NO_SEPARATORS
+#define AUTO_QUOTES                ALOG_FL_AUTO_QUOTES
 #define NO_AUTO_QUOTES             ALOG_FL_NO_AUTO_QUOTES
-#define SKIP_AUTO_QUOTES           ALOG_FL_SKIP_AUTO_QUOTES
-#define PREFER_QUOTES              ALOG_FL_PREFER_QUOTES
+#define QUOTE_LITERALS             ALOG_FL_QUOTE_LITERALS
 
 #define BUFFER(ptr, sz)            ALOG_BUFFER(ptr, sz)
-#define SEPARATOR(separ)           ALOG_SEPARATOR(separ)
-#define SEPARATOR_ONCE(separ)      ALOG_SEPARATOR_ONCE(separ)
-#define NO_SEPARATOR               ALOG_NO_SEPARATOR
-#define SEPARATOR_FORCE            ALOG_SEPARATOR_FORCE
-#define SEPARATOR_FORCE_ONCE       ALOG_SEPARATOR_FORCE_ONCE
+#define SEP(separator)             ALOG_SEPARATOR(separator)
+#define SSEP(count)                ALOG_SKIP_SEPARATOR(count)
 
 #define LOG_ASSERT(cond)           ALOG_ASSERT(cond)
 #define LOG_ASSERT_D(cond)         ALOG_ASSERT_D(cond)

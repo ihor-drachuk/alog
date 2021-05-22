@@ -50,11 +50,11 @@ Buffer DefaultFormatter::format(const Record& record) const
     result.appendString(" ", 1);
     result.appendString(record.getMessage(), record.getMessageLen());
 
-    if ((record.flags & (int)Record::Flags::Abort) ||
-        (record.flags & (int)Record::Flags::Throw))
+    if (record.hasFlagsAny(Record::Flags::Abort,
+                           Record::Flags::Throw))
     {
         result.appendString(" (", 2);
-        result.appendString(record.filenameOnly);
+        result.appendStringAL(record.filenameOnly);
         result.appendString(")", 1);
     }
 

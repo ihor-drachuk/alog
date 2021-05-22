@@ -66,37 +66,37 @@ void Logger::addRecord(Record&& record)
     record.startTp = impl().startTp;
 
     if (impl().autoflush)
-        record.flags |= (int)Record::Flags::Flush;
+        record.flagsOn(Record::Flags::Flush);
 
     if (impl().mode == Synchronous) {
         // Sync write
         std::lock_guard<std::mutex> mx(impl().writeMutex);
 
-        bool pass = ((record.flags & (int)Record::Flags::Drop) == 0) && (impl().filter ? impl().filter->canPass(record).value_or(true) : true);
+        bool pass = (!record.hasFlags(Record::Flags::Drop)) && (impl().filter ? impl().filter->canPass(record).value_or(true) : true);
         if (pass)
             impl().sink->write(record);
 
-        if (record.flags & (int)Record::Flags::Flush)
+        if (record.hasFlags(Record::Flags::Flush))
             impl().sink->flush();
 
-        if ((record.flags & (int)Record::Flags::Abort) && !(record.flags & (int)Record::Flags::Queued))
+        if (record.hasFlags(Record::Flags::Abort) && !record.hasFlags(Record::Flags::Internal_Queued))
             alog_abort();
 
-        if ((record.flags & (int)Record::Flags::Throw) && !(record.flags & (int)Record::Flags::Queued))
+        if (record.hasFlags(Record::Flags::Throw) && !record.hasFlags(Record::Flags::Internal_Queued))
             alog_exception(record.getMessage(), record.getMessageLen());
 
     } else {
         // Add to queue
 
         std::unique_ptr<std::string> throwText;
-        bool abort = (record.flags & (int)Record::Flags::Abort) && !(record.flags & (int)Record::Flags::Queued);
+        bool abort = record.hasFlags(Record::Flags::Abort) && !record.hasFlags(Record::Flags::Internal_Queued);
 
-        if ((record.flags & (int)Record::Flags::Throw) && !(record.flags & (int)Record::Flags::Queued)) {
+        if (record.hasFlags(Record::Flags::Throw) && !record.hasFlags(Record::Flags::Internal_Queued)) {
             throwText = std::make_unique<std::string>(record.getMessage(), record.getMessageLen());
         }
 
         std::unique_lock<std::mutex> lck(impl().queueMutex);
-        if (record.flags & (int)Record::Flags::Flush) {
+        if (record.hasFlags(Record::Flags::Flush)) {
             if (!record.steadyTp.time_since_epoch().count())
                 record.steadyTp = decltype(record.steadyTp)::max();
 
@@ -209,10 +209,10 @@ void Logger::threadFunc()
         }
 
         for (const auto& x : queue) {
-            const auto pass = ((x.flags & (int)Record::Flags::Drop) == 0) && (impl().filter ? impl().filter->canPass(x).value_or(true) : true);
+            const auto pass = (!x.hasFlags(Record::Flags::Drop)) && (impl().filter ? impl().filter->canPass(x).value_or(true) : true);
             if (pass) impl().sink->write(x);
 
-            if (x.flags & (int)Record::Flags::Flush) {
+            if (x.hasFlags(Record::Flags::Flush)) {
                 impl().sink->flush();
 
                 {

@@ -68,7 +68,7 @@ TEST(ALog_LongSSO, formatted)
     ASSERT_EQ(memcmp(sso.getString(), model, strlen(model)), 0);
     ASSERT_EQ(*(sso.getString() + sso.getStringLen()), 0);
 
-    sso.appendString(longText.c_str());
+    sso.appendString(longText.c_str(), longText.size());
     sso.appendFmtString("%s %d %5d", "Test", 11, 7);
     sso.appendFmtString("%s %d %5d", "Test", 11, 7);
 
@@ -84,7 +84,7 @@ TEST(ALog_LongSSO, copy)
 
     {
         ALog::LongSSO<> sso, sso2;
-        sso.appendString(model);
+        sso.appendStringAL(model);
         ASSERT_EQ(sso.getStringLen(), strlen(model));
         ASSERT_STREQ(sso.getString(), model);
         ASSERT_TRUE(sso.isShortString());
@@ -100,7 +100,7 @@ TEST(ALog_LongSSO, copy)
 
     {
         ALog::LongSSO<5> sso, sso2;
-        sso.appendString(model);
+        sso.appendStringAL(model);
         ASSERT_EQ(sso.getStringLen(), strlen(model));
         ASSERT_STREQ(sso.getString(), model);
         ASSERT_FALSE(sso.isShortString());
@@ -121,7 +121,7 @@ TEST(ALog_LongSSO, move)
 
     {
         ALog::LongSSO<> sso, sso2;
-        sso.appendString(model);
+        sso.appendStringAL(model);
         ASSERT_EQ(sso.getStringLen(), strlen(model));
         ASSERT_STREQ(sso.getString(), model);
         ASSERT_TRUE(sso.isShortString());
@@ -135,7 +135,7 @@ TEST(ALog_LongSSO, move)
 
     {
         ALog::LongSSO<5> sso, sso2;
-        sso.appendString(model);
+        sso.appendStringAL(model);
         ASSERT_EQ(sso.getStringLen(), strlen(model));
         ASSERT_STREQ(sso.getString(), model);
         ASSERT_FALSE(sso.isShortString());

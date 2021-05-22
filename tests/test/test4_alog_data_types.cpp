@@ -40,10 +40,11 @@ TEST(ALog_DataTypes, test_various_types)
     LOGD << std::wstring(L"String (wide)");
     LOGD << std::pair<int, std::string>(11, "Hi") << "SSS";
     LOGD << std::pair<std::string, int>("Hi", 11) << "SSS";
-    LOGD << NO_SEPARATOR << std::pair<int, std::string>(11, "Hi") << "SSS-no-sep";
+    LOGD << NO_SEPARATORS << std::pair<int, std::string>(11, "Hi") << "SSS-no-sep";
     LOGD << std::pair<int, std::pair<int, std::string>>(11, {12, "Hi"}) ;
 
-    LOGD << std::pair<std::pair<std::string, std::string>, std::pair<std::string, std::string>>({"1", "2"}, {"3", "4"});
+    LOGD << std::pair<std::pair<std::string, std::string>, std::pair<std::string, std::string>>({"1", "2"}, {"3", "4"}) << "T";
+    LOGD << SSEP(20) << std::pair<std::pair<std::string, std::string>, std::pair<std::string, std::string>>({"1", "2"}, {"3", "4"}) << "T";
 
     LOGD << std::vector<int>{1, 2, 3, 4} << "SSS";
     LOGD << std::list<int>{1, 2, 3, 4};
@@ -61,10 +62,10 @@ TEST(ALog_DataTypes, test_various_types)
 
     LOGD << BUFFER("Hello", 5);
 
-    LOGD << SEPARATOR(" ") << "String-1" << 1 << "String-2";
-    LOGD <<                   "String-1" << 1 << "String-2";
-    LOGD << NO_SEPARATOR   << "String-1" << 1 << "String-2";
-    LOGD << SEPARATOR(", ")<< "String-1" << 1 << "String-2";
+    LOGD << SEP(" ")        << "String-1" << 1 << "String-2";
+    LOGD <<                    "String-1" << 1 << "String-2";
+    LOGD << NO_SEPARATORS   << "String-1" << 1 << "String-2";
+    LOGD << SEP(", ")       << "String-1" << 1 << "String-2";
 
     LOGD << "Print now" << FLUSH;
 }
