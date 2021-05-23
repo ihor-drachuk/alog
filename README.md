@@ -31,13 +31,13 @@
   - Module name, thread ID, thread name
 - Functional
   - Log anything: containers, pointers, raw buffers, custom types
-  - Operates on UTF-8 encoding - log any unicode character
+  - Based on UTF-8 encoding - log any unicode character
   - Conditional logging
     - `LOGE_IF(errorFlag) << "Error!";`
   - Flags. Call `std::abort` or throw exception right from log-record!
     - `LOGE_IF(errorFlag) << "Error!" << THROW;`
   - Asserts
-    - `LOG_ASSERT`, `LOG_ASSERT_D`, `LOG_ASSERT_THROW`. Example: `LOG_ASSERT(errorFlag) << "Error!";`
+    - `LOG_ASSERT`, `LOG_ASSERT_D`, `LOG_ASSERT_THROW`. Example: `LOG_ASSERT(errorFlag) << "Error info";`
   - Auto-quotes
   - Auto-separators
 - Flexible & configurable
@@ -73,8 +73,8 @@
 
 #### Currently supported log-flags
  - `FLUSH`, `THROW`, `ABORT`
- - `NO_AUTO_QUOTES`, `PREFER_QUOTES`
- - `SEPARATOR`, `SEPARATOR_ONCE`, `NO_SEPARATOR`, `SEPARATOR_FORCE`, `SEPARATOR_FORCE_ONCE`
+ - `SEPARATORS`, `NO_SEPARATORS`, `SEP(new_separator)`, `SSEP(skip_count)`
+ - `AUTO_QUOTES`, `NO_AUTO_QUOTES`, `QUOTE_LITERALS`
 
 More extensions for ALog implemented separately: [alog-extensions](https://github.com/ihor-drachuk/alog-extensions)
 
@@ -126,7 +126,7 @@ int main() {
 [    0.000] T#0  [Warn    ] [::main:8]  Another message
 [    0.000] T#0  [Info    ] [::main:9]  Another container: {Container; Size: 2; Data = "str1", "str2"}
 ```
-- `LOGMD` instead of `LOGD` when module name is not provided. See next example.
+- `LOGMD` used instead of `LOGD` when module name is not provided. See next example.
 - `[    0.000]` - By default, time is specified in [sec.msec] from app start.
 - `T#0` - Enumerated threads like 'T#0', 'T#1' much easier to understand than comparing IDs like 71041, 9163, 91273 between themselves, which also changed on each restart.
 
