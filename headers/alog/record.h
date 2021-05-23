@@ -71,7 +71,7 @@ struct Record
         [[nodiscard]] static inline Separator create(const char* separator) { Separator r; r.separator.appendStringAL(separator); return r; };
         template<size_t N>
         [[nodiscard]] static inline Separator create(const char(&separator)[N]) { Separator r; r.separator.appendString(separator); return r; };
-        LongSSO<separator_sso_len> separator;
+        I::LongSSO<separator_sso_len> separator;
     };
 
     struct SkipSeparator {
@@ -103,19 +103,19 @@ struct Record
     inline const char* getMessage() const { return message.getString(); }
     inline size_t getMessageLen() const { return message.getStringLen(); }
 
-    [[nodiscard]] inline auto backupFlags() { return CreateFinally([this, fl = flags](){ flags = fl; }); }
+    [[nodiscard]] inline auto backupFlags() { return I::CreateFinally([this, fl = flags](){ flags = fl; }); }
     inline bool hasFlags(Flags value) const { return (flags & (int)value) == (int)value; }
     inline bool hasFlagsAny(Flags value) const { return (flags & (int)value); }
     inline void flagsOn(Flags value)  { flags |=  (int)value; combineFlags(); }
     inline void flagsOff(Flags value) { flags &= ~(int)value; }
 
-    template<typename... Ts> inline bool hasFlags(Ts... values) const { return (flags & combineInt(values...)) == combineInt(values...); }
-    template<typename... Ts> inline bool hasFlagsAny(Ts... values) const { return (flags & combineInt(values...)); }
-    template<typename... Ts> inline void flagsOn(Ts... values) { flags |= combineInt(values...); combineFlags(); }
-    template<typename... Ts> inline void flagsOff(Ts... values) { flags &= ~combineInt(values...); }
+    template<typename... Ts> inline bool hasFlags(Ts... values) const { return (flags & I::combineInt(values...)) == I::combineInt(values...); }
+    template<typename... Ts> inline bool hasFlagsAny(Ts... values) const { return (flags & I::combineInt(values...)); }
+    template<typename... Ts> inline void flagsOn(Ts... values) { flags |= I::combineInt(values...); combineFlags(); }
+    template<typename... Ts> inline void flagsOff(Ts... values) { flags &= ~I::combineInt(values...); }
 
 #ifdef ALOG_ENABLE_DEBUG
-    [[nodiscard]] inline auto verifySkipSeparators(int delta = 0) { return CreateFinally([this, ss = ALog::max(skipSeparators + delta, 0)](){ assert(ss == skipSeparators); }); }
+    [[nodiscard]] inline auto verifySkipSeparators(int delta = 0) { return I::CreateFinally([this, ss = I::max(skipSeparators + delta, 0)](){ assert(ss == skipSeparators); }); }
     #define VERIFY_SKIP_SEPARATORS(record, num) auto _checkSS = record.verifySkipSeparators(num);
 #else
     [[nodiscard]] inline Nothing verifySkipSeparators(int = 0) { return {}; }
@@ -138,8 +138,8 @@ struct Record
     std::chrono::time_point<std::chrono::steady_clock> steadyTp;
     std::chrono::time_point<std::chrono::system_clock> systemTp;
 
-    LongSSO<msg_sso_len> message;
-    LongSSO<separator_sso_len> separator {" "};
+    I::LongSSO<msg_sso_len> message;
+    I::LongSSO<separator_sso_len> separator {" "};
 
 private:
     int flags;
@@ -600,13 +600,13 @@ void logArray(Record& record, size_t sz, Iter begin, Iter end);
 } // namespace ALog
 
 template <typename T>
-inline typename std::enable_if_t<ALog::is_container<T>::value && ALog::has_key<T>::value && ALog::is_qt_container<T>::value, ALog::Record>&& operator<< (ALog::Record&& record, const T& value);
+inline typename std::enable_if_t<ALog::I::is_container<T>::value && ALog::I::has_key<T>::value && ALog::I::is_qt_container<T>::value, ALog::Record>&& operator<< (ALog::Record&& record, const T& value);
 
 template <typename T>
-inline typename std::enable_if_t<ALog::is_container<T>::value && ALog::has_key<T>::value && !ALog::is_qt_container<T>::value, ALog::Record>&& operator<< (ALog::Record&& record, const T& value);
+inline typename std::enable_if_t<ALog::I::is_container<T>::value && ALog::I::has_key<T>::value && !ALog::I::is_qt_container<T>::value, ALog::Record>&& operator<< (ALog::Record&& record, const T& value);
 
 template <typename T>
-inline typename std::enable_if_t<ALog::is_container<T>::value && !ALog::has_key<T>::value, ALog::Record>&& operator<< (ALog::Record&& record, const T& value);
+inline typename std::enable_if_t<ALog::I::is_container<T>::value && !ALog::I::has_key<T>::value, ALog::Record>&& operator<< (ALog::Record&& record, const T& value);
 
 template <typename T>
 inline typename std::enable_if_t<std::is_array<T>::value, ALog::Record>&& operator<< (ALog::Record&& record, const T& value);
@@ -671,28 +671,28 @@ void logArray(Record& record, size_t sz, Iter begin, Iter end)
 } // namespace ALog
 
 template <typename T>
-inline typename std::enable_if_t<ALog::is_container<T>::value && ALog::has_key<T>::value && ALog::is_qt_container<T>::value, ALog::Record>&& operator<< (ALog::Record&& record, const T& value)
+inline typename std::enable_if_t<ALog::I::is_container<T>::value && ALog::I::has_key<T>::value && ALog::I::is_qt_container<T>::value, ALog::Record>&& operator<< (ALog::Record&& record, const T& value)
 {
-    using Key = typename ALog::container_types<0, T>::type;
-    using Value = typename ALog::container_types<1, T>::type;
+    using Key = typename ALog::I::container_types<0, T>::type;
+    using Value = typename ALog::I::container_types<1, T>::type;
 
     ALog::Internal::logArray(record,
                              value.size(),
-                             ALog::qt_iterator_wrapper<Key, Value, typename T::const_iterator>(value.cbegin()),
-                             ALog::qt_iterator_wrapper<Key, Value, typename T::const_iterator>(value.cend()));
+                             ALog::I::qt_iterator_wrapper<Key, Value, typename T::const_iterator>(value.cbegin()),
+                             ALog::I::qt_iterator_wrapper<Key, Value, typename T::const_iterator>(value.cend()));
 
     return std::move(record);
 }
 
 template <typename T>
-inline typename std::enable_if_t<ALog::is_container<T>::value && ALog::has_key<T>::value && !ALog::is_qt_container<T>::value, ALog::Record>&& operator<< (ALog::Record&& record, const T& value)
+inline typename std::enable_if_t<ALog::I::is_container<T>::value && ALog::I::has_key<T>::value && !ALog::I::is_qt_container<T>::value, ALog::Record>&& operator<< (ALog::Record&& record, const T& value)
 {
     ALog::Internal::logArray(record, value.size(), value.cbegin(), value.cend());
     return std::move(record);
 }
 
 template <typename T>
-inline typename std::enable_if_t<ALog::is_container<T>::value && !ALog::has_key<T>::value, ALog::Record>&& operator<< (ALog::Record&& record, const T& value)
+inline typename std::enable_if_t<ALog::I::is_container<T>::value && !ALog::I::has_key<T>::value, ALog::Record>&& operator<< (ALog::Record&& record, const T& value)
 {
     ALog::Internal::logArray(record, value.size(), value.cbegin(), value.cend());
     return std::move(record);
@@ -701,7 +701,7 @@ inline typename std::enable_if_t<ALog::is_container<T>::value && !ALog::has_key<
 template <typename T>
 inline typename std::enable_if_t<std::is_array<T>::value, ALog::Record>&& operator<< (ALog::Record&& record, const T& value)
 {
-    constexpr size_t sz = ALog::array_size<T>::size;
+    constexpr size_t sz = ALog::I::array_size<T>::size;
     ALog::Internal::logArray(record, sz, value, value + sz);
     return std::move(record);
 }

@@ -11,10 +11,10 @@ template<int Number = 0>
 class LoggerN : public Logger { };
 
 template<int Number = 0>
-using LoggerHolder = SIOS<LoggerN<Number>>;
+using LoggerHolder = I::SIOS<LoggerN<Number>>;
 
 template<int Number = 0>
-class LoggerEntry : protected SIOS_Entry<LoggerN<Number>>
+class LoggerEntry : protected I::SIOS_Entry<LoggerN<Number>>
 {
 public:
     // Warning! Module name is not copied and should be literal!
@@ -123,7 +123,7 @@ inline ALog::MockRecord&& operator<< (ALog::MockRecord&& r, const T&) { return s
 #define ACCESS_ALOGGER_MODULE          ACCESS_ALOGGER_MODULE_N(0)
 
 
-#define _ALOG_RECORD(Severity)          ALog::Record::create(Severity, __LINE__, __FILE__, ALog::extractFileNameOnly(__FILE__), __func__)
+#define _ALOG_RECORD(Severity)          ALog::Record::create(Severity, __LINE__, __FILE__, ALog::I::extractFileNameOnly(__FILE__), __func__)
 #define _ALOG(Logger, Severity)         Logger += _ALOG_RECORD(Severity)
 
 

@@ -4,6 +4,7 @@
 #include <cassert>
 
 namespace ALog {
+namespace Internal {
 
 struct StaticCheck
 {
@@ -69,4 +70,5 @@ bool isSeparatorSymbol(char c)
     return isSeparator[(int)c];
 }
 
+} // namespace Internal
 } // namespace ALog

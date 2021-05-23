@@ -89,7 +89,7 @@ BENCHMARK(ALog_Tools_construct_unique_ptr);
 static void ALog_Tools_optional_bool(benchmark::State& state)
 {
     while (state.KeepRunning()) {
-        ALog::optional_bool opt;
+        ALog::I::optional_bool opt;
         opt = ((&state) + 1 != nullptr);
         auto result = opt.value_or(false);
         (void)result;
@@ -115,7 +115,7 @@ BENCHMARK(ALog_Tools_optional_bool_std);
 static void LongSSO_typical(benchmark::State& state)
 {
     while (state.KeepRunning()) {
-        ALog::LongSSO<> str;
+        ALog::I::LongSSO<> str;
         str.appendString("1234", 4);
         str.appendString("1234567890", 10);
         str.appendString("1234", 4);
@@ -143,7 +143,7 @@ BENCHMARK(LongSSO_std_typical);
 BENCHMARK_F(ALogToolsFixture, LongSSO_long)(benchmark::State& state)
 {
     while (state.KeepRunning()) {
-        ALog::LongSSO<> str;
+        ALog::I::LongSSO<> str;
         str.appendString("1234", 4);
         str.appendString(m_str.data(), m_str.size());
     }
@@ -153,7 +153,7 @@ BENCHMARK_F(ALogToolsFixture, LongSSO_long)(benchmark::State& state)
 BENCHMARK_F(ALogToolsFixture, LongSSO_long_opt)(benchmark::State& state)
 {
     while (state.KeepRunning()) {
-        ALog::LongSSO<> str(m_buffer);
+        ALog::I::LongSSO<> str(m_buffer);
         str.appendString("1234", 4);
         str.appendString(m_str.data(), m_str.size());
     }
@@ -173,7 +173,7 @@ BENCHMARK_F(ALogToolsFixture, LongSSO_std_long)(benchmark::State& state)
 static void LongSSO_typical_fmt(benchmark::State& state)
 {
     while (state.KeepRunning()) {
-        ALog::LongSSO<> str;
+        ALog::I::LongSSO<> str;
         str.appendFmtString("%s %d %5d", "Test", 11, 7);
     }
 }
@@ -183,11 +183,11 @@ BENCHMARK(LongSSO_typical_fmt);
 
 static void LongSSO_copy(benchmark::State& state)
 {
-    ALog::LongSSO<> str;
+    ALog::I::LongSSO<> str;
     str.appendString("Test");
 
     while (state.KeepRunning()) {
-        ALog::LongSSO<> str2(str);
+        ALog::I::LongSSO<> str2(str);
     }
 }
 
@@ -196,11 +196,11 @@ BENCHMARK(LongSSO_copy);
 
 static void LongSSO_move_x2(benchmark::State& state)
 {
-    ALog::LongSSO<> str;
+    ALog::I::LongSSO<> str;
     str.appendString("Test");
 
     while (state.KeepRunning()) {
-        ALog::LongSSO<> str2(std::move(str));
+        ALog::I::LongSSO<> str2(std::move(str));
         str = std::move(str2);
     }
 }

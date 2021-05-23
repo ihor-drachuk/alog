@@ -131,21 +131,21 @@ TEST(ALog, test_threadNames)
 
     // Part 1
     std::thread t1([&](){
-        ALog::ThreadTools::setCurrentThreadName(thrName1);
+        ALog::I::ThreadTools::setCurrentThreadName(thrName1);
         std::this_thread::sleep_for(std::chrono::milliseconds(20));
-        ASSERT_EQ(thrName1, ALog::ThreadTools::currentThreadName());
+        ASSERT_EQ(thrName1, ALog::I::ThreadTools::currentThreadName());
     });
 
     std::thread t2([&](){
-        ALog::ThreadTools::setCurrentThreadName(thrName2);
+        ALog::I::ThreadTools::setCurrentThreadName(thrName2);
         std::this_thread::sleep_for(std::chrono::milliseconds(10));
-        ASSERT_EQ(thrName2, ALog::ThreadTools::currentThreadName());
+        ASSERT_EQ(thrName2, ALog::I::ThreadTools::currentThreadName());
     });
 
     std::thread t3([&](){
-        ALog::ThreadTools::setCurrentThreadName(thrName3);
+        ALog::I::ThreadTools::setCurrentThreadName(thrName3);
         std::this_thread::sleep_for(std::chrono::milliseconds(20));
-        ASSERT_EQ(thrName3, ALog::ThreadTools::currentThreadName());
+        ASSERT_EQ(thrName3, ALog::I::ThreadTools::currentThreadName());
     });
 
     t1.join();
@@ -163,13 +163,13 @@ TEST(ALog, test_threadNames)
     DEFINE_ALOGGER_MODULE(ALogerTest);
 
     std::thread t4([&](){
-        ALog::ThreadTools::setCurrentThreadName(thrName4);
+        ALog::I::ThreadTools::setCurrentThreadName(thrName4);
         LOGD;
     });
 
     std::thread t5([&](){
         std::this_thread::sleep_for(std::chrono::milliseconds(20));
-        ALog::ThreadTools::setCurrentThreadName(thrName5);
+        ALog::I::ThreadTools::setCurrentThreadName(thrName5);
         LOGD;
     });
 

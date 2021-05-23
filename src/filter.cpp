@@ -4,7 +4,7 @@
 
 namespace ALog {
 
-optional_bool FilterSeverity::canPass(const Record& record) const
+I::optional_bool FilterSeverity::canPass(const Record& record) const
 {
     return record.severity >= m_severity;
 }
@@ -21,9 +21,9 @@ FilterStorage& FilterStorage::addFilter(const IFilterPtr& filter)
     return *this;
 }
 
-optional_bool FilterStorage::canPass(const Record& record) const
+I::optional_bool FilterStorage::canPass(const Record& record) const
 {
-    optional_bool result;
+    I::optional_bool result;
 
     for (const auto& x : m_filters) {
         result = x->canPass(record);
@@ -33,7 +33,7 @@ optional_bool FilterStorage::canPass(const Record& record) const
     return result.value_or(m_defaultDecision);
 }
 
-optional_bool FilterStorage_OR::canPass(const Record& record) const
+I::optional_bool FilterStorage_OR::canPass(const Record& record) const
 {
     if (m_filters.empty()) return m_defaultDecision;
 
@@ -43,7 +43,7 @@ optional_bool FilterStorage_OR::canPass(const Record& record) const
     return false;
 }
 
-optional_bool FilterStorage_AND::canPass(const Record& record) const
+I::optional_bool FilterStorage_AND::canPass(const Record& record) const
 {
     if (m_filters.empty()) return m_defaultDecision;
 
@@ -70,7 +70,7 @@ FilterModuleSeverity::~FilterModuleSeverity()
 {
 }
 
-optional_bool FilterModuleSeverity::canPass(const Record& record) const
+I::optional_bool FilterModuleSeverity::canPass(const Record& record) const
 {
     if (impl().module != record.module) return {};
     return record.severity >= impl().severity;

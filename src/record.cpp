@@ -33,8 +33,8 @@ Record Record::create(Severity severity, int line, const char* file, const char*
     record.filenameFull = file;
     record.filenameOnly = fileOnly;
     record.func = func;
-    record.threadNum = ThreadTools::currentThreadId();
-    record.threadTitle = ThreadTools::currentThreadName();
+    record.threadNum = I::ThreadTools::currentThreadId();
+    record.threadTitle = I::ThreadTools::currentThreadName();
     record.module = nullptr;
     record.steadyTp = std::chrono::steady_clock::now();
     record.systemTp = std::chrono::system_clock::now();
@@ -84,7 +84,7 @@ ALog::Record&& operator<<(ALog::Record&& record, const ALog::Record::RawData& va
     char str[bufSz+1];
     size_t len;
 
-    auto _f = ALog::CreateFinally([sepBckp = record.separator, &record](){ record.separator = sepBckp; });
+    auto _f = ALog::I::CreateFinally([sepBckp = record.separator, &record](){ record.separator = sepBckp; });
     record.separator.clear();
 
     if (!value.sz) {

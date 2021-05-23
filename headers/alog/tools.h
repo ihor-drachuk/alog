@@ -39,6 +39,8 @@ namespace ALog {
 
 using Buffer = std::vector<uint8_t>;
 
+namespace Internal {
+
 constexpr const char* extractFileNameOnly(const char* str) {
     auto it = str;
     auto lastSlash = str;
@@ -506,4 +508,11 @@ constexpr int combineInt(T value0, Ts... values) { return (int)value0 | combineI
 template<typename T>
 inline T max(T a, T b) { return a > b ? a : b; }
 
+} // namespace Internal
+} // namespace ALog
+
+namespace ALog {
+namespace I {
+using namespace ::ALog::Internal;
+} // namespace I
 } // namespace ALog

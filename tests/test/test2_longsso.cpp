@@ -5,21 +5,21 @@
 TEST(ALog_LongSSO, test0)
 {
     for (int i = 0; i < 100; i++) {
-        ALog::LongSSO<> longSSO;
+        ALog::I::LongSSO<> longSSO;
         (void)longSSO;
     }
 
     ALog::Buffer cache;
 
     for (int i = 0; i < 100; i++) {
-        ALog::LongSSO<> longSSO(cache);
+        ALog::I::LongSSO<> longSSO(cache);
         (void)longSSO;
     }
 }
 
 TEST(ALog_LongSSO, basic)
 {
-    ALog::LongSSO<> longSSO;
+    ALog::I::LongSSO<> longSSO;
     ASSERT_NE(longSSO.getString(), nullptr);
     ASSERT_EQ(*longSSO.getString(), 0);
     ASSERT_EQ(longSSO.getStringLen(), 0);
@@ -51,7 +51,7 @@ TEST(ALog_LongSSO, basic)
 
 TEST(ALog_LongSSO, formatted)
 {
-    ALog::LongSSO<> sso;
+    ALog::I::LongSSO<> sso;
 
     const char* const model = "Test 11     7";
     const std::string longText(sso.getSsoLimit() * 3 / 2, 'a');
@@ -83,7 +83,7 @@ TEST(ALog_LongSSO, copy)
     const char* const model = "Some text";
 
     {
-        ALog::LongSSO<> sso, sso2;
+        ALog::I::LongSSO<> sso, sso2;
         sso.appendStringAL(model);
         ASSERT_EQ(sso.getStringLen(), strlen(model));
         ASSERT_STREQ(sso.getString(), model);
@@ -99,7 +99,7 @@ TEST(ALog_LongSSO, copy)
     }
 
     {
-        ALog::LongSSO<5> sso, sso2;
+        ALog::I::LongSSO<5> sso, sso2;
         sso.appendStringAL(model);
         ASSERT_EQ(sso.getStringLen(), strlen(model));
         ASSERT_STREQ(sso.getString(), model);
@@ -120,7 +120,7 @@ TEST(ALog_LongSSO, move)
     const char* const model = "Some text";
 
     {
-        ALog::LongSSO<> sso, sso2;
+        ALog::I::LongSSO<> sso, sso2;
         sso.appendStringAL(model);
         ASSERT_EQ(sso.getStringLen(), strlen(model));
         ASSERT_STREQ(sso.getString(), model);
@@ -134,7 +134,7 @@ TEST(ALog_LongSSO, move)
     }
 
     {
-        ALog::LongSSO<5> sso, sso2;
+        ALog::I::LongSSO<5> sso, sso2;
         sso.appendStringAL(model);
         ASSERT_EQ(sso.getStringLen(), strlen(model));
         ASSERT_STREQ(sso.getString(), model);
@@ -150,7 +150,7 @@ TEST(ALog_LongSSO, move)
 
 TEST(ALog_LongSSO, string_constructor)
 {
-    ALog::LongSSO<> sso("1");
+    ALog::I::LongSSO<> sso("1");
     ASSERT_EQ(sso.getStringLen(), 1);
     ASSERT_STREQ(sso.getString(), "1");
 }

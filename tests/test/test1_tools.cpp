@@ -3,10 +3,10 @@
 
 TEST(ALog_Tools, extractFileNameOnly)
 {
-    constexpr auto result = ALog::extractFileNameOnly("H:\\folder\\sub-folder\\file.cpp");
+    constexpr auto result = ALog::I::extractFileNameOnly("H:\\folder\\sub-folder\\file.cpp");
     ASSERT_STREQ(result, "file.cpp");
 
-    constexpr auto result2 = ALog::extractFileNameOnly("/folder/sub-folder/uncomfortable - file.cpp");
+    constexpr auto result2 = ALog::I::extractFileNameOnly("/folder/sub-folder/uncomfortable - file.cpp");
     ASSERT_STREQ(result2, "uncomfortable - file.cpp");
 }
 
@@ -15,7 +15,7 @@ TEST(ALog_Tools, Finally)
     bool triggered = false;
 
     {
-        auto _f = ALog::CreateFinally([&](){ triggered = true; });
+        auto _f = ALog::I::CreateFinally([&](){ triggered = true; });
         ASSERT_FALSE(triggered);
     }
 
@@ -31,7 +31,7 @@ TEST(ALog_Tools, CombineInt)
         D = 8
     };
 
-    ASSERT_EQ(ALog::combineInt(SE::A), 1);
-    ASSERT_EQ(ALog::combineInt(SE::A, SE::C), 5);
-    ASSERT_EQ(ALog::combineInt(SE::A, SE::B, SE::C, SE::D), 15);
+    ASSERT_EQ(ALog::I::combineInt(SE::A), 1);
+    ASSERT_EQ(ALog::I::combineInt(SE::A, SE::C), 5);
+    ASSERT_EQ(ALog::I::combineInt(SE::A, SE::B, SE::C, SE::D), 15);
 }
