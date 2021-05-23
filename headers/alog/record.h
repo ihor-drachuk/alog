@@ -81,10 +81,6 @@ struct Record
         int count { 0 };
     };
 
-    using F = Flags;
-    using S = Separator;
-    using SS = SkipSeparator;
-
     // -----
 
     [[nodiscard]] static Record create(Severity severity, int line, const char* file, const char* fileOnly, const char* func);
@@ -193,8 +189,6 @@ inline void onStringQuote1(Record& record, bool literal = false) {
 inline void onStringQuote2(Record& record) {
     record.onStringQuote2();
 }
-
-using R = Record;
 
 } // namespace ALog
 
@@ -618,10 +612,10 @@ inline ALog::Record&& operator<< (ALog::Record&& record, const std::pair<T1, T2>
     auto _flagsRestorer = record.backupFlags();
     VERIFY_SKIP_SEPARATORS(record, -1);
 
-    record << ALog::R::F::Internal_QuoteLiterals;
+    record << ALog::Record::Flags::Internal_QuoteLiterals;
 
     record.appendMessage("(");
-    std::move(record) << ALog::R::SS() << value.first;
+    std::move(record) << ALog::Record::SkipSeparator() << value.first;
 
     record.updateSkipSeparatorsCF(2);
     record.appendMessage(", ");
@@ -647,23 +641,23 @@ void logArray(Record& record, size_t sz, Iter begin, Iter end)
     auto _flagsRestorer = record.backupFlags();
     VERIFY_SKIP_SEPARATORS(record, -1);
 
-    record << ALog::R::F::Internal_QuoteLiterals;
+    record << ALog::Record::Flags::Internal_QuoteLiterals;
 
     auto it = begin;
 
     record.appendMessage("{Container; Size: ");
-    std::move(record) << R::SS(2) << sz;
+    std::move(record) << Record::SkipSeparator(2) << sz;
     record.appendMessage("; Data = ");
 
-    std::move(record) << R::SS(1) << *it++;
+    std::move(record) << Record::SkipSeparator(1) << *it++;
 
     while (it != end) {
-        std::move(record) << R::SS(2);
+        std::move(record) << Record::SkipSeparator(2);
         record.appendMessage(", ");
         std::move(record) << *it++;
     }
 
-    std::move(record) << R::SS(1);
+    std::move(record) << Record::SkipSeparator(1);
     record.appendMessage("}");
 }
 
