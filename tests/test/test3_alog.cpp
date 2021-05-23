@@ -482,21 +482,25 @@ TEST(ALog, test_separators)
     MARK_ALOGGER_READY;
 
     LOGMD << SEP(" ")       << "String-1" << 1 << "String-2";
+    LOGMD.seps(" ")         << "String-1" << 1 << "String-2";
     LOGMD <<                   "String-1" << 1 << "String-2";
     LOGMD << NO_SEPARATORS  << "String-1" << 1 << "String-2";
+    LOGMD.no_seps()         << "String-1" << 1 << "String-2";
     LOGMD << SEP(", ")      << "String-1" << 1 << "String-2";
 
     MainALogger_0->flush();
 
-    ASSERT_EQ(records.size(), 4);
+    ASSERT_EQ(records.size(), 6);
     ASSERT_STREQ(records[0].message.getString(), "String-1 1 String-2");
-#ifdef ALOG_ENABLE_DEF_SEPARATORS
     ASSERT_STREQ(records[1].message.getString(), "String-1 1 String-2");
+#ifdef ALOG_ENABLE_DEF_SEPARATORS
+    ASSERT_STREQ(records[2].message.getString(), "String-1 1 String-2");
 #else
-    ASSERT_STREQ(records[1].message.getString(), "String-11String-2");
-#endif
     ASSERT_STREQ(records[2].message.getString(), "String-11String-2");
-    ASSERT_STREQ(records[3].message.getString(), "String-1, 1, String-2");
+#endif
+    ASSERT_STREQ(records[3].message.getString(), "String-11String-2");
+    ASSERT_STREQ(records[4].message.getString(), "String-11String-2");
+    ASSERT_STREQ(records[5].message.getString(), "String-1, 1, String-2");
 }
 
 TEST(ALog, test_separators_advanced)

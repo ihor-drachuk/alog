@@ -121,6 +121,14 @@ struct Record
     [[nodiscard]] inline auto updateSkipSeparators(int value) { auto r = verifySkipSeparators(); skipSeparators += value; return r; }
     inline void updateSkipSeparatorsCF(int value) { skipSeparators += value; }
 
+    Record&& seps() { flagsOn(Flags::Separators); return std::move(*this); }
+    template<size_t N>
+    Record&& seps(const char(&value)[N]) { flagsOn(Flags::Separators); separator.clear(); separator.appendString(value); return std::move(*this); }
+    Record&& seps(const char* value) { flagsOn(Flags::Separators); separator.clear(); separator.appendStringAL(value); return std::move(*this); }
+    Record&& no_seps() { flagsOn(Flags::NoSeparators); return std::move(*this); }
+    Record&& quotes() { flagsOn(Flags::AutoQuote); return std::move(*this); }
+    Record&& no_quotes() { flagsOn(Flags::NoAutoQuote); return std::move(*this); }
+
     Severity severity;
     int line;
     const char* filenameFull;
