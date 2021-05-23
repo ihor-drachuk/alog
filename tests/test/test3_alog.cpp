@@ -474,13 +474,6 @@ TEST(ALog, test_flags)
 
 TEST(ALog, test_separators)
 {
-#if 0
-    auto record = _ALOG_RECORD(ALog::Severity::Info);
-    record << ABORT;
-    ASSERT_EQ(record.flags, (int)ALog::Record::Flags::AbortSync);
-    record -= ABORT;
-    ASSERT_EQ(record.flags, 0);
-
     std::vector<ALog::Record> records;
 
     DEFINE_MAIN_ALOGGER;
@@ -488,27 +481,22 @@ TEST(ALog, test_separators)
     ALOGGER_DIRECT->setSink(sink2);
     MARK_ALOGGER_READY;
 
-    LOGMD << SEP(" ") << "String-1" << 1 << "String-2";
+    LOGMD << SEP(" ")       << "String-1" << 1 << "String-2";
     LOGMD <<                   "String-1" << 1 << "String-2";
-    LOGMD << NO_SEPARATORS   << "String-1" << 1 << "String-2";
-    LOGMD << SEP(", ") << "String-1" << 1 << "String-2";
-
-    LOGMD  << "Test" << "Test"                              << "(Test)" << "(Test)";
+    LOGMD << NO_SEPARATORS  << "String-1" << 1 << "String-2";
+    LOGMD << SEP(", ")      << "String-1" << 1 << "String-2";
 
     MainALogger_0->flush();
 
-    ASSERT_EQ(records.size(), 10);
+    ASSERT_EQ(records.size(), 4);
     ASSERT_STREQ(records[0].message.getString(), "String-1 1 String-2");
+#ifdef ALOG_ENABLE_DEF_SEPARATORS
     ASSERT_STREQ(records[1].message.getString(), "String-1 1 String-2");
+#else
+    ASSERT_STREQ(records[1].message.getString(), "String-11String-2");
+#endif
     ASSERT_STREQ(records[2].message.getString(), "String-11String-2");
     ASSERT_STREQ(records[3].message.getString(), "String-1, 1, String-2");
-    ASSERT_STREQ(records[4].message.getString(), "Test Test(Test)(Test)");
-    ASSERT_STREQ(records[5].message.getString(), "Test Test (Test) (Test)");
-    ASSERT_STREQ(records[6].message.getString(), "Test Test (Test)(Test)");
-    ASSERT_STREQ(records[7].message.getString(), "()()()");
-    ASSERT_STREQ(records[8].message.getString(), "(), (), ()");
-    ASSERT_STREQ(records[9].message.getString(), "(), ()()");
-#endif
 }
 
 TEST(ALog, test_separators_advanced)
