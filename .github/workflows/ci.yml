@@ -19,6 +19,7 @@ jobs:
         alog_enable_debug: [ON, OFF]
 
     runs-on: ${{ matrix.os }}
+    if: "!contains(github.event.head_commit.message, 'CI skip')"
     timeout-minutes: 15
 
     steps:
@@ -60,4 +61,4 @@ jobs:
       run: |
        cmake -DALOG_CI_SKIP_SORT_TEST=1 -DALOG_ENABLE_TESTS=ON -DALOG_ENABLE_BENCHMARK=ON -DALOG_ENABLE_DEF_SEPARATORS=${{matrix.alog_enable_def_separators}} -DALOG_ENABLE_DEF_AUTO_QUOTES=${{matrix.alog_enable_def_auto_quotes}}  -DALOG_ENABLE_DEBUG=${{matrix.alog_enable_debug}} -DCMAKE_BUILD_TYPE="${{matrix.build_type}}" -G "${{env.GENERATOR}}" -S "${{github.workspace}}/src" -B "${{github.workspace}}/build"
        cmake --build "${{github.workspace}}/build" --config "${{matrix.build_type}}" -j "${{env.CORES}}"
-       ctest --rerun-failed --output-on-failure --timeout 30 -C "${{matrix.build_type}}" --test-dir "${{github.workspace}}/build/tests"
+       ctest --rerun-failed --output-on-failure --timeout 60 -C "${{matrix.build_type}}" --test-dir "${{github.workspace}}/build/tests"
