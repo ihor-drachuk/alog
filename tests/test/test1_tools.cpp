@@ -16,6 +16,7 @@ TEST(ALog_Tools, Finally)
 
     {
         auto _f = ALog::I::CreateFinally([&](){ triggered = true; });
+        auto _f2 (std::move(_f));
         ASSERT_FALSE(triggered);
     }
 

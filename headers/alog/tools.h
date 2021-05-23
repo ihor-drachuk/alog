@@ -58,16 +58,24 @@ bool isSeparatorSymbol(char c);
 template<typename Functor>
 class Finally {
 public:
-    Finally(Functor f): f(f) {}
+    Finally(Functor f): m_f(f) {}
     Finally(const Finally&) = delete;
-    Finally(Finally&&) = default;
-    ~Finally() { f(); }
+    Finally(Finally&& rhs): m_f(rhs.m_f) { rhs.m_moved = true; }
+    ~Finally() { if (!m_moved) m_f(); }
 
     Finally<Functor>& operator=(const Finally<Functor>&) = delete;
-    Finally<Functor>& operator=(Finally<Functor>&&) = default;
+    Finally<Functor>& operator=(Finally<Functor>&& rhs) {
+        if (this == &rhs) return *this;
+
+        m_f = rhs.m_f;
+        rhs.m_moved = true;
+
+        return *this;
+    }
 
 private:
-    Functor f;
+    Functor m_f;
+    bool m_moved { false };
 };
 
 template<typename Functor>
