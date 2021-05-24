@@ -150,6 +150,7 @@ inline ALog::MockRecord&& operator<< (ALog::MockRecord&& r, const T&) { return s
 
 #define ALOG_BUFFER(ptr, sz)          ALog::Record::RawData::create(ptr, sz)
 #define ALOG_SEPARATOR(separator)     ALog::Record::Separator::create(separator)
+#define ALOG_SEPARATOR_ONCE(separator) ALog::Record::Separator::create(separator, true)
 #define ALOG_SKIP_SEPARATOR(count)    ALog::Record::SkipSeparator::create(count)
 
 #define ALOG_ASSERT(cond)             ALOGF_IF(!(cond)) << ALOG_FL_ABORT << "Assertion failed: " << #cond << ALOG_SEPARATOR_ONCE("; ")
@@ -159,6 +160,14 @@ inline ALog::MockRecord&& operator<< (ALog::MockRecord&& r, const T&) { return s
 #define ALOG_ASSERT_D(cond)           ALOG_ASSERT(cond)
 #endif
 #define ALOG_ASSERT_THROW(cond)       ALOGE_IF(!(cond)) << ALOG_FL_THROW << "Exception. Assertion failed: " << #cond << ALOG_SEPARATOR_ONCE("; ")
+
+#define ALOGM_ASSERT(cond)             ALOGMF_IF(!(cond)) << ALOG_FL_ABORT << "Assertion failed: " << #cond << ALOG_SEPARATOR_ONCE("; ")
+#ifdef NDEBUG
+#define ALOGM_ASSERT_D(cond)           ALog::MockRecord()
+#else
+#define ALOGM_ASSERT_D(cond)           ALOGM_ASSERT(cond)
+#endif
+#define ALOGM_ASSERT_THROW(cond)       ALOGME_IF(!(cond)) << ALOG_FL_THROW << "Exception. Assertion failed: " << #cond << ALOG_SEPARATOR_ONCE("; ")
 
 // Main macros
 #define ALOGV                         ALOG_MODULE(ALog::Severity::Verbose)
@@ -229,18 +238,25 @@ inline ALog::MockRecord&& operator<< (ALog::MockRecord&& r, const T&) { return s
 #define ABORT                      ALOG_FL_ABORT
 
 #define SEPARATORS                 ALOG_FL_SEPARATORS
+#define SEPS                       ALOG_FL_SEPARATORS
 #define NO_SEPARATORS              ALOG_FL_NO_SEPARATORS
+#define NSEPS                      ALOG_FL_NO_SEPARATORS
 #define AUTO_QUOTES                ALOG_FL_AUTO_QUOTES
 #define NO_AUTO_QUOTES             ALOG_FL_NO_AUTO_QUOTES
 #define QUOTE_LITERALS             ALOG_FL_QUOTE_LITERALS
 
 #define BUFFER(ptr, sz)            ALOG_BUFFER(ptr, sz)
 #define SEP(separator)             ALOG_SEPARATOR(separator)
+#define OSEP(separator)            ALOG_SEPARATOR_ONCE(separator)
 #define SSEP(count)                ALOG_SKIP_SEPARATOR(count)
 
 #define LOG_ASSERT(cond)           ALOG_ASSERT(cond)
 #define LOG_ASSERT_D(cond)         ALOG_ASSERT_D(cond)
 #define LOG_ASSERT_THROW(cond)     ALOG_ASSERT_THROW(cond)
+
+#define LOGM_ASSERT(cond)           ALOGM_ASSERT(cond)
+#define LOGM_ASSERT_D(cond)         ALOGM_ASSERT_D(cond)
+#define LOGM_ASSERT_THROW(cond)     ALOGM_ASSERT_THROW(cond)
 
 // Main
 #define LOGV                       ALOGV

@@ -48,14 +48,16 @@ struct Record
 
         Separators = 16,             // 16
         NoSeparators = 32,           // 32
-        AutoQuote = 64,              // 64
-        NoAutoQuote = 128,           // 128
-        QuoteLiterals = 256,         // 256
+        SeparatorsBckp = 64,         // 64
+        AutoQuote = 128,             // 128
+        NoAutoQuote = 256,           // 256
+        QuoteLiterals = 512,         // 512
 
-        Internal_NoSeparators    = 512,  // 512
-        Internal_QuoteClose      = 1024, // 1024
-        Internal_Queued          = 2048, // 2048
-        Internal_QuoteLiterals   = 4096, // 4096
+        Internal_NoSeparators    = 1024,
+        Internal_QuoteClose      = 2048,
+        Internal_Queued          = 4096,
+        Internal_QuoteLiterals   = 8192,
+        Internal_RestoreSepBckp = 16384,
     };
 
     struct Nothing { };
@@ -68,10 +70,11 @@ struct Record
 
     struct Separator {
         [[nodiscard]] static inline Separator create() { Separator r; return r; };
-        [[nodiscard]] static inline Separator create(const char* separator) { Separator r; r.separator.appendStringAL(separator); return r; };
+        [[nodiscard]] static inline Separator create(const char* separator, bool once = false) { Separator r; r.separator.appendStringAL(separator); r.once = once; return r; };
         template<size_t N>
-        [[nodiscard]] static inline Separator create(const char(&separator)[N]) { Separator r; r.separator.appendString(separator); return r; };
+        [[nodiscard]] static inline Separator create(const char(&separator)[N], bool once = false) { Separator r; r.separator.appendString(separator); r.once = once; return r; };
         I::LongSSO<separator_sso_len> separator;
+        bool once { false };
     };
 
     struct SkipSeparator {
@@ -149,6 +152,9 @@ private:
     int flags;
     int skipSeparators;
 
+    I::LongSSO<separator_sso_len> separatorBckp;
+    int flagsBckp;
+
 private:
     inline void handleSeparators(char /*nextSymbol*/) {
         if (skipSeparators) {
@@ -159,6 +165,14 @@ private:
         if (!hasFlags(Flags::Separators) || hasFlags(Flags::Internal_NoSeparators) || !separator || !message) return;
 
         message.appendString(separator);
+
+        if (hasFlags(Flags::Internal_RestoreSepBckp)) {
+            flagsOff(Flags::Internal_RestoreSepBckp);
+            separator = separatorBckp;
+
+            flagsOff(Flags::Separators);
+            flagsOn((flagsBckp & (int)Flags::Separators) ? (int)Flags::Separators : 0);
+        }
     }
 
     inline void onStringQuote1(bool literal) {
@@ -186,6 +200,13 @@ private:
 
         if (hasFlags(ALog::Record::Flags::NoAutoQuote)) {
             flagsOff(ALog::Record::Flags::NoAutoQuote, ALog::Record::Flags::AutoQuote);
+        }
+
+        if (hasFlags(ALog::Record::Flags::SeparatorsBckp)) {
+            flagsOff(ALog::Record::Flags::SeparatorsBckp);
+            flagsBckp = flags;
+            separatorBckp = separator;
+            flagsOn(ALog::Record::Flags::Internal_RestoreSepBckp);
         }
     }
 };
@@ -538,6 +559,9 @@ inline ALog::Record&& operator<< (ALog::Record&& record, ALog::Record::SkipSepar
 
 inline ALog::Record&& operator<< (ALog::Record&& record, const ALog::Record::Separator& value)
 {
+    if (value.once)
+        record.flagsOn(ALog::Record::Flags::SeparatorsBckp);
+
     record.separator = value.separator;
     record << ALog::Record::Flags::Separators;
     return std::move(record);
