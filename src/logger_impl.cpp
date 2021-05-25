@@ -1,4 +1,4 @@
-#include <alog/logger-impl.h>
+#include <alog/logger_impl.h>
 #include <alog/exceptions.h>
 
 #include <algorithm>

@@ -1,7 +1,7 @@
 #pragma once
 #include <mutex>
 #include <vector>
-#include <alog/logger-impl.h>
+#include <alog/logger_impl.h>
 
 namespace ALog {
 
