@@ -38,6 +38,7 @@ TEST(ALog_DataTypes, test_various_types)
     LOGD << L"Literal string (wide)";
     LOGD << std::string("String");
     LOGD << std::wstring(L"String (wide)");
+    LOGD << "Some value:" << std::string("value");
     LOGD << std::pair<int, std::string>(11, "Hi") << "SSS";
     LOGD << std::pair<std::string, int>("Hi", 11) << "SSS";
     LOGD << NO_SEPARATORS << std::pair<int, std::string>(11, "Hi") << "SSS-no-sep";
