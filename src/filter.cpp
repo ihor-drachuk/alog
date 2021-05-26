@@ -9,19 +9,19 @@ I::optional_bool FilterSeverity::canPass(const Record& record) const
     return record.severity >= m_severity;
 }
 
-FilterStorage::FilterStorage(const std::initializer_list<IFilterPtr>& filters)
+FilterContainer::FilterContainer(const std::initializer_list<IFilterPtr>& filters)
 {
     for (const auto& x : filters)
         m_filters.push_back(x);
 }
 
-FilterStorage& FilterStorage::addFilter(const IFilterPtr& filter)
+FilterContainer& FilterContainer::addFilter(const IFilterPtr& filter)
 {
     m_filters.push_back(filter);
     return *this;
 }
 
-I::optional_bool FilterStorage::canPass(const Record& record) const
+I::optional_bool FilterContainer::canPass(const Record& record) const
 {
     I::optional_bool result;
 
@@ -33,7 +33,7 @@ I::optional_bool FilterStorage::canPass(const Record& record) const
     return result.value_or(m_defaultDecision);
 }
 
-I::optional_bool FilterStorage_OR::canPass(const Record& record) const
+I::optional_bool FilterContainer_OR::canPass(const Record& record) const
 {
     if (m_filters.empty()) return m_defaultDecision;
 
@@ -43,7 +43,7 @@ I::optional_bool FilterStorage_OR::canPass(const Record& record) const
     return false;
 }
 
-I::optional_bool FilterStorage_AND::canPass(const Record& record) const
+I::optional_bool FilterContainer_AND::canPass(const Record& record) const
 {
     if (m_filters.empty()) return m_defaultDecision;
 

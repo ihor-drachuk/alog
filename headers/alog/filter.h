@@ -36,14 +36,14 @@ private:
     ALOG_DECLARE_PIMPL
 };
 
-class FilterStorage : public IFilter
+class FilterContainer : public IFilter
 {
 public:
-    FilterStorage() = default;
-    FilterStorage(const std::initializer_list<IFilterPtr>& filters);
+    FilterContainer() = default;
+    FilterContainer(const std::initializer_list<IFilterPtr>& filters);
 
     void setDefaultDecision(bool value) { m_defaultDecision = value; }
-    FilterStorage& addFilter(const IFilterPtr& filter);
+    FilterContainer& addFilter(const IFilterPtr& filter);
     I::optional_bool canPass(const Record& Record) const override;
 
 protected:
@@ -51,17 +51,17 @@ protected:
     std::vector<IFilterPtr> m_filters;
 };
 
-class FilterStorage_OR : public FilterStorage
+class FilterContainer_OR : public FilterContainer
 {
 public:
-    using FilterStorage::FilterStorage;
+    using FilterContainer::FilterContainer;
     I::optional_bool canPass(const Record& Record) const override;
 };
 
-class FilterStorage_AND : public FilterStorage
+class FilterContainer_AND : public FilterContainer
 {
 public:
-    using FilterStorage::FilterStorage;
+    using FilterContainer::FilterContainer;
     I::optional_bool canPass(const Record& Record) const override;
 };
 
