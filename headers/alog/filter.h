@@ -28,9 +28,20 @@ private:
 class FilterModuleSeverity : public IFilter
 {
 public:
-    FilterModuleSeverity(Severity Severity, const char* module);
+    FilterModuleSeverity(Severity severity, const char* module);
     ~FilterModuleSeverity();
-    I::optional_bool canPass(const Record& Record) const override;
+    I::optional_bool canPass(const Record& record) const override;
+
+private:
+    ALOG_DECLARE_PIMPL
+};
+
+class FilterFileSeverity : public IFilter
+{
+public:
+    FilterFileSeverity(Severity severity, const std::string& fileName);
+    ~FilterFileSeverity();
+    I::optional_bool canPass(const Record& record) const override;
 
 private:
     ALOG_DECLARE_PIMPL

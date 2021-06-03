@@ -76,4 +76,28 @@ I::optional_bool FilterModuleSeverity::canPass(const Record& record) const
     return record.severity >= impl().severity;
 }
 
+
+struct FilterFileSeverity::impl_t
+{
+    Severity severity;
+    std::string fileName;
+};
+
+FilterFileSeverity::FilterFileSeverity(Severity severity, const std::string& fileName)
+{
+    createImpl();
+    impl().severity = severity;
+    impl().fileName = fileName;
+}
+
+FilterFileSeverity::~FilterFileSeverity()
+{
+}
+
+I::optional_bool FilterFileSeverity::canPass(const Record& record) const
+{
+    if (!strstr(record.filenameOnly, impl().fileName.c_str())) return {};
+    return record.severity >= impl().severity;
+}
+
 } // namespace ALog
