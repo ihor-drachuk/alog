@@ -10,7 +10,7 @@ struct SeverityFile::impl_t
     ALog::Comparison1 comparison;
 };
 
-SeverityFile::SeverityFile(Severity severity, const std::string& fileName, Comparison1 comparison)
+SeverityFile::SeverityFile(::ALog::Severity severity, const std::string& fileName, Comparison1 comparison)
 {
     createImpl();
     impl().severity = severity;

@@ -1,8 +1,5 @@
 #include <alog/sinks/pipeline.h>
 
-#include <alog/formatters/default.h>
-#include <alog/sinks/console.h>
-
 namespace ALog {
 namespace Sinks {
 
@@ -12,19 +9,10 @@ struct Pipeline::impl_t
     IFormatterPtr formatter;      // Record -> Buffer
     Converters::Chain converters; // Buffer
     Sinks::Chain sinks;
-
-    bool bufferPipelineMode { false };
 };
 
 
 Pipeline::Pipeline()
-{
-    createImpl();
-    impl().formatter = std::make_shared<Formatters::Default>();
-    impl().sinks.addSink(std::make_shared<Sinks::Console>(Sinks::Console::Stream::StdOut));
-}
-
-Pipeline::Pipeline(no_initialization_tag)
 {
     createImpl();
 }
@@ -61,31 +49,19 @@ Sinks::Chain& Pipeline::sinks()
     return impl().sinks;
 }
 
-void Pipeline::setBufferPipelineMode(bool enable)
-{
-    impl().bufferPipelineMode = enable;
-}
-
 void Pipeline::write(const Buffer& buffer, const Record& record)
 {
     if (impl().sinks.empty())
         return;
 
-    if (impl().bufferPipelineMode) {
-        // Buffer
-        assert(buffer.size());
-        assert(impl().filters.empty());
-        assert(!impl().formatter);
+    assert(buffer.size() || impl().formatter);
 
-        impl().sinks.write(impl().converters.convert(buffer), record);
-
-    } else {
-        // Record
-        assert(buffer.empty());
-        assert(impl().formatter);
-
-        if (impl().filters.canPass(record).value_or(true))
+    if (impl().filters.canPass(record).value_or(true)) {
+        if (impl().formatter) {
             impl().sinks.write(impl().converters.convert(impl().formatter->format(record)), record);
+        } else {
+            impl().sinks.write(impl().converters.convert(buffer), record);
+        }
     }
 }
 

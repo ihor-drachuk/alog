@@ -3,23 +3,12 @@
 namespace ALog {
 namespace Converters {
 
-Chain::Chain(const std::initializer_list<IConverterPtr>& filters)
-{
-    for (const auto& x : filters)
-        m_converters.push_back(x);
-}
-
-void Chain::clear()
-{
-    m_converters.clear();
-}
-
 Buffer Chain::convert(const Buffer& data)
 {
-    if (m_converters.size() == 1)
-        return m_converters.begin()->get()->convert(data);
+    if (items().size() == 1)
+        return items().begin()->get()->convert(data);
 
-    if (m_converters.empty())
+    if (items().empty())
         return data;
 
     Buffer buffer1;
@@ -28,9 +17,9 @@ Buffer Chain::convert(const Buffer& data)
     Buffer* out = &buffer2;
     Buffer* result = nullptr;
 
-    auto it = m_converters.begin();
+    auto it = items().begin();
 
-    while (it != m_converters.end()) {
+    while (it != items().end()) {
         *out = it->get()->convert(*in);
         result = out;
 

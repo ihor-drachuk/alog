@@ -17,7 +17,7 @@
 TEST(ALog_DataTypes, test_various_types)
 {
     DEFINE_MAIN_ALOGGER;
-    ALOGGER_DIRECT->pipeline().sinks().setSink(std::make_shared<ALog::Sinks::Console>());
+    ALOGGER_DIRECT->pipeline().sinks().set(std::make_shared<ALog::Sinks::Console>());
     MARK_ALOGGER_READY;
 
     DEFINE_ALOGGER_MODULE(ALogerTest);

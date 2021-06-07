@@ -1,5 +1,8 @@
 #include <alog/logger_impl.h>
+
 #include <alog/exceptions.h>
+#include <alog/formatters/default.h>
+#include <alog/sinks/console.h>
 
 #include <algorithm>
 #include <memory>
@@ -50,12 +53,20 @@ Logger::Logger()
 {
     createImpl();
     setMode(AsynchronousSort);
+    setupDefaultConfig();
 }
 
 Logger::~Logger()
 {
     flush();
     stopThread();
+}
+
+void Logger::setupDefaultConfig()
+{
+    impl().pipeline.reset();
+    impl().pipeline.formatter() = std::make_shared<ALog::Formatters::Default>();
+    impl().pipeline.sinks().set(std::make_shared<ALog::Sinks::Console>());
 }
 
 void Logger::addRecord(Record&& record)
