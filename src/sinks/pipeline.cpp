@@ -41,6 +41,26 @@ void Pipeline::reset()
     impl().sinks.clear();
 }
 
+Filters::Chain& Pipeline::filters()
+{
+    return impl().filters;
+}
+
+IFormatterPtr& Pipeline::formatter()
+{
+    return impl().formatter;
+}
+
+Converters::Chain& Pipeline::converters()
+{
+    return impl().converters;
+}
+
+Sinks::Chain& Pipeline::sinks()
+{
+    return impl().sinks;
+}
+
 void Pipeline::setBufferPipelineMode(bool enable)
 {
     impl().bufferPipelineMode = enable;
@@ -48,6 +68,9 @@ void Pipeline::setBufferPipelineMode(bool enable)
 
 void Pipeline::write(const Buffer& buffer, const Record& record)
 {
+    if (impl().sinks.empty())
+        return;
+
     if (impl().bufferPipelineMode) {
         // Buffer
         assert(buffer.size());

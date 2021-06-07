@@ -1,5 +1,7 @@
 #define QT_DISABLE_DEPRECATED_BEFORE 0x0A0000
 
+#include <gtest/gtest.h>
+
 #include <thread>
 #include <mutex>
 #include <condition_variable>
@@ -15,10 +17,8 @@
 #include <unordered_map>
 #include <utility>
 
-#include <gtest/gtest.h>
-#include "alog/logger.h"
-#include "alog/formatter.h"
-#include "alog/exceptions.h"
+#include <alog/all.h>
+
 
 template<typename T,
          typename std::enable_if<std::is_floating_point<T>::value, int>::type = 0>
@@ -26,6 +26,7 @@ bool floatsEquality(T a, T b)
 {
     return ((a - b) <= std::numeric_limits<T>::epsilon());
 }
+
 
 TEST(ALog, test0)
 {
@@ -68,8 +69,8 @@ TEST(ALog, test_sink)
     ALog::Record record;
 
     DEFINE_MAIN_ALOGGER;
-    auto sink2 = std::make_shared<ALog::SinkFunctor2>([&record](const ALog::Record& rec){ record = rec; });
-    ALOGGER_DIRECT->setSink(sink2);
+    auto sink2 = std::make_shared<ALog::Sinks::Functor2>([&record](const ALog::Buffer&, const ALog::Record& rec){ record = rec; });
+    ALOGGER_DIRECT->pipeline().sinks().setSink(sink2);
     MARK_ALOGGER_READY;
 
     DEFINE_ALOGGER_MODULE(ALogerTest);
@@ -89,8 +90,8 @@ TEST(ALog, test_sinkWithLateMaster)
     ASSERT_EQ(records.size(), 0);
 
     DEFINE_MAIN_ALOGGER;
-    auto sink2 = std::make_shared<ALog::SinkFunctor2>([&records](const ALog::Record& rec){ records.push_back(rec); });
-    ALOGGER_DIRECT->setSink(sink2);
+    auto sink2 = std::make_shared<ALog::Sinks::Functor2>([&records](const ALog::Buffer&, const ALog::Record& rec){ records.push_back(rec); });
+    ALOGGER_DIRECT->pipeline().sinks().setSink(sink2);
     MARK_ALOGGER_READY;
 
     ASSERT_EQ(records.size(), 0);
@@ -110,8 +111,8 @@ TEST(ALog, test_syncMode)
     ALog::Record record;
 
     DEFINE_MAIN_ALOGGER;
-    auto sink2 = std::make_shared<ALog::SinkFunctor2>([&record](const ALog::Record& rec){ record = rec; });
-    ALOGGER_DIRECT->setSink(sink2);
+    auto sink2 = std::make_shared<ALog::Sinks::Functor2>([&record](const ALog::Buffer&, const ALog::Record& rec){ record = rec; });
+    ALOGGER_DIRECT->pipeline().sinks().setSink(sink2);
     ALOGGER_DIRECT->setMode(ALog::Logger::Synchronous);
     MARK_ALOGGER_READY;
 
@@ -156,8 +157,8 @@ TEST(ALog, test_threadNames)
     std::vector<ALog::Record> records;
 
     DEFINE_MAIN_ALOGGER;
-    auto sink2 = std::make_shared<ALog::SinkFunctor2>([&records](const ALog::Record& rec){ records.push_back(rec); });
-    ALOGGER_DIRECT->setSink(sink2);
+    auto sink2 = std::make_shared<ALog::Sinks::Functor2>([&records](const ALog::Buffer&, const ALog::Record& rec){ records.push_back(rec); });
+    ALOGGER_DIRECT->pipeline().sinks().setSink(sink2);
     MARK_ALOGGER_READY;
 
     DEFINE_ALOGGER_MODULE(ALogerTest);
@@ -192,8 +193,8 @@ TEST(ALog, test_sort)
 
     {
         DEFINE_MAIN_ALOGGER;
-        auto sink2 = std::make_shared<ALog::SinkFunctor2>([&records](const ALog::Record& rec){ records.push_back(rec); });
-        ALOGGER_DIRECT->setSink(sink2);
+        auto sink2 = std::make_shared<ALog::Sinks::Functor2>([&records](const ALog::Buffer&, const ALog::Record& rec){ records.push_back(rec); });
+        ALOGGER_DIRECT->pipeline().sinks().setSink(sink2);
         ALOGGER_DIRECT->setMode( strict ? ALog::Logger::AsynchronousStrictSort : ALog::Logger::AsynchronousSort );
         MARK_ALOGGER_READY;
 
@@ -248,8 +249,8 @@ TEST(ALog, test_flush)
         ALog::Record record;
 
         ALog::DefaultLogger logger;
-        auto sink2 = std::make_shared<ALog::SinkFunctor2>([&record](const ALog::Record& rec){ record = rec; });
-        logger->setSink(sink2);
+        auto sink2 = std::make_shared<ALog::Sinks::Functor2>([&record](const ALog::Buffer&, const ALog::Record& rec){ record = rec; });
+        logger->pipeline().sinks().setSink(sink2);
         logger.markReady();
 
         DEFINE_ALOGGER_MODULE(ALogerTest);
@@ -284,8 +285,8 @@ TEST(ALog, test_operatorPutStream)
     std::vector<ALog::Record> records;
 
     ALog::DefaultLogger logger;
-    auto sink2 = std::make_shared<ALog::SinkFunctor2>([&records](const ALog::Record& rec){ records.push_back(rec); });
-    logger->setSink(sink2);
+    auto sink2 = std::make_shared<ALog::Sinks::Functor2>([&records](const ALog::Buffer&, const ALog::Record& rec){ records.push_back(rec); });
+    logger->pipeline().sinks().setSink(sink2);
     logger.markReady();
 
     DEFINE_ALOGGER_MODULE(ALogerTest);
@@ -366,7 +367,7 @@ TEST(ALog, test_operatorPutStream)
 
 TEST(ALog, test_defaultFormatter)
 {
-    ALog::DefaultFormatter formatter;
+    ALog::Formatters::Default formatter;
 
     // #1
     auto record = _ALOG_RECORD(ALog::Severity::Info) << "Test";
@@ -377,7 +378,7 @@ TEST(ALog, test_defaultFormatter)
     str2.resize(str1.size());
     memcpy(str2.data(), str1.data(), str1.size());
 
-    ASSERT_EQ(str2, "[    0.014] T#0  [Info    ] [::TestBody:372]  Test");
+    ASSERT_EQ(str2, "[    0.014] T#0  [Info    ] [::TestBody:373]  Test");
 
     // #2
     record = _ALOG_RECORD(ALog::Severity::Info) << "Test";
@@ -387,7 +388,7 @@ TEST(ALog, test_defaultFormatter)
 
     str2.resize(str1.size());
     memcpy(str2.data(), str1.data(), str1.size());
-    ASSERT_EQ(str2, "[    0.014] T#0  (Worker) [Info    ] [::TestBody:383]  Test");
+    ASSERT_EQ(str2, "[    0.014] T#0  (Worker) [Info    ] [::TestBody:384]  Test");
 
     // #3
     record = _ALOG_RECORD(ALog::Severity::Info) << "Test";
@@ -397,7 +398,7 @@ TEST(ALog, test_defaultFormatter)
 
     str2.resize(str1.size());
     memcpy(str2.data(), str1.data(), str1.size());
-    ASSERT_EQ(str2, "[    0.014] T#0  [Info    ] [Module               ] [::TestBody:393]  Test");
+    ASSERT_EQ(str2, "[    0.014] T#0  [Info    ] [Module               ] [::TestBody:394]  Test");
 
     // #4
     record = _ALOG_RECORD(ALog::Severity::Info) << "Test";
@@ -408,7 +409,7 @@ TEST(ALog, test_defaultFormatter)
 
     str2.resize(str1.size());
     memcpy(str2.data(), str1.data(), str1.size());
-    ASSERT_EQ(str2, "[   13.014] T#0  (Worker) [Info    ] [Module               ] [::TestBody:403]  Test");
+    ASSERT_EQ(str2, "[   13.014] T#0  (Worker) [Info    ] [Module               ] [::TestBody:404]  Test");
 
     // #5
     record.flagsOn(ALog::Record::Flags::Abort);
@@ -426,7 +427,7 @@ TEST(ALog, test_defaultFormatterLate)
     ALog::DefaultLogger logger;
     ALog::Record record[2];
     int recordIdx = 0;
-    logger->setSink(std::make_shared<ALog::SinkFunctor2>([&](const ALog::Record& rec){
+    logger->pipeline().sinks().setSink(std::make_shared<ALog::Sinks::Functor2>([&](const ALog::Buffer&, const ALog::Record& rec){
         record[recordIdx++] = rec;
     }));
     logger.markReady();
@@ -434,7 +435,7 @@ TEST(ALog, test_defaultFormatterLate)
 
     ASSERT_EQ(recordIdx, 2);
 
-    ALog::DefaultFormatter formatter;
+    ALog::Formatters::Default formatter;
     auto str1 = formatter.format(record[0]);
     std::string str2;
 
@@ -477,8 +478,8 @@ TEST(ALog, test_separators)
     std::vector<ALog::Record> records;
 
     DEFINE_MAIN_ALOGGER;
-    auto sink2 = std::make_shared<ALog::SinkFunctor2>([&records](const ALog::Record& rec){ records.push_back(rec); });
-    ALOGGER_DIRECT->setSink(sink2);
+    auto sink2 = std::make_shared<ALog::Sinks::Functor2>([&records](const ALog::Buffer&, const ALog::Record& rec){ records.push_back(rec); });
+    ALOGGER_DIRECT->pipeline().sinks().setSink(sink2);
     MARK_ALOGGER_READY;
 
     LOGMD << SEP(" ")       << "String-1" << 1 << "String-2";
@@ -515,8 +516,8 @@ TEST(ALog, test_separators_advanced)
     std::vector<ALog::Record> records;
 
     DEFINE_MAIN_ALOGGER;
-    auto sink2 = std::make_shared<ALog::SinkFunctor2>([&records](const ALog::Record& rec){ records.push_back(rec); });
-    ALOGGER_DIRECT->setSink(sink2);
+    auto sink2 = std::make_shared<ALog::Sinks::Functor2>([&records](const ALog::Buffer&, const ALog::Record& rec){ records.push_back(rec); });
+    ALOGGER_DIRECT->pipeline().sinks().setSink(sink2);
     MARK_ALOGGER_READY;
 
     LOGMD << "Literal string" << "SSS" << "(SSS)";

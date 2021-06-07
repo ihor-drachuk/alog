@@ -30,6 +30,7 @@ public:
     Chain() = default;
     Chain(const std::initializer_list<ISinkPtr>& filters);
 
+    void setSink(const ISinkPtr& sink) { m_sinks.clear(); m_sinks.push_back(sink); };
     Chain& addSink(const ISinkPtr& sink) { m_sinks.push_back(sink); return *this; };
     void clear();
     inline bool empty() const { return m_sinks.empty(); };

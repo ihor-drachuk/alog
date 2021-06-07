@@ -3,7 +3,7 @@ PROJECT(alog)
 
 option(ALOG_ENABLE_TESTS             "ALog: Enable tests" OFF)
 option(ALOG_ENABLE_BENCHMARK         "ALog: Enable benchmark" OFF)
-option(ALOG_ENABLE_DEF_SEPARATORS    "ALog: Enable space-separators by default" ON)
+option(ALOG_ENABLE_DEF_SEPARATORS    "ALog: Enable space-separators by default" OFF)
 option(ALOG_ENABLE_DEF_AUTO_QUOTES   "ALog: Enable auto quotes" ON)
 option(ALOG_ENABLE_DEBUG             "ALog: Enable additional debug checks" OFF)
 

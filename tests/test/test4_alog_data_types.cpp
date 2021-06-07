@@ -1,7 +1,6 @@
-#include <cstdint>
 #include <gtest/gtest.h>
-#include "alog/logger.h"
 
+#include <cstdint>
 #include <string>
 #include <vector>
 #include <list>
@@ -11,11 +10,14 @@
 #include <unordered_map>
 #include <utility>
 
+#include <alog/logger.h>
+#include <alog/sinks/console.h>
+
 
 TEST(ALog_DataTypes, test_various_types)
 {
     DEFINE_MAIN_ALOGGER;
-    ALOGGER_DIRECT->setSink(std::make_shared<ALog::SinkStdStream>());
+    ALOGGER_DIRECT->pipeline().sinks().setSink(std::make_shared<ALog::Sinks::Console>());
     MARK_ALOGGER_READY;
 
     DEFINE_ALOGGER_MODULE(ALogerTest);

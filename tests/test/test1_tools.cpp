@@ -1,5 +1,5 @@
 #include <gtest/gtest.h>
-#include "alog/tools.h"
+#include <alog/tools.h>
 
 TEST(ALog_Tools, extractFileNameOnly)
 {

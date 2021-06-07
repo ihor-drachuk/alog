@@ -97,7 +97,6 @@ inline ALog::MockRecord&& operator<< (ALog::MockRecord&& r, const T&) { return s
 #define DEFINE_MAIN_ALOGGER            DEFINE_MAIN_ALOGGER_N(0)
 #define SIMPLE_SETUP_ALOG \
     DEFINE_MAIN_ALOGGER; \
-    ALOGGER_DIRECT->setSink(std::make_shared<ALog::SinkStdStream>()); \
     MARK_ALOGGER_READY; \
 
 #define ALOGGER_N(N)                   (*ALog::LoggerHolder<N>::instance()->get())

@@ -1,6 +1,8 @@
 #include <gtest/gtest.h>
+
 #include <string>
-#include "alog/tools.h"
+#include <alog/tools.h>
+
 
 TEST(ALog_LongSSO, test0)
 {

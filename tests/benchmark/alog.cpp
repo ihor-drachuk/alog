@@ -1,5 +1,6 @@
 #include <benchmark/benchmark.h>
-#include "alog/logger.h"
+#include <alog/logger.h>
+#include <alog/formatters/minimal.h>
 
 static void LogMessage_module(benchmark::State& state)
 {
@@ -15,6 +16,7 @@ BENCHMARK(LogMessage_module);
 static void LogMessage_module_and_main(benchmark::State& state)
 {
     DEFINE_MAIN_ALOGGER;
+    ALOGGER_DIRECT->pipeline().reset();
     ALOGGER_DIRECT.markReady();
     DEFINE_ALOGGER_MODULE(ALogTest);
 
@@ -29,6 +31,7 @@ static void LogMessage_main_async(benchmark::State& state)
 {
     DEFINE_MAIN_ALOGGER;
     ALOGGER_DIRECT->setMode(ALog::Logger::Asynchronous);
+    ALOGGER_DIRECT->pipeline().reset();
     ALOGGER_DIRECT.markReady();
 
     while (state.KeepRunning())
@@ -42,6 +45,7 @@ static void LogMessage_main_sync(benchmark::State& state)
 {
     DEFINE_MAIN_ALOGGER;
     ALOGGER_DIRECT->setMode(ALog::Logger::Synchronous);
+    ALOGGER_DIRECT->pipeline().reset();
     ALOGGER_DIRECT.markReady();
 
     while (state.KeepRunning())
@@ -66,5 +70,40 @@ static void LogMessage_complex(benchmark::State& state)
 
 BENCHMARK(LogMessage_complex);
 
+
+static void LogMessage_sink_async(benchmark::State& state)
+{
+    DEFINE_MAIN_ALOGGER;
+    ALOGGER_DIRECT->setMode(ALog::Logger::Asynchronous);
+    ALOGGER_DIRECT->pipeline().reset();
+    ALOGGER_DIRECT->pipeline().sinks().setSink(std::make_shared<ALog::Sinks::Null>());
+    ALOGGER_DIRECT->pipeline().formatter() = std::make_shared<ALog::Formatters::Minimal>();
+    ALOGGER_DIRECT.markReady();
+
+    DEFINE_ALOGGER_MODULE(ALogTest);
+
+    while (state.KeepRunning())
+        LOGD;
+}
+
+BENCHMARK(LogMessage_sink_async);
+
+
+static void LogMessage_sink_sync(benchmark::State& state)
+{
+    DEFINE_MAIN_ALOGGER;
+    ALOGGER_DIRECT->setMode(ALog::Logger::Synchronous);
+    ALOGGER_DIRECT->pipeline().reset();
+    ALOGGER_DIRECT->pipeline().sinks().setSink(std::make_shared<ALog::Sinks::Null>());
+    ALOGGER_DIRECT->pipeline().formatter() = std::make_shared<ALog::Formatters::Minimal>();
+    ALOGGER_DIRECT.markReady();
+
+    DEFINE_ALOGGER_MODULE(ALogTest);
+
+    while (state.KeepRunning())
+        LOGD;
+}
+
+BENCHMARK(LogMessage_sink_sync);
 
 BENCHMARK_MAIN();
