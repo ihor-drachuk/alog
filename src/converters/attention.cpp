@@ -1,4 +1,3 @@
-#pragma once
 #include <alog/converters/attention.h>
 
 namespace ALog {

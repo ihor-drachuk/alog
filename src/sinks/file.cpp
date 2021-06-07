@@ -1,5 +1,6 @@
-#pragma once
 #include <alog/sinks/file.h>
+
+#include <stdexcept>
 
 namespace ALog {
 namespace Sinks {
