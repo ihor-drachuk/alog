@@ -37,6 +37,10 @@ template<typename, int> class QVarLengthArray;
 
 namespace ALog {
 
+enum Comparison1 { Less, GreaterEqual };
+
+enum no_initialization_tag { no_initialization };
+
 using Buffer = std::vector<uint8_t>;
 
 namespace Internal {
@@ -514,7 +518,7 @@ template<typename T, typename... Ts>
 constexpr int combineInt(T value0, Ts... values) { return (int)value0 | combineInt(values...); }
 
 template<typename T>
-inline T max(T a, T b) { return a > b ? a : b; }
+inline T (max)(T a, T b) { return a > b ? a : b; }
 
 } // namespace Internal
 } // namespace ALog

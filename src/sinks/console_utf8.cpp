@@ -7,6 +7,7 @@
 #include <sstream>
 
 namespace ALog {
+namespace Sinks {
 
 class MBuf: public std::stringbuf {
 public:
@@ -67,7 +68,7 @@ ConsoleUTF8::~ConsoleUTF8()
     delete impl().streamBuf;
 }
 
-void ConsoleUTF8::writeBuffer(const Buffer& buffer)
+void ConsoleUTF8::write(const Buffer& buffer, const Record&)
 {
     const auto sz = buffer.size();
 
@@ -80,6 +81,7 @@ void ConsoleUTF8::writeBuffer(const Buffer& buffer)
     *impl().ostream << (const char*)impl().buffer.data() << std::flush;
 }
 
+} // namespace Sinks
 } // namespace ALog
 
 #endif // ALOG_WINDOWS

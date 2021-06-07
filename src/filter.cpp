@@ -3,25 +3,27 @@
 #include <string>
 
 namespace ALog {
+namespace Filters {
 
-I::optional_bool FilterSeverity::canPass(const Record& record) const
-{
-    return record.severity >= m_severity;
-}
-
-FilterContainer::FilterContainer(const std::initializer_list<IFilterPtr>& filters)
+Chain::Chain(const std::initializer_list<IFilterPtr>& filters)
 {
     for (const auto& x : filters)
         m_filters.push_back(x);
 }
 
-FilterContainer& FilterContainer::addFilter(const IFilterPtr& filter)
+Chain& Chain::addFilter(const IFilterPtr& filter)
 {
     m_filters.push_back(filter);
     return *this;
 }
 
-I::optional_bool FilterContainer::canPass(const Record& record) const
+void Chain::clear()
+{
+    m_filters.clear();
+    m_defaultDecision = true;
+}
+
+I::optional_bool Chain::canPass(const Record& record) const
 {
     I::optional_bool result;
 
@@ -33,7 +35,7 @@ I::optional_bool FilterContainer::canPass(const Record& record) const
     return result.value_or(m_defaultDecision);
 }
 
-I::optional_bool FilterContainer_OR::canPass(const Record& record) const
+I::optional_bool Chain_OR::canPass(const Record& record) const
 {
     if (m_filters.empty()) return m_defaultDecision;
 
@@ -43,7 +45,7 @@ I::optional_bool FilterContainer_OR::canPass(const Record& record) const
     return false;
 }
 
-I::optional_bool FilterContainer_AND::canPass(const Record& record) const
+I::optional_bool Chain_AND::canPass(const Record& record) const
 {
     if (m_filters.empty()) return m_defaultDecision;
 
@@ -53,51 +55,5 @@ I::optional_bool FilterContainer_AND::canPass(const Record& record) const
     return true;
 }
 
-struct FilterModuleSeverity::impl_t
-{
-    Severity severity;
-    std::string module;
-};
-
-FilterModuleSeverity::FilterModuleSeverity(Severity severity, const char* module)
-{
-    createImpl();
-    impl().severity = severity;
-    impl().module = module;
-}
-
-FilterModuleSeverity::~FilterModuleSeverity()
-{
-}
-
-I::optional_bool FilterModuleSeverity::canPass(const Record& record) const
-{
-    if (impl().module != record.module) return {};
-    return record.severity >= impl().severity;
-}
-
-
-struct FilterFileSeverity::impl_t
-{
-    Severity severity;
-    std::string fileName;
-};
-
-FilterFileSeverity::FilterFileSeverity(Severity severity, const std::string& fileName)
-{
-    createImpl();
-    impl().severity = severity;
-    impl().fileName = fileName;
-}
-
-FilterFileSeverity::~FilterFileSeverity()
-{
-}
-
-I::optional_bool FilterFileSeverity::canPass(const Record& record) const
-{
-    if (!strstr(record.filenameOnly, impl().fileName.c_str())) return {};
-    return record.severity >= impl().severity;
-}
-
+} // namespace Filters
 } // namespace ALog

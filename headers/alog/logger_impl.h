@@ -1,8 +1,8 @@
 #pragma once
 #include <alog/record.h>
-#include <alog/filter.h>
-#include <alog/sink.h>
 #include <alog/tools.h>
+#include <alog/sinks/pipeline.h>
+
 
 namespace ALog {
 
@@ -31,8 +31,9 @@ public:
 
     // Not thread-safe
     void setMode(LoggerMode mode);
-    void setFilter(const IFilterPtr& filter);
-    void setSink(const ISinkPtr& sink);
+
+    ALog::Sinks::Pipeline& pipeline();
+    const ALog::Sinks::Pipeline& pipeline() const;
 
 private:
     void startThread();

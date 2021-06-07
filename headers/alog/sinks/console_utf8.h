@@ -1,23 +1,21 @@
 #pragma once
 #include <alog/sink.h>
+#include <alog/sinks/console.h>
 
 namespace ALog {
+namespace Sinks {
 
 #ifdef ALOG_WINDOWS
 
-class ConsoleUTF8 : public ISinkWithFmtCnv
+class ConsoleUTF8 : public ISink
 {
 public:
-    enum class Stream {
-        StdOut,
-        StdErr
-    };
+    enum class Stream {StdOut, StdErr};
 
     ConsoleUTF8(Stream stream);
     ~ConsoleUTF8();
 
-protected:
-    void writeBuffer(const Buffer& buffer) override;
+    void write(const Buffer& buffer, const Record& record);
 
 private:
     ALOG_DECLARE_PIMPL
@@ -25,8 +23,9 @@ private:
 
 #else
 
-using ConsoleUTF8 = SinkStdStream;
+using ConsoleUTF8 = Console;
 
 #endif // ALOG_WINDOWS
 
+} // namespace Sinks
 } // namespace ALog

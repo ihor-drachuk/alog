@@ -27,8 +27,7 @@ void alog_exception(const char* msg, size_t)
 
 struct Logger::impl_t
 {
-    ISinkPtr sink;
-    IFilterPtr filter;
+    ALog::Sinks::Pipeline pipeline;
 
     LoggerMode mode;
     std::mutex writeMutex;
@@ -61,8 +60,6 @@ Logger::~Logger()
 
 void Logger::addRecord(Record&& record)
 {
-    if (!impl().sink) return;
-
     record.startTp = impl().startTp;
 
     if (impl().autoflush)
@@ -72,12 +69,12 @@ void Logger::addRecord(Record&& record)
         // Sync write
         std::lock_guard<std::mutex> mx(impl().writeMutex);
 
-        bool pass = (!record.hasFlags(Record::Flags::Drop)) && (impl().filter ? impl().filter->canPass(record).value_or(true) : true);
+        bool pass = !record.hasFlags(Record::Flags::Drop);
         if (pass)
-            impl().sink->write(record);
+            impl().pipeline.write({}, record);
 
         if (record.hasFlags(Record::Flags::Flush))
-            impl().sink->flush();
+            impl().pipeline.flush();
 
         if (record.hasFlags(Record::Flags::Abort) && !record.hasFlags(Record::Flags::Internal_Queued))
             alog_abort();
@@ -119,12 +116,10 @@ void Logger::addRecord(Record&& record)
 
 void Logger::flush()
 {
-    if (!impl().sink) return;
-
     if (impl().mode == Synchronous) {
         // Sync write
         std::lock_guard<std::mutex> lck(impl().writeMutex);
-        impl().sink->flush();
+        impl().pipeline.flush();
     } else {
         // Add to queue & wait
         addRecord(Record::create(Record::Flags::FlushAndDrop));
@@ -150,14 +145,14 @@ void Logger::setMode(Logger::LoggerMode mode)
         startThread();
 }
 
-void Logger::setFilter(const IFilterPtr& filter)
+Sinks::Pipeline& Logger::pipeline()
 {
-    impl().filter = filter;
+    return impl().pipeline;
 }
 
-void Logger::setSink(const ISinkPtr& sink)
+const Sinks::Pipeline& Logger::pipeline() const
 {
-    impl().sink = sink;
+    return impl().pipeline;
 }
 
 void Logger::startThread()
@@ -209,11 +204,11 @@ void Logger::threadFunc()
         }
 
         for (const auto& x : queue) {
-            const auto pass = (!x.hasFlags(Record::Flags::Drop)) && (impl().filter ? impl().filter->canPass(x).value_or(true) : true);
-            if (pass) impl().sink->write(x);
+            const auto pass = !x.hasFlags(Record::Flags::Drop);
+            if (pass) impl().pipeline.write({}, x);
 
             if (x.hasFlags(Record::Flags::Flush)) {
-                impl().sink->flush();
+                impl().pipeline.flush();
 
                 {
                     std::unique_lock<std::mutex> lck(impl().queueMutex);

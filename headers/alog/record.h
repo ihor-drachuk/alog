@@ -114,7 +114,7 @@ struct Record
     template<typename... Ts> inline void flagsOff(Ts... values) { flags &= ~I::combineInt(values...); }
 
 #ifdef ALOG_ENABLE_DEBUG
-    [[nodiscard]] inline auto verifySkipSeparators(int delta = 0) { return I::CreateFinally([this, ss = I::max(skipSeparators + delta, 0)](){ assert(ss == skipSeparators); }); }
+    [[nodiscard]] inline auto verifySkipSeparators(int delta = 0) { return I::CreateFinally([this, ss = (I::max)(skipSeparators + delta, 0)](){ assert(ss == skipSeparators); }); }
     #define VERIFY_SKIP_SEPARATORS(record, num) auto _checkSS = record.verifySkipSeparators(num);
 #else
     [[nodiscard]] inline Nothing verifySkipSeparators(int = 0) { return {}; }
