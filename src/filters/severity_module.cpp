@@ -10,7 +10,7 @@ struct SeverityModule::impl_t
     ALog::Comparison1 comparison;
 };
 
-SeverityModule::SeverityModule(Severity severity, const char* module, Comparison1 comparison)
+SeverityModule::SeverityModule(::ALog::Severity severity, const char* module, Comparison1 comparison)
 {
     createImpl();
     impl().severity = severity;

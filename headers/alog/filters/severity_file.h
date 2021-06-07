@@ -6,7 +6,7 @@ namespace Filters {
 class SeverityFile : public IFilter
 {
 public:
-    SeverityFile(Severity severity,
+    SeverityFile(::ALog::Severity severity,
                  const std::string& fileName,
                  ALog::Comparison1 comparison = ALog::GreaterEqual);
     ~SeverityFile();

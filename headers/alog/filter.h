@@ -9,6 +9,10 @@ namespace ALog {
 class IFilter
 {
 public:
+    IFilter() = default;
+    IFilter(const IFilter&) = delete;
+    IFilter& operator=(const IFilter&) = delete;
+
     virtual ~IFilter() = default;
     virtual I::optional_bool canPass(const Record& record) const = 0;
 };
@@ -21,30 +25,33 @@ using IFilterPtr = std::shared_ptr<IFilter>;
 namespace ALog {
 namespace Filters {
 
-class Chain : public IFilter
+class Chain : public IFilter, public Internal::IChain<IFilter, Chain>
 {
 public:
-    Chain() = default;
-    Chain(const std::initializer_list<IFilterPtr>& filters);
+    using Internal::IChain<IFilter, Chain>::IChain;
 
     void setDefaultDecision(bool value) { m_defaultDecision = value; }
-
-    Chain& addFilter(const IFilterPtr& filter);
-    void clear();
-    inline bool empty() const { return m_filters.empty(); };
-
     I::optional_bool canPass(const Record& record) const override;
+
+    void clear() override;
 
 protected:
     bool m_defaultDecision { true };
-    std::vector<IFilterPtr> m_filters;
 };
 
 
 class Chain_OR : public Chain
 {
 public:
+    using Chain_OR_Ptr = std::shared_ptr<Chain_OR>;
+
+public:
     using Chain::Chain;
+
+    template<typename... Args>
+    [[nodiscard]] static Chain_OR_Ptr create(Args... args) { return std::make_shared<Chain_OR>(std::forward<Args>(args)...); }
+    [[nodiscard]] static Chain_OR_Ptr create(const std::initializer_list<IFilterPtr>& filters) { return std::make_shared<Chain_OR>(filters); }
+
     I::optional_bool canPass(const Record& record) const override;
 };
 
@@ -52,7 +59,15 @@ public:
 class Chain_AND : public Chain
 {
 public:
+    using Chain_AND_Ptr = std::shared_ptr<Chain_AND>;
+
+public:
     using Chain::Chain;
+
+    template<typename... Args>
+    [[nodiscard]] static Chain_AND_Ptr create(Args... args) { return std::make_shared<Chain_AND>(std::forward<Args>(args)...); }
+    [[nodiscard]] static Chain_AND_Ptr create(const std::initializer_list<IFilterPtr>& filters) { return std::make_shared<Chain_AND>(filters); }
+
     I::optional_bool canPass(const Record& record) const override;
 };
 

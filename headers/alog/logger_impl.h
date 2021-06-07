@@ -23,6 +23,8 @@ public:
     Logger();
     ~Logger();
 
+    void setupDefaultConfig();
+
     // Thread-safe
     void addRecord(Record&& Record);
     void operator+= (Record&& record) { addRecord(std::move(record)); }

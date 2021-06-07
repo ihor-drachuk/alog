@@ -391,6 +391,39 @@ private:
 };
 #pragma pack(pop)
 
+template<typename Interface, typename Class>
+class IChain
+{
+public:
+    using ItemPtr = std::shared_ptr<Interface>;
+    using ClassPtr = std::shared_ptr<Class>;
+
+public:
+    IChain() = default;
+    IChain(const std::initializer_list<ItemPtr>& item) { add(item); }
+
+    template<typename... Args>
+    [[nodiscard]] static ClassPtr create(Args&&... args) { return std::make_shared<Class>(std::forward<Args>(args)...); }
+    [[nodiscard]] static ClassPtr create(const std::initializer_list<ItemPtr>& items) { return std::make_shared<Class>(items); }
+
+    void set(const ItemPtr& item) { clear(); add(item); };
+    void set(const std::initializer_list<ItemPtr>& items) { clear(); add(items); };
+    IChain<Interface, Class>& add(const ItemPtr& item) { m_items.push_back(item); return *this; };
+    IChain<Interface, Class>& add(const std::initializer_list<ItemPtr>& items) {
+        for (const auto& x : items) m_items.push_back(x);
+        return *this;
+    }
+    virtual void clear() { m_items.clear(); }
+    bool empty() const { return m_items.empty(); };
+
+protected:
+    using Items = std::vector<ItemPtr>;
+    const Items& items() const { return m_items; }
+
+private:
+    Items m_items;
+};
+
 template<typename C>
 struct is_container {
 private:

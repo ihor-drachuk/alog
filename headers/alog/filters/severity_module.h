@@ -6,7 +6,7 @@ namespace Filters {
 class SeverityModule : public IFilter
 {
 public:
-    SeverityModule(Severity severity,
+    SeverityModule(::ALog::Severity severity,
                    const char* module,
                    ALog::Comparison1 comparison = ALog::GreaterEqual);
     ~SeverityModule();

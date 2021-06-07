@@ -76,7 +76,7 @@ static void LogMessage_sink_async(benchmark::State& state)
     DEFINE_MAIN_ALOGGER;
     ALOGGER_DIRECT->setMode(ALog::Logger::Asynchronous);
     ALOGGER_DIRECT->pipeline().reset();
-    ALOGGER_DIRECT->pipeline().sinks().setSink(std::make_shared<ALog::Sinks::Null>());
+    ALOGGER_DIRECT->pipeline().sinks().set(std::make_shared<ALog::Sinks::Null>());
     ALOGGER_DIRECT->pipeline().formatter() = std::make_shared<ALog::Formatters::Minimal>();
     ALOGGER_DIRECT.markReady();
 
@@ -94,7 +94,7 @@ static void LogMessage_sink_sync(benchmark::State& state)
     DEFINE_MAIN_ALOGGER;
     ALOGGER_DIRECT->setMode(ALog::Logger::Synchronous);
     ALOGGER_DIRECT->pipeline().reset();
-    ALOGGER_DIRECT->pipeline().sinks().setSink(std::make_shared<ALog::Sinks::Null>());
+    ALOGGER_DIRECT->pipeline().sinks().set(std::make_shared<ALog::Sinks::Null>());
     ALOGGER_DIRECT->pipeline().formatter() = std::make_shared<ALog::Formatters::Minimal>();
     ALOGGER_DIRECT.markReady();
 

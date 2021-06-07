@@ -12,7 +12,6 @@ class Pipeline : public ISink
 {
 public:
     Pipeline();
-    Pipeline(no_initialization_tag);
     ~Pipeline() override;
 
     void reset();
@@ -21,8 +20,6 @@ public:
     IFormatterPtr& formatter();
     Converters::Chain& converters();
     Sinks::Chain& sinks();
-
-    void setBufferPipelineMode(bool enable = true);
 
     void write(const Buffer& buffer, const Record& record) override;
     void flush() override;

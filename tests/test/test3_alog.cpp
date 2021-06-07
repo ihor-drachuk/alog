@@ -70,7 +70,7 @@ TEST(ALog, test_sink)
 
     DEFINE_MAIN_ALOGGER;
     auto sink2 = std::make_shared<ALog::Sinks::Functor2>([&record](const ALog::Buffer&, const ALog::Record& rec){ record = rec; });
-    ALOGGER_DIRECT->pipeline().sinks().setSink(sink2);
+    ALOGGER_DIRECT->pipeline().sinks().set(sink2);
     MARK_ALOGGER_READY;
 
     DEFINE_ALOGGER_MODULE(ALogerTest);
@@ -91,7 +91,7 @@ TEST(ALog, test_sinkWithLateMaster)
 
     DEFINE_MAIN_ALOGGER;
     auto sink2 = std::make_shared<ALog::Sinks::Functor2>([&records](const ALog::Buffer&, const ALog::Record& rec){ records.push_back(rec); });
-    ALOGGER_DIRECT->pipeline().sinks().setSink(sink2);
+    ALOGGER_DIRECT->pipeline().sinks().set(sink2);
     MARK_ALOGGER_READY;
 
     ASSERT_EQ(records.size(), 0);
@@ -112,7 +112,7 @@ TEST(ALog, test_syncMode)
 
     DEFINE_MAIN_ALOGGER;
     auto sink2 = std::make_shared<ALog::Sinks::Functor2>([&record](const ALog::Buffer&, const ALog::Record& rec){ record = rec; });
-    ALOGGER_DIRECT->pipeline().sinks().setSink(sink2);
+    ALOGGER_DIRECT->pipeline().sinks().set(sink2);
     ALOGGER_DIRECT->setMode(ALog::Logger::Synchronous);
     MARK_ALOGGER_READY;
 
@@ -158,7 +158,7 @@ TEST(ALog, test_threadNames)
 
     DEFINE_MAIN_ALOGGER;
     auto sink2 = std::make_shared<ALog::Sinks::Functor2>([&records](const ALog::Buffer&, const ALog::Record& rec){ records.push_back(rec); });
-    ALOGGER_DIRECT->pipeline().sinks().setSink(sink2);
+    ALOGGER_DIRECT->pipeline().sinks().set(sink2);
     MARK_ALOGGER_READY;
 
     DEFINE_ALOGGER_MODULE(ALogerTest);
@@ -194,7 +194,7 @@ TEST(ALog, test_sort)
     {
         DEFINE_MAIN_ALOGGER;
         auto sink2 = std::make_shared<ALog::Sinks::Functor2>([&records](const ALog::Buffer&, const ALog::Record& rec){ records.push_back(rec); });
-        ALOGGER_DIRECT->pipeline().sinks().setSink(sink2);
+        ALOGGER_DIRECT->pipeline().sinks().set(sink2);
         ALOGGER_DIRECT->setMode( strict ? ALog::Logger::AsynchronousStrictSort : ALog::Logger::AsynchronousSort );
         MARK_ALOGGER_READY;
 
@@ -250,7 +250,7 @@ TEST(ALog, test_flush)
 
         ALog::DefaultLogger logger;
         auto sink2 = std::make_shared<ALog::Sinks::Functor2>([&record](const ALog::Buffer&, const ALog::Record& rec){ record = rec; });
-        logger->pipeline().sinks().setSink(sink2);
+        logger->pipeline().sinks().set(sink2);
         logger.markReady();
 
         DEFINE_ALOGGER_MODULE(ALogerTest);
@@ -286,7 +286,7 @@ TEST(ALog, test_operatorPutStream)
 
     ALog::DefaultLogger logger;
     auto sink2 = std::make_shared<ALog::Sinks::Functor2>([&records](const ALog::Buffer&, const ALog::Record& rec){ records.push_back(rec); });
-    logger->pipeline().sinks().setSink(sink2);
+    logger->pipeline().sinks().set(sink2);
     logger.markReady();
 
     DEFINE_ALOGGER_MODULE(ALogerTest);
@@ -427,7 +427,7 @@ TEST(ALog, test_defaultFormatterLate)
     ALog::DefaultLogger logger;
     ALog::Record record[2];
     int recordIdx = 0;
-    logger->pipeline().sinks().setSink(std::make_shared<ALog::Sinks::Functor2>([&](const ALog::Buffer&, const ALog::Record& rec){
+    logger->pipeline().sinks().set(std::make_shared<ALog::Sinks::Functor2>([&](const ALog::Buffer&, const ALog::Record& rec){
         record[recordIdx++] = rec;
     }));
     logger.markReady();
@@ -479,7 +479,7 @@ TEST(ALog, test_separators)
 
     DEFINE_MAIN_ALOGGER;
     auto sink2 = std::make_shared<ALog::Sinks::Functor2>([&records](const ALog::Buffer&, const ALog::Record& rec){ records.push_back(rec); });
-    ALOGGER_DIRECT->pipeline().sinks().setSink(sink2);
+    ALOGGER_DIRECT->pipeline().sinks().set(sink2);
     MARK_ALOGGER_READY;
 
     LOGMD << SEP(" ")       << "String-1" << 1 << "String-2";
@@ -517,7 +517,7 @@ TEST(ALog, test_separators_advanced)
 
     DEFINE_MAIN_ALOGGER;
     auto sink2 = std::make_shared<ALog::Sinks::Functor2>([&records](const ALog::Buffer&, const ALog::Record& rec){ records.push_back(rec); });
-    ALOGGER_DIRECT->pipeline().sinks().setSink(sink2);
+    ALOGGER_DIRECT->pipeline().sinks().set(sink2);
     MARK_ALOGGER_READY;
 
     LOGMD << "Literal string" << "SSS" << "(SSS)";

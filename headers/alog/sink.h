@@ -11,6 +11,10 @@ namespace ALog {
 class ISink
 {
 public:
+    ISink() = default;
+    ISink(const ISink&) = delete;
+    ISink& operator=(const ISink&) = delete;
+
     virtual ~ISink() = default;
     virtual void write(const Buffer& buffer, const Record& record) = 0;
     virtual void flush() { }
@@ -24,24 +28,14 @@ using ISinkPtr = std::shared_ptr<ISink>;
 namespace ALog {
 namespace Sinks {
 
-class Chain : public ISink
+class Chain : public ISink, public Internal::IChain<ISink, Chain>
 {
 public:
-    Chain() = default;
-    Chain(const std::initializer_list<ISinkPtr>& filters);
-
-    void setSink(const ISinkPtr& sink) { m_sinks.clear(); m_sinks.push_back(sink); };
-    Chain& addSink(const ISinkPtr& sink) { m_sinks.push_back(sink); return *this; };
-    void clear();
-    inline bool empty() const { return m_sinks.empty(); };
+    using Internal::IChain<ISink, Chain>::IChain;
 
     void write(const Buffer& buffer, const Record& record) override;
     void flush() override;
-
-private:
-    std::vector<ISinkPtr> m_sinks;
 };
-
 
 
 template<typename T>
@@ -56,7 +50,6 @@ private:
 };
 
 using Functor2 = Functor<std::function<void(const Buffer& buffer, const Record&)>>;
-
 
 
 class Null : public ISink
