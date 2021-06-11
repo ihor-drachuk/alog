@@ -58,9 +58,9 @@ void Pipeline::write(const Buffer& buffer, const Record& record)
 
     if (impl().filters.canPass(record).value_or(true)) {
         if (impl().formatter) {
-            impl().sinks.write(impl().converters.convert(impl().formatter->format(record)), record);
+            impl().sinks.write(impl().converters.convert(impl().formatter->format(record), record), record);
         } else {
-            impl().sinks.write(impl().converters.convert(buffer), record);
+            impl().sinks.write(impl().converters.convert(buffer, record), record);
         }
     }
 }

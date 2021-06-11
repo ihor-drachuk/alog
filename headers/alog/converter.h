@@ -5,15 +5,26 @@
 
 namespace ALog {
 
+namespace Filters { class Chain; }
+struct Record;
+
 class IConverter
 {
 public:
-    IConverter() = default;
+    IConverter();
     IConverter(const IConverter&) = delete;
     IConverter& operator=(const IConverter&) = delete;
+    virtual ~IConverter();
 
-    virtual ~IConverter() = default;
-    virtual Buffer convert(const Buffer& data) = 0;
+    Filters::Chain& filters();
+
+    Buffer convert(const Buffer& data, const Record& record);
+
+protected:
+    virtual Buffer convertImpl(const Buffer& data, const Record& record) = 0;
+
+private:
+    ALOG_DECLARE_PIMPL
 };
 
 using IConverterPtr = std::shared_ptr<IConverter>;
@@ -29,7 +40,7 @@ class Chain : public IConverter, public Internal::IChain<IConverter, Chain>
 public:
     using Internal::IChain<IConverter, Chain>::IChain;
 
-    Buffer convert(const Buffer& data) override;
+    Buffer convertImpl(const Buffer& data, const Record& record) override;
 };
 
 } // namespace Converters

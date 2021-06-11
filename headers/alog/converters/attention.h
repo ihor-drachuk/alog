@@ -6,8 +6,8 @@ namespace Converters {
 
 class Attention : public IConverter
 {
-public:
-    Buffer convert(const Buffer& data) override;
+protected:
+    Buffer convertImpl(const Buffer& data, const Record& record) override;
 };
 
 } // namespace Converters

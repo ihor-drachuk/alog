@@ -3,7 +3,7 @@
 namespace ALog {
 namespace Converters {
 
-Buffer Attention::convert(const Buffer& data)
+Buffer Attention::convertImpl(const Buffer& data, const Record& /*record*/)
 {
     const auto str = "  !!!  ";
     const size_t sz = strlen(str);
