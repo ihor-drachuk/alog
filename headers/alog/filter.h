@@ -31,6 +31,7 @@ public:
     using Internal::IChain<IFilter, Chain>::IChain;
 
     void setDefaultDecision(bool value) { m_defaultDecision = value; }
+
     I::optional_bool canPass(const Record& record) const override;
 
     void clear() override;
@@ -84,6 +85,17 @@ private:
 };
 
 using Functor2 = Functor<std::function<I::optional_bool(const Record&)>>;
+
+
+class Always : public IFilter
+{
+public:
+    Always(I::optional_bool pass): m_pass(pass) { }
+    I::optional_bool canPass(const Record&) const override { return m_pass; }
+
+private:
+    I::optional_bool m_pass;
+};
 
 } // namespace Filters
 } // namespace ALog
