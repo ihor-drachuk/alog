@@ -43,5 +43,15 @@ I::optional_bool Chain_AND::canPass(const Record& record) const
     return true;
 }
 
+Internal::optional_bool Chain_NOR::canPass(const Record& record) const
+{
+    if (empty()) return m_defaultDecision;
+
+    for (const auto& x : items())
+        if (x->canPass(record).value_or(false)) return false;
+
+    return true;
+}
+
 } // namespace Filters
 } // namespace ALog

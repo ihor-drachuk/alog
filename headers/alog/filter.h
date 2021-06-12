@@ -73,6 +73,22 @@ public:
 };
 
 
+class Chain_NOR : public Chain
+{
+public:
+    using Chain_NOR_Ptr = std::shared_ptr<Chain_NOR>;
+
+public:
+    using Chain::Chain;
+
+    template<typename... Args>
+    [[nodiscard]] static Chain_NOR_Ptr create(Args... args) { return std::make_shared<Chain_NOR>(std::forward<Args>(args)...); }
+    [[nodiscard]] static Chain_NOR_Ptr create(const std::initializer_list<IFilterPtr>& filters) { return std::make_shared<Chain_NOR>(filters); }
+
+    I::optional_bool canPass(const Record& record) const override;
+};
+
+
 template<typename T>
 class Functor : public IFilter
 {
