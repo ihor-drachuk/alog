@@ -10,7 +10,8 @@ struct SeverityModule::impl_t
     ALog::Comparison1 comparison;
 };
 
-SeverityModule::SeverityModule(::ALog::Severity severity, const char* module, Comparison1 comparison)
+SeverityModule::SeverityModule(::ALog::Severity severity, const char* module, Mode mode, Comparison1 comparison)
+    : IFilter(mode)
 {
     createImpl();
     impl().severity = severity;
@@ -22,7 +23,7 @@ SeverityModule::~SeverityModule()
 {
 }
 
-I::optional_bool SeverityModule::canPass(const Record& record) const
+I::optional_bool SeverityModule::canPassImpl(const Record& record) const
 {
     if (impl().module != record.module) return {};
     auto ge = record.severity >= impl().severity;

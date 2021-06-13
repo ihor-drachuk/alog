@@ -6,9 +6,11 @@ namespace Filters {
 class Module : public IFilter
 {
 public:
-    Module(const char* module, bool pass = true);
+    Module(const char* module, bool pass = true, Mode mode = PassOrReject);
     ~Module();
-    I::optional_bool canPass(const Record& record) const override;
+
+protected:
+    I::optional_bool canPassImpl(const Record& record) const override;
 
 private:
     ALOG_DECLARE_PIMPL

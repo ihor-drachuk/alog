@@ -9,7 +9,8 @@ struct Module::impl_t
     bool pass;
 };
 
-Module::Module(const char* module, bool pass)
+Module::Module(const char* module, bool pass, Mode mode)
+    : IFilter(mode)
 {
     createImpl();
     impl().module = module;
@@ -20,10 +21,9 @@ Module::~Module()
 {
 }
 
-I::optional_bool Module::canPass(const Record& record) const
+I::optional_bool Module::canPassImpl(const Record& record) const
 {
-    bool match = (impl().module == record.module);
-    return impl().pass ? match : !match;
+    return !((impl().module == record.module) ^ impl().pass);
 }
 
 } // namespace Filters

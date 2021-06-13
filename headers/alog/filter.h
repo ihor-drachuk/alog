@@ -9,12 +9,27 @@ namespace ALog {
 class IFilter
 {
 public:
-    IFilter() = default;
+    enum Mode {
+        PassOrReject,
+        PassOrUndefined,
+        RejectOrUndefined,
+
+        UndefinedIsPass = 1024,
+        UndefinedIsReject = 2048,
+    };
+
+    IFilter(Mode mode = PassOrReject): m_mode(mode) { };
     IFilter(const IFilter&) = delete;
     IFilter& operator=(const IFilter&) = delete;
 
     virtual ~IFilter() = default;
-    virtual I::optional_bool canPass(const Record& record) const = 0;
+    virtual I::optional_bool canPass(const Record& record) const;
+
+protected:
+    virtual I::optional_bool canPassImpl(const Record& record) const { (void)record; return {}; };
+
+protected:
+    Mode m_mode;
 };
 
 using IFilterPtr = std::shared_ptr<IFilter>;
@@ -93,8 +108,13 @@ template<typename T>
 class Functor : public IFilter
 {
 public:
-    Functor(const T& func): m_func(func) { }
-    I::optional_bool canPass(const Record& record) const override { return m_func(record); }
+    Functor(const T& func, Mode mode = PassOrReject)
+        : IFilter(mode),
+          m_func(func)
+    { }
+
+protected:
+    I::optional_bool canPassImpl(const Record& record) const override { return m_func(record); }
 
 private:
     T m_func;

@@ -510,6 +510,69 @@ TEST(ALog, test_separators)
     ASSERT_STREQ(records[8].message.getString(), "String-11_String-2");
 }
 
+TEST(ALog, test_filters)
+{
+    std::vector<ALog::Record> records;
+
+    auto filters = ALog::Filters::Chain::create({
+        // Always pass warnings
+        std::make_shared<ALog::Filters::Severity>(ALog::Severity::Warning, ALog::IFilter::PassOrUndefined),
+
+        // Example: Hide DeviceFeaturesFactory
+        std::make_shared<ALog::Filters::Module>("module1", false, ALog::IFilter::RejectOrUndefined),
+
+        // Pass everything from FirebaseIntegration
+        std::make_shared<ALog::Filters::Module>("module2", true, ALog::IFilter::PassOrUndefined),
+
+        // Explicit default decision - reject
+        std::make_shared<ALog::Filters::Always>(false)
+    });
+
+    DEFINE_MAIN_ALOGGER;
+    auto sink2 = std::make_shared<ALog::Sinks::Functor2>([&records](const ALog::Buffer&, const ALog::Record& rec){ records.push_back(rec); });
+    ALOGGER_DIRECT->pipeline().sinks().set(sink2);
+    ALOGGER_DIRECT->pipeline().filters().set(filters);
+    ALOGGER_DIRECT->setMode(ALog::Logger::LoggerMode::Synchronous);
+    MARK_ALOGGER_READY;
+
+
+    {
+        DEFINE_ALOGGER_MODULE(module1);
+        LOGD << "1";
+        LOGW << "2";
+        LOGE << "3";
+    }
+
+    {
+        DEFINE_ALOGGER_MODULE(module2);
+        LOGD << "4";
+        LOGW << "5";
+        LOGE << "6";
+    }
+
+    {
+        DEFINE_ALOGGER_MODULE(module3);
+        LOGD << "7";
+        LOGW << "8";
+        LOGE << "9";
+    }
+
+    std::set<std::string> expected {"2", "3", "5", "6", "8", "9",  "4"};
+    std::set<std::string> unexpected {"1", "7"};
+    std::set<std::string> items;
+
+    for (const auto& x : records)
+        items.insert(x.getMessage());
+
+    for (const auto& x : expected) {
+        ASSERT_GE(items.count(x), 1);
+    }
+
+    for (const auto& x : unexpected) {
+        ASSERT_EQ(items.count(x), 0);
+    }
+}
+
 TEST(ALog, test_separators_advanced)
 {
 #if 0

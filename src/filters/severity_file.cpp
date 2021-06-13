@@ -10,7 +10,8 @@ struct SeverityFile::impl_t
     ALog::Comparison1 comparison;
 };
 
-SeverityFile::SeverityFile(::ALog::Severity severity, const std::string& fileName, Comparison1 comparison)
+SeverityFile::SeverityFile(::ALog::Severity severity, const std::string& fileName, Mode mode, Comparison1 comparison)
+    : IFilter(mode)
 {
     createImpl();
     impl().severity = severity;
@@ -22,9 +23,9 @@ SeverityFile::~SeverityFile()
 {
 }
 
-I::optional_bool SeverityFile::canPass(const Record& record) const
+I::optional_bool SeverityFile::canPassImpl(const Record& record) const
 {
-    if (!strstr(record.filenameOnly, impl().fileName.c_str())) return {};
+    if (impl().fileName != record.filenameOnly) return {};
     auto ge = record.severity >= impl().severity;
     return (impl().comparison == ALog::GreaterEqual) ? ge : !ge;
 }

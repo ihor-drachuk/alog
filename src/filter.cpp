@@ -3,6 +3,37 @@
 #include <string>
 
 namespace ALog {
+
+Internal::optional_bool IFilter::canPass(const Record& record) const
+{
+    auto result = canPassImpl(record);
+
+    if (!result.has_value()) {
+        if (m_mode & UndefinedIsPass)
+            return true;
+        else if (m_mode & UndefinedIsReject)
+            return false;
+        else
+            return {};
+    }
+
+    Mode modeStripped = static_cast<Mode>(m_mode
+                        & ~UndefinedIsPass
+                        & ~UndefinedIsReject);
+
+    switch (modeStripped) {
+        case PassOrReject: return *result;
+        case PassOrUndefined: return *result ? I::optional_bool(true) : I::optional_bool();
+        case RejectOrUndefined: return *result ? I::optional_bool() : I::optional_bool(false);
+
+        case UndefinedIsPass: break;
+        case UndefinedIsReject: break;
+    }
+
+    assert(!"Should not get here!");
+    return {};
+}
+
 namespace Filters {
 
 void Chain::clear()
@@ -17,7 +48,7 @@ I::optional_bool Chain::canPass(const Record& record) const
 
     for (const auto& x : items()) {
         result = x->canPass(record);
-        if (result) break;
+        if (result.has_value()) break;
     }
 
     return result.value_or(m_defaultDecision);

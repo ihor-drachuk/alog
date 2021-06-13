@@ -375,6 +375,8 @@ public:
         return *this;
     }
 
+    inline bool has_value() const { return m_hasValue; }
+
     inline bool value() const {
         assert(m_hasValue);
         return m_value;
@@ -382,7 +384,7 @@ public:
 
     bool value_or(bool value) const noexcept { return m_hasValue ? m_value : value; }
 
-    operator bool() const noexcept { return m_hasValue; }
+    //operator bool() const noexcept { return m_hasValue; }
     bool operator*() const { return value(); }
 
 private:
@@ -560,4 +562,5 @@ namespace ALog {
 namespace I {
 using namespace ::ALog::Internal;
 } // namespace I
+using Internal::optional_bool;
 } // namespace ALog

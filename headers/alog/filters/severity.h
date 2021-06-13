@@ -6,12 +6,15 @@ namespace Filters {
 class Severity : public IFilter
 {
 public:
-    Severity(::ALog::Severity severity, ALog::Comparison1 comparison = ALog::GreaterEqual)
-        : m_severity(severity),
+    Severity(::ALog::Severity severity, Mode mode = PassOrReject, ALog::Comparison1 comparison = ALog::GreaterEqual)
+        : IFilter(mode),
+          m_severity(severity),
           m_comparison(comparison)
     { }
 
-    I::optional_bool canPass(const Record& record) const override;
+
+protected:
+    I::optional_bool canPassImpl(const Record& record) const override;
 
 private:
     ::ALog::Severity m_severity;

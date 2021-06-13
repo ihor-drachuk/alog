@@ -3,7 +3,7 @@
 namespace ALog {
 namespace Filters {
 
-I::optional_bool Severity::canPass(const Record& record) const
+I::optional_bool Severity::canPassImpl(const Record& record) const
 {
     auto ge = record.severity >= m_severity;
     return (m_comparison == ALog::GreaterEqual) ? ge : !ge;
