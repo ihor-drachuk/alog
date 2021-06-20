@@ -1,9 +1,29 @@
-## ALog - fast easy flexible C++ logger
+## ALog - fast simple flexible C++ logger
 
 [![Build & test](https://github.com/ihor-drachuk/alog/actions/workflows/ci.yml/badge.svg?branch=master)](https://github.com/ihor-drachuk/alog/actions/workflows/ci.yml)
 
 ### Table of contents
+   * [ALog - fast simple flexible C++ logger](#alog---fast-simple-flexible-c-logger)
+      * [Table of contents](#table-of-contents)
+      * [Requirements](#requirements)
+      * [Features](#features)
+         * [Currently implemented sinks, formatters &amp; filters](#currently-implemented-sinks-formatters--filters)
+         * [Currently supported log-flags](#currently-supported-log-flags)
+   * [Setup (CMake)](#setup-cmake)
+      * [Option #1: auto-download](#option-1-auto-download)
+      * [Option #2: manual download](#option-2-manual-download)
+   * [Examples](#examples)
+      * [#1. Intro](#1-intro)
+      * [#2. Declare module title](#2-declare-module-title)
+      * [#3. Extended (non-simple) logger setup](#3-extended-non-simple-logger-setup)
+      * [#4. Duplicate logs to file](#4-duplicate-logs-to-file)
+      * [#5. Filter out non-important logs](#5-filter-out-non-important-logs)
+      * [#6. Advanced I - Part 1: Filters chain](#6-advanced-i---part-1-filters-chain)
+      * [#7. Advanced I - Part 2: Understanding of RejectOrUndefined](#7-advanced-i---part-2-understanding-of-rejectorundefined)
+      * [#8. Advanced II: different filters for different sinks](#8-advanced-ii-different-filters-for-different-sinks)
+      * [More examples TBD...](#more-examples-tbd)
 
+_<sup>(Thanks to [ekalinin/github-markdown-toc](https://github.com/ekalinin/github-markdown-toc))</sup>_
 
 ### Requirements
 - CMake, C++17 compiler
