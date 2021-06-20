@@ -98,7 +98,7 @@ More extensions for ALog implemented separately: [alog-extensions](https://githu
 ## Setup (CMake)
 
 ### Option #1: auto-download
-- Requirements: git, CMake 3.16
+- Requirements: CMake 3.16, git
 - Just add these lines to your CMakeLists:
 ```CMake
 include(FetchContent)
@@ -112,7 +112,7 @@ target_link_libraries(YourProject PRIVATE alog)   # Replace "YourProject" !
 ```
 
 ### Option #2: auto-download (old)
-- Requirements: git, CMake 3.16
+- Requirements: CMake 3.16, git
 - Place these files in your project folder: [ALog-download.txt](https://raw.githubusercontent.com/ihor-drachuk/alog/cmake-autodownload/ALog-download.txt), [ALog-download.in](https://raw.githubusercontent.com/ihor-drachuk/alog/cmake-autodownload/ALog-download.in)
 - Add to your CMakeLists:
 ```CMake
@@ -310,7 +310,7 @@ int main() {
     pipelineStderr->filters().set( std::make_shared<ALog::Filters::Severity>(ALog::Severity::Warning, ALog::IFilter::Default, ALog::GreaterEqual) );
     pipelineStderr->sinks().set( std::make_shared<ALog::Sinks::Console>(ALog::Sinks::Console::Stream::StdErr) );
 
-    // Also without any conditions and filter write to "all-logs.txt"
+    // Also without any conditions and filters write to "all-logs.txt"
     auto pipelineFile = std::make_shared<ALog::Sinks::Pipeline>();
     pipelineFile->filters().set({});
     pipelineFile->sinks().set( std::make_shared<ALog::Sinks::File>("all-logs.txt") );
