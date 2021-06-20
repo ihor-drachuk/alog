@@ -1,20 +1,9 @@
-## ALog - fast simple flexible C++ logger
+## ALog - fast easy flexible C++ logger
 
 [![Build & test](https://github.com/ihor-drachuk/alog/actions/workflows/ci.yml/badge.svg?branch=master)](https://github.com/ihor-drachuk/alog/actions/workflows/ci.yml)
 
 ### Table of contents
-   * [ALog - fast simple flexible C++ logger](#alog---fast-simple-flexible-c-logger)
-      * [Requirements](#requirements)
-      * [Features](#features)
-         * [Currently implemented sinks, formatters &amp; filters](#currently-implemented-sinks-formatters--filters)
-         * [Currently supported log-flags](#currently-supported-log-flags)
-   * [Setup (CMake)](#setup-cmake)
-      * [Option #1: auto-download](#option-1-auto-download)
-      * [Option #2: manual download](#option-2-manual-download)
-   * [Examples](#examples)
-      * [#1. Intro](#1-intro)
-      * [#2. Module title - recommended](#2-module-title---recommended)
-      * More examples TBD...
+
 
 ### Requirements
 - CMake, C++17 compiler
@@ -32,6 +21,7 @@
 - Functional
   - Log anything: containers, pointers, raw buffers, custom types
   - Based on UTF-8 encoding - log any unicode character
+  - Qt-friendly
   - Conditional logging
     - `LOGE_IF(errorFlag) << "Error!";`
   - Flags. Call `std::abort` or throw exception right from log-record!
@@ -57,23 +47,27 @@
 
 #### Currently implemented sinks, formatters & filters
  - Sinks
-   - Standard stream <sub><sup>(SinkStdStream)</sup></sub>
-   - File <sub><sup>(SinkSimpleFile)</sup></sub>
-   - Null <sub><sup>(SinkNull)</sup></sub>
-   - Functor / Lambda <sub><sup>(SinkFunctor)</sup></sub>
-   - Virtual sink with filter + nested sink <sub><sup>(SinkWithFilter)</sup></sub>
-   - Virtual sink with multiple nested sinks <sub><sup>(SinkContainer)</sup></sub>
- - Formatters
+   - Console
+   - ConsoleUTF8
+   - File
+   - ...special: Null, Functor, Chain, Pipeline
+ - Formatters:
    - Default formatter
    - Minimal formatter (text-only)
  - Filters
-   - By severity <sub><sup>(FilterSeverity)</sup></sub>
-   - By module & severity <sub><sup>(FilterModuleSeverity)</sup></sub>
-   - By nested filters set <sub><sup>(FilterStorage)</sup></sub>
+   - By module
+   - By source file
+   - By severity
+   - By severity & module
+   - By severity & file
+   - By tag: sensitive information, low-level IO dumps, etc.
+   - ...special: Always, Functor, Chain
 
 #### Currently supported log-flags
- - `FLUSH`, `THROW`, `ABORT`
- - `SEPARATORS`, `NO_SEPARATORS`, `SEP(new_separator)`, `SSEP(skip_count)`
+ - `BUFFER` -- for printing RAW buffers
+ - `FLUSH`
+ - `THROW`, `ABORT`
+ - `SEPARATORS` (`SEPS`), `NO_SEPARATORS` (`NSEPS`), `SEP(new_separator)`, `SSEP(skip_count)`
  - `AUTO_QUOTES`, `NO_AUTO_QUOTES`, `QUOTE_LITERALS`
 
 More extensions for ALog implemented separately: [alog-extensions](https://github.com/ihor-drachuk/alog-extensions)
@@ -126,11 +120,11 @@ int main() {
 [    0.000] T#0  [Warn    ] [::main:8]  Another message
 [    0.000] T#0  [Info    ] [::main:9]  Another container: {Container; Size: 2; Data = "str1", "str2"}
 ```
-- `LOGMD` used instead of `LOGD` when module name is not provided. See next example.
+- `LOGMD` used instead of `LOGD` when module name is not provided.
 - `[    0.000]` - By default, time is specified in [sec.msec] from app start.
 - `T#0` - Enumerated threads like 'T#0', 'T#1' much easier to understand than comparing IDs like 71041, 9163, 91273 between themselves, which also changed on each restart.
 
-### #2. Module title - recommended
+### #2. Declare module title
 Source:
 ```C++
 #include <alog/logger.h>
@@ -153,6 +147,151 @@ Output:
 [    0.000] T#0  [Warn    ] [Satellite_Main_Loop  ] [::main:8]  Another message
 [    0.000] T#0  [Info    ] [Satellite_Main_Loop  ] [::main:9]  Another container: {Container; Size: 2; Data = "str1", "str2"}
 ```
-- Notice! When module title is provided, instead of `LOGMD` we use `LOGD` (recommended).
+- Notice! When module title is provided, instead of `LOGMD` we use `LOGD`.
+- It's recommended to provide module name always
+
+### #3. Extended (non-simple) logger setup
+```C++
+#include <alog/logger.h>
+DEFINE_ALOGGER_MODULE(Main);
+
+int main() {
+    ALog::DefaultLogger logger;                                    //      During trace debug recommended to set:
+    logger->setMode(ALog::Logger::LoggerMode::AsynchronousSort);   // <--   - Synchronous
+    logger->setAutoflush(false);                                   // <--   - true
+    logger->pipeline().sinks().set( ... );
+    logger->pipeline().filters().set( ... );
+    logger->pipeline().converters().set( ... );
+    // Don't log anything before call to `markReady`!
+    logger.markReady();
+    // Don't change logger settings after call to `markReady`!
+
+    LOGD << "Test!";
+
+    return 0;
+}
+```
+
+### #4. Duplicate logs to file
+```C++
+#include <alog/all.h>
+DEFINE_ALOGGER_MODULE(Main);
+
+int main() {
+    ALog::DefaultLogger logger;
+    logger->setMode(ALog::Logger::LoggerMode::AsynchronousSort);
+    logger->setAutoflush(false);
+    // By default logger contains sink `Console`. Now we're adding another one: `File`.
+    logger->pipeline().sinks().add( std::make_shared<ALog::Sinks::File>("logs.txt") );
+    logger.markReady();
+
+    LOGD << "Test!";
+
+    return 0;
+}
+```
+
+
+### #5. Filter out non-important logs
+```C++
+#include <alog/all.h>
+DEFINE_ALOGGER_MODULE(Main);
+
+int main() {
+    ALog::DefaultLogger logger;
+    logger->setMode(ALog::Logger::LoggerMode::AsynchronousSort);
+    logger->setAutoflush(false);
+    // Pass logs with severity "Warning" and higher
+    logger->pipeline().filters().set( std::make_shared<ALog::Filters::Severity>(ALog::Severity::Warning) );
+    logger.markReady();
+
+    LOGD << "Test!";
+
+    return 0;
+}
+```
+
+### #6. Advanced I - Part 1: Filters chain
+```C++
+#include <alog/all.h>
+DEFINE_ALOGGER_MODULE(Main);
+
+int main() {
+    auto filters = ALog::Filters::Chain::create({
+        // Always pass 'Warning' and higher
+        std::make_shared<ALog::Filters::Severity>(ALog::Severity::Warning, ALog::IFilter::PassOrUndefined),
+
+        // Always exclude logs from MyNoisyModule
+        std::make_shared<ALog::Filters::Module>("MyNoisyModule", false, ALog::IFilter::RejectOrUndefined),
+
+        // Always pass all logs from MyUnstableModule
+        std::make_shared<ALog::Filters::Module>("MyUnstableModule", true, ALog::IFilter::PassOrUndefined),
+
+        // Temporary uncomment line below to quickly enable all logs (except MyNoisyModule, because it's processed/triggered earlier in chain)
+        // std::make_shared<ALog::Filters::Always>(true),
+
+        // Explicit default decision (reject) if none of the rules above triggered
+        std::make_shared<ALog::Filters::Always>(false)
+    });
+
+    ALog::DefaultLogger logger;
+    logger->setMode(ALog::Logger::LoggerMode::AsynchronousSort);
+    logger->setAutoflush(false);
+    logger->pipeline().filters().set(filters);
+    logger.markReady();
+
+    LOGD << "Test!";
+
+    return 0;
+}
+```
+
+### #7. Advanced I - Part 2: Understanding of `RejectOrUndefined`
+
+`ALog::Filters::Chain` is container of other filters.
+
+When log record is tested by the `Chain` filter, it's internally tested by each nested filter until one of them will answer `true` (accept) or `false` (reject). Filters also can answer `Undefined`, it means that current log record is not accepted nor rejected by this filter, so it will be tested by the next one.
+
+Ok. Each filter can 'accept', 'reject' and 'hold the answer'. So, what means special filter mode `RejectOrUndefined` and what other modes exist?
+
+There are 3 modes:
+ - PassOrReject (default). When some strict binary filter answers `true` or `false`, log record is passed or dropped respectively. It's not possible to apply some additional (2nd, 3rd...) filter in chain for log record because decision is always determined and applied by the first filter.
+ - PassOrUndefined. Binary filter logic `true/false` is converted to `true/undefined`. Filter can accept record, or do nothing. Useful, when you definitely need to pass log record by some condition, but other logs are not affected by this filter and will be tested by next filters in chain.
+ - RejectOrUndefined. Binary filter logic `true/false` is converted to `undefined/false`. Filter can drop record, or do nothing. Useful, when you definitely need to reject log record by some condition, but other logs are not affected by this filter and will be tested by next filters in chain.
+
+### #8. Advanced II: different filters for different sinks
+```C++
+#include <alog/all.h>
+DEFINE_ALOGGER_MODULE(Main);
+
+int main() {
+    // If less than 'Warning' ==> stdout
+    auto pipelineStdout = std::make_shared<ALog::Sinks::Pipeline>();
+    pipelineStdout->filters().set( std::make_shared<ALog::Filters::Severity>(ALog::Severity::Warning, ALog::IFilter::Default, ALog::Less) );
+    pipelineStdout->sinks().set( std::make_shared<ALog::Sinks::Console>(ALog::Sinks::Console::Stream::StdOut) );
+
+    // If 'Warning' or higher ==> stderr
+    auto pipelineStderr = std::make_shared<ALog::Sinks::Pipeline>();
+    pipelineStderr->filters().set( std::make_shared<ALog::Filters::Severity>(ALog::Severity::Warning, ALog::IFilter::Default, ALog::GreaterEqual) );
+    pipelineStderr->sinks().set( std::make_shared<ALog::Sinks::Console>(ALog::Sinks::Console::Stream::StdErr) );
+
+    // Also without any conditions and filter write to "all-logs.txt"
+    auto pipelineFile = std::make_shared<ALog::Sinks::Pipeline>();
+    pipelineFile->filters().set({});
+    pipelineFile->sinks().set( std::make_shared<ALog::Sinks::File>("all-logs.txt") );
+
+
+    ALog::DefaultLogger logger;
+    logger->setMode(ALog::Logger::LoggerMode::AsynchronousSort);
+    logger->setAutoflush(false);
+    logger->pipeline().sinks().set({pipelineStdout, pipelineStderr, pipelineFile});
+    logger.markReady();
+
+    LOGD << "Test!";
+
+    return 0;
+}
+```
+
 
 ### More examples TBD...
