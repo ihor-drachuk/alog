@@ -14,6 +14,8 @@ public:
         PassOrUndefined,
         RejectOrUndefined,
 
+        Default = PassOrReject,
+
         UndefinedIsPass = 1024,
         UndefinedIsReject = 2048,
     };
