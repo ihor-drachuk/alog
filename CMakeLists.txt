@@ -27,6 +27,8 @@ target_compile_options(alog PRIVATE
     $<$<NOT:$<CXX_COMPILER_ID:MSVC>>:-Werror>
 )
 
+target_compile_definitions(alog PRIVATE NOMINMAX)
+
 if(ALOG_ENABLE_DEF_SEPARATORS)
     target_compile_definitions(alog PUBLIC ALOG_ENABLE_DEF_SEPARATORS)
 endif()
