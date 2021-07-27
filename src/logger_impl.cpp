@@ -10,10 +10,19 @@
 #include <thread>
 #include <condition_variable>
 
+#ifdef WIN32
+#include <Windows.h>
+#define ALOG_STOP_DEBUGGER DebugBreak()
+#else
+#include <csignal>
+#define ALOG_STOP_DEBUGGER raise(SIGTRAP)
+#endif
+
 namespace ALog {
 
 void alog_abort()
 {
+    ALOG_STOP_DEBUGGER;
     std::abort();
 }
 
@@ -78,7 +87,7 @@ void Logger::addRecord(Record&& record)
 
     if (impl().mode == Synchronous) {
         // Sync write
-        std::lock_guard<std::mutex> mx(impl().writeMutex);
+        std::unique_lock<std::mutex> mx(impl().writeMutex);
 
         bool pass = !record.hasFlags(Record::Flags::Drop);
         if (pass)
@@ -86,6 +95,8 @@ void Logger::addRecord(Record&& record)
 
         if (record.hasFlags(Record::Flags::Flush))
             impl().pipeline.flush();
+
+        mx.unlock(); // Mutex unlocked here!
 
         if (record.hasFlags(Record::Flags::Abort) && !record.hasFlags(Record::Flags::Internal_Queued))
             alog_abort();
@@ -116,6 +127,8 @@ void Logger::addRecord(Record&& record)
             impl().queue.emplace_back(std::move(record));
             impl().cv.notify_one();
         }
+
+        lck.unlock(); // Mutex unlocked here!
 
         if (abort)
             alog_abort();
