@@ -10,8 +10,7 @@ option(ALOG_ENABLE_DEBUG             "ALog: Enable additional debug checks" OFF)
 FILE(GLOB_RECURSE SOURCES src/*.cpp src/*.h headers/*.h)
 
 add_library(alog STATIC ${SOURCES})
-set_property(TARGET alog PROPERTY CXX_STANDARD 17)
-set_property(TARGET alog PROPERTY CXX_STANDARD_REQUIRED TRUE)
+target_compile_features(alog PUBLIC cxx_std_17)
 target_include_directories(alog PUBLIC headers)
 
 if(MSVC)
