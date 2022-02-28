@@ -272,8 +272,6 @@ namespace Internal {
         assert(radix == 10);
         sprintf(dst, "%lu", value);
     }
-
-namespace { }
 #endif // ALOG_LINUX || ALOG_MACOSX
 
 template<typename T>
