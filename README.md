@@ -11,8 +11,7 @@
          * [Currently supported log-flags](#currently-supported-log-flags)
    * [Setup (CMake)](#setup-cmake)
       * [Option #1: auto-download](#option-1-auto-download)
-      * [Option #2: auto-download (old)](#option-2-auto-download-old)
-      * [Option #3: manual download](#option-3-manual-download)
+      * [Option #2: manual download](#option-2-manual-download)
    * [Examples](#examples)
       * [#1. Intro](#1-intro)
       * [#2. Declare module title](#2-declare-module-title)
@@ -111,16 +110,7 @@ FetchContent_MakeAvailable(alog)
 target_link_libraries(YourProject PRIVATE alog)   # Replace "YourProject" !
 ```
 
-### Option #2: auto-download (old)
-- Requirements: CMake 3.16, git
-- Place these files in your project folder: [ALog-download.txt](https://raw.githubusercontent.com/ihor-drachuk/alog/cmake-autodownload/ALog-download.txt), [ALog-download.in](https://raw.githubusercontent.com/ihor-drachuk/alog/cmake-autodownload/ALog-download.in)
-- Add to your CMakeLists:
-```CMake
-include(ALog-download.txt)
-target_link_libraries(YourProject PRIVATE alog)
-```
-
-### Option #3: manual download
+### Option #2: manual download
 - Clone ALog manually
 - Add to your CMakeLists:
 ```CMake
