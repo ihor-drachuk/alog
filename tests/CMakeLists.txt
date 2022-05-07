@@ -5,6 +5,8 @@ if (NOT ALOG_ENABLE_TESTS AND NOT ALOG_ENABLE_BENCHMARK)
     return()
 endif()
 
+include(FetchContent)
+
 if (ALOG_ENABLE_TESTS)
     set(ALOG_NEED_GTEST ON)
 endif()
@@ -26,31 +28,12 @@ if (ALOG_NEED_GTEST AND NOT TARGET gtest)
         set(INSTALL_GMOCK OFF CACHE BOOL "Do not install gmock" FORCE)
         set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
 
-        message("Preparing GTest download 1/2")
+        FetchContent_Declare(
+            googletest
+            URL https://github.com/google/googletest/archive/refs/tags/release-1.11.0.tar.gz
+        )
 
-        configure_file(CMakeLists-gtest.txt.in
-            "${CMAKE_CURRENT_BINARY_DIR}/googletest-download/CMakeLists.txt")
-
-        message("Preparing GTest download 2/2")
-
-        execute_process(COMMAND "${CMAKE_COMMAND}" -G "${CMAKE_GENERATOR}" -S "${CMAKE_CURRENT_BINARY_DIR}/googletest-download" -B "${CMAKE_CURRENT_BINARY_DIR}/googletest-download2" RESULT_VARIABLE download_status)
-
-        if (NOT "${download_status}" STREQUAL "0")
-            message(FATAL_ERROR "Preparing GTest download - failed")
-        endif()
-
-        message("GTest download...")
-
-        execute_process(COMMAND "${CMAKE_COMMAND}" --build "${CMAKE_CURRENT_BINARY_DIR}/googletest-download2" RESULT_VARIABLE download_status2)
-
-        if (NOT "${download_status2}" STREQUAL "0")
-            message(FATAL_ERROR "GTest download - failed")
-        endif()
-
-        message("GTest download done")
-
-        add_subdirectory(${CMAKE_CURRENT_BINARY_DIR}/googletest-src
-            ${CMAKE_CURRENT_BINARY_DIR}/googletest-build)
+        FetchContent_MakeAvailable(googletest)
     endif()
 endif()
 
@@ -66,31 +49,12 @@ if (ALOG_NEED_BENCHMARK AND NOT TARGET benchmark)
         set(BENCHMARK_ENABLE_INSTALL OFF CACHE BOOL "" FORCE)
         set(BENCHMARK_ENABLE_GTEST_TESTS OFF CACHE BOOL "" FORCE)
 
-        message("Preparing google-benchmark download 1/2")
+        FetchContent_Declare(
+            google-benchmark
+            URL https://github.com/google/benchmark/archive/refs/tags/v1.5.3.tar.gz
+        )
 
-        configure_file(CMakeLists-benchmark.txt.in
-            "${CMAKE_CURRENT_BINARY_DIR}/google-benchmark-download/CMakeLists.txt")
-
-        message("Preparing google-benchmark download 2/2")
-
-        execute_process(COMMAND "${CMAKE_COMMAND}" -G "${CMAKE_GENERATOR}" -S "${CMAKE_CURRENT_BINARY_DIR}/google-benchmark-download" -B "${CMAKE_CURRENT_BINARY_DIR}/google-benchmark-download2" RESULT_VARIABLE download_status)
-
-        if (NOT "${download_status}" STREQUAL "0")
-            message(FATAL_ERROR "Preparing google-benchmark download - failed")
-        endif()
-
-        message("google-benchmark download...")
-
-        execute_process(COMMAND "${CMAKE_COMMAND}" --build "${CMAKE_CURRENT_BINARY_DIR}/google-benchmark-download2" RESULT_VARIABLE download_status2)
-
-        if (NOT "${download_status2}" STREQUAL "0")
-            message(FATAL_ERROR "google-benchmark download - failed")
-        endif()
-
-        message("google-benchmark download done")
-
-        add_subdirectory(${CMAKE_CURRENT_BINARY_DIR}/google-benchmark-src
-            ${CMAKE_CURRENT_BINARY_DIR}/google-benchmark-build)
+        FetchContent_MakeAvailable(google-benchmark)
     endif()
 endif()
 
