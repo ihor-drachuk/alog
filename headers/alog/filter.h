@@ -1,6 +1,7 @@
 #pragma once
 #include <memory>
 #include <vector>
+#include <functional>
 #include <alog/record.h>
 #include <alog/tools.h>
 

@@ -4,6 +4,13 @@
 #include <locale>
 #include <codecvt>
 
+#ifdef ALOG_HAS_QT_LIBRARY
+#include <QJsonObject>
+#include <QJsonArray>
+#include <QJsonValue>
+#include <QJsonDocument>
+#endif // ALOG_HAS_QT_LIBRARY
+
 #ifdef _MSC_VER
     #define snwprintf _snwprintf
 #endif // _MSC_VER
@@ -115,3 +122,42 @@ ALog::Record&& operator<<(ALog::Record&& record, const ALog::Record::RawData& va
 
     return std::move(record);
 }
+
+
+#ifdef ALOG_HAS_QT_LIBRARY
+ALog::Record&& operator<< (ALog::Record&& record, const QJsonObject& value)
+{
+    ALog::Internal::logJsonData(record, "Object", QString::fromUtf8(QJsonDocument(value).toJson()));
+    return std::move(record);
+}
+
+ALog::Record&& operator<< (ALog::Record&& record, const QJsonArray& value)
+{
+    ALog::Internal::logJsonData(record, "Array", QString::fromUtf8(QJsonDocument(value).toJson()));
+    return std::move(record);
+}
+
+ALog::Record&& operator<< (ALog::Record&& record, const QJsonValue& value)
+{
+    if (value.isObject()) {
+        std::move(record) << value.toObject();
+
+    } else if (value.isArray()) {
+        std::move(record) << value.toArray();
+
+    } else {
+        QJsonObject obj;
+        obj[""] = value;
+        ALog::Internal::logJsonData(record, "Value", QString::fromUtf8(QJsonDocument(obj).toJson()));
+
+    }
+
+    return std::move(record);
+}
+
+ALog::Record&& operator<< (ALog::Record&& record, const QJsonDocument& value)
+{
+    ALog::Internal::logJsonData(record, "JsonDocument", QString::fromUtf8(value.toJson()));
+    return std::move(record);
+}
+#endif // ALOG_HAS_QT_LIBRARY

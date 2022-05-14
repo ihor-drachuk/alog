@@ -615,6 +615,21 @@ inline typename std::enable_if_t<std::is_same<T, QPoint>::value, ALog::Record>&&
     return std::move(record);
 }
 
+#ifdef ALOG_HAS_QT_LIBRARY
+template<typename T1, typename T2,
+         typename std::enable_if<!std::is_same<QPair<T1, T2>, std::pair<T1, T2>>::value>::type* = nullptr>
+inline ALog::Record&& operator<< (ALog::Record&& record, const QPair<T1, T2>& value)
+{
+    std::move(record) << std::pair<T1, T2>{value.first, value.second};
+    return std::move(record);
+}
+
+ALog::Record&& operator<< (ALog::Record&& record, const QJsonObject& value);
+ALog::Record&& operator<< (ALog::Record&& record, const QJsonArray& value);
+ALog::Record&& operator<< (ALog::Record&& record, const QJsonValue& value);
+ALog::Record&& operator<< (ALog::Record&& record, const QJsonDocument& value);
+#endif // ALOG_HAS_QT_LIBRARY
+
 // --- Forward declarations specially for clang compiler (Mac OS) ---
 namespace ALog {
 namespace Internal {

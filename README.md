@@ -64,12 +64,14 @@ _<sup>(Thanks to [ekalinin/github-markdown-toc](https://github.com/ekalinin/gith
   - IFilter -- if you need special logs-filtering logic (...remove sensitive information?)
   - IFormatter -- decide how & which fields of record to print (another dimension of verbosity)
   - IConverter -- change encoding, line endings, compress, encrypt...
+- Qt-friendly
 
 #### Currently implemented sinks, formatters & filters
  - Sinks
    - Console
    - ConsoleUTF8
    - File
+   - Baical (for Baical log server)
    - ...special: Null, Functor, Chain, Pipeline
  - Formatters:
    - Default formatter
@@ -89,8 +91,6 @@ _<sup>(Thanks to [ekalinin/github-markdown-toc](https://github.com/ekalinin/gith
  - `THROW`, `ABORT`
  - `SEPARATORS` (`SEPS`), `NO_SEPARATORS` (`NSEPS`), `SEP(new_separator)`, `SSEP(skip_count)`
  - `AUTO_QUOTES`, `NO_AUTO_QUOTES`, `QUOTE_LITERALS`
-
-More extensions for ALog implemented separately: [alog-extensions](https://github.com/ihor-drachuk/alog-extensions)
 
 ---
 

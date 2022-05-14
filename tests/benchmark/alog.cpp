@@ -1,6 +1,7 @@
 #include <benchmark/benchmark.h>
 #include <alog/logger.h>
 #include <alog/formatters/minimal.h>
+#include <alog/containers/all.h>
 
 static void LogMessage_module(benchmark::State& state)
 {
