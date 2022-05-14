@@ -1,7 +1,13 @@
 #include <alog/tools.h>
 
+#include <alog/record.h>
+
 #include <atomic>
 #include <cassert>
+
+#ifdef ALOG_HAS_QT_LIBRARY
+#include <QString>
+#endif // ALOG_HAS_QT_LIBRARY
 
 namespace ALog {
 namespace Internal {
@@ -69,6 +75,25 @@ bool isSeparatorSymbol(char c)
 
     return isSeparator[(int)c];
 }
+
+#ifdef ALOG_HAS_QT_LIBRARY
+void logJsonData(ALog::Record& record, const QString& jsonType, const QString& jsonContent)
+{
+    auto _flagsRestorer = record.backupFlags();
+
+    auto jsonTypeU8 = jsonType.toUtf8();
+    auto jsonContentU8 = jsonContent.toUtf8();
+
+    assert(*jsonTypeU8.rbegin() != 0);
+
+    record.appendMessage("{Json; ");
+    record << ALog::Record::Flags::Internal_NoSeparators;
+    record.appendMessage(jsonTypeU8.constData(), jsonTypeU8.size());
+    record.appendMessage("; Content = \"");
+    record.appendMessage(jsonContentU8.constData(), jsonContentU8.size());
+    record.appendMessage("\"}");
+}
+#endif // ALOG_HAS_QT_LIBRARY
 
 } // namespace Internal
 } // namespace ALog

@@ -5,7 +5,6 @@
 #include <cstring>
 #include <utility>
 #include <memory>
-#include <alog/tools_fwd.h>
 
 #if defined(_WIN32) || defined(_WIN64)
 #define ALOG_WINDOWS
@@ -24,18 +23,18 @@ class QLatin1String;
 class QStringRef;
 class QByteArray;
 class QPoint;
-template<typename> class QList;
-template<typename> class QLinkedList;
-template<typename> class QVector;
-template<typename> class QStack;
-template<typename> class QQueue;
-template<typename> class QSet;
+class QJsonObject;
+class QJsonArray;
+class QJsonValue;
+class QJsonDocument;
 
-template<typename, typename> class QMap;
-template<typename, typename> class QHash;
-template<typename, int> class QVarLengthArray;
+#ifdef ALOG_HAS_QT_LIBRARY
+#include <QtContainerFwd>
+#endif
 
 namespace ALog {
+
+struct Record;
 
 enum Comparison1 { Less, GreaterEqual };
 
@@ -426,71 +425,37 @@ private:
     Items m_items;
 };
 
-template<typename C>
-struct is_container {
-private:
-    template<typename T>
-    static constexpr auto has_cbegin(T*)
-    -> typename
-        std::is_same<
-            decltype( std::declval<T>().cbegin() ),
-            typename T::const_iterator
-        >::type;
-
-    template<typename>
-    static constexpr std::false_type has_cbegin(...);
-
-    template<typename T>
-    static constexpr auto has_cend(T*)
-    -> typename
-        std::is_same<
-            decltype( std::declval<T>().cend() ),
-            typename T::const_iterator
-        >::type;
-
-    template<typename>
-    static constexpr std::false_type has_cend(...);
-
-    using cbegin_ret_type = decltype(has_cbegin<C>(0));
-    using cend_ret_type = decltype(has_cend<C>(0));
-
-public:
-    static constexpr bool value = cbegin_ret_type::value && cend_ret_type::value;
-};
-
-template <std::size_t N>
-struct is_container<char[N]> : std::false_type { };
-template <std::size_t N>
-struct is_container<wchar_t[N]> : std::false_type { };
-
-template <> struct is_container<QString> : std::false_type { };
-template <> struct is_container<QLatin1String> : std::false_type { };
-template <> struct is_container<QStringRef> : std::false_type { };
-template <> struct is_container<QByteArray> : std::false_type { };
-template <> struct is_container<std::string> : std::false_type { };
-template <> struct is_container<std::wstring> : std::false_type { };
+template<typename T>
+struct is_container : public std::false_type {};
 
 template <typename T>
-struct has_key : public std::integral_constant<bool, false> { };
-
-template <typename... Ts> struct has_key<std::map<Ts...>> : std::true_type { };
-template <typename... Ts> struct has_key<std::multimap<Ts...>> : std::true_type { };
-template <typename... Ts> struct has_key<std::unordered_map<Ts...>> : std::true_type { };
-template <typename... Ts> struct has_key<std::unordered_multimap<Ts...>> : std::true_type { };
-template <typename... Ts> struct has_key<QMap<Ts...>> : std::true_type { };
-template <typename... Ts> struct has_key<QHash<Ts...>> : std::true_type { };
+struct has_key : public std::false_type {};
 
 template <typename T>
-struct is_qt_container : public std::integral_constant<bool, false> { };
-template <typename... Ts> struct is_qt_container<QMap<Ts...>> : std::true_type { };
-template <typename... Ts> struct is_qt_container<QHash<Ts...>> : std::true_type { };
-template <typename... Ts> struct is_qt_container<QList<Ts...>> : std::true_type { };
-template <typename... Ts> struct is_qt_container<QLinkedList<Ts...>> : std::true_type { };
-template <typename... Ts> struct is_qt_container<QVector<Ts...>> : std::true_type { };
-template <typename... Ts> struct is_qt_container<QStack<Ts...>> : std::true_type { };
-template <typename... Ts> struct is_qt_container<QQueue<Ts...>> : std::true_type { };
-template <typename... Ts> struct is_qt_container<QSet<Ts...>> : std::true_type { };
-template <typename... Ts> struct is_qt_container<QVarLengthArray<Ts...>> : std::true_type { };
+struct is_qt_container : public std::false_type {}; // TODO: Remove?
+
+#ifdef ALOG_HAS_QT_LIBRARY
+
+template<typename... Args> struct ALog::Internal::is_container<QCache<Args...>> : public std::true_type { };
+template<typename... Args> struct ALog::Internal::is_container<QHash<Args...>> : public std::true_type { };
+template<typename... Args> struct ALog::Internal::is_container<QList<Args...>> : public std::true_type { };
+template<typename... Args> struct ALog::Internal::is_container<QMap<Args...>> : public std::true_type { };
+template<typename... Args> struct ALog::Internal::is_container<QMultiHash<Args...>> : public std::true_type { };
+template<typename... Args> struct ALog::Internal::is_container<QMultiMap<Args...>> : public std::true_type { };
+template<typename... Args> struct ALog::Internal::is_container<QQueue<Args...>> : public std::true_type { };
+template<typename... Args> struct ALog::Internal::is_container<QSet<Args...>> : public std::true_type { };
+template<typename... Args> struct ALog::Internal::is_container<QStack<Args...>> : public std::true_type { };
+template<typename... Args> struct ALog::Internal::is_container<QVarLengthArray<Args...>> : public std::true_type { };
+template<typename Arg>     struct ALog::Internal::is_container<QVector<Arg>> : public std::true_type { };
+template<>                 struct ALog::Internal::is_container<QStringList> : public std::true_type { };
+
+template<typename... Args> struct ALog::Internal::has_key<QCache<Args...>> : public std::true_type { };
+template<typename... Args> struct ALog::Internal::has_key<QHash<Args...>> : public std::true_type { };
+template<typename... Args> struct ALog::Internal::has_key<QMap<Args...>> : public std::true_type { };
+template<typename... Args> struct ALog::Internal::has_key<QMultiHash<Args...>> : public std::true_type { };
+template<typename... Args> struct ALog::Internal::has_key<QMultiMap<Args...>> : public std::true_type { };
+
+#endif // ALOG_HAS_QT_LIBRARY
 
 template <typename T>
 struct array_size
@@ -554,6 +519,10 @@ constexpr int combineInt(T value0, Ts... values) { return (int)value0 | combineI
 
 template<typename T>
 inline T (max)(T a, T b) { return a > b ? a : b; }
+
+#ifdef ALOG_HAS_QT_LIBRARY
+void logJsonData(Record& record, const QString& jsonType, const QString& jsonContent);
+#endif // ALOG_HAS_QT_LIBRARY
 
 } // namespace Internal
 } // namespace ALog

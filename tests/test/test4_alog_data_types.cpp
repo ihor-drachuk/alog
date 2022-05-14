@@ -2,17 +2,21 @@
 
 #include <cstdint>
 #include <string>
-#include <vector>
-#include <list>
-#include <set>
-#include <unordered_set>
-#include <map>
-#include <unordered_map>
 #include <utility>
 
 #include <alog/logger.h>
 #include <alog/sinks/console.h>
+#include <alog/containers/all.h>
 
+#ifdef ALOG_HAS_QT_LIBRARY
+#include <QVector>
+#include <QList>
+#include <QMap>
+#include <QSet>
+#include <QJsonValue>
+#include <QJsonObject>
+#include <QJsonArray>
+#endif // ALOG_HAS_QT_LIBRARY
 
 TEST(ALog_DataTypes, test_various_types)
 {
@@ -62,6 +66,17 @@ TEST(ALog_DataTypes, test_various_types)
         {{1, "1"}, {2, "2"}, {3, "3"}},
         {{4, "4"}, {5, "5"}},
     };
+
+#ifdef ALOG_HAS_QT_LIBRARY
+    LOGD << QVector<int>{1,2,3,4};
+    LOGD << QList{1,2,3,4};
+    LOGD << QMap<int, const char*>{{1, "1"}, {2, "2"}};
+    LOGD << QSet{1,2,3,4};
+    LOGD << QPair<int, const char*>{1, "11"};
+    LOGD << QJsonValue(1234);
+    LOGD << QJsonObject({{"field1", 10}, {"field2", "str"}});
+    LOGD << QJsonArray({1, 2, "Test"});
+#endif // ALOG_HAS_QT_LIBRARY
 
     LOGD << BUFFER("Hello", 5);
 

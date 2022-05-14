@@ -13,6 +13,19 @@ add_library(alog STATIC ${SOURCES})
 target_compile_features(alog PUBLIC cxx_std_17)
 target_include_directories(alog PUBLIC headers)
 
+find_package(QT NAMES Qt6 Qt5 OPTIONAL_COMPONENTS Core)
+find_package(Qt${QT_VERSION_MAJOR} QUIET OPTIONAL_COMPONENTS Core)
+
+if(TARGET p7)
+    target_link_libraries(alog PRIVATE p7)
+    target_compile_definitions(alog PUBLIC ALOG_HAS_P7_LIBRARY)
+endif()
+
+if(Qt5_FOUND OR Qt6_FOUND)
+    target_link_libraries(alog PUBLIC Qt${QT_VERSION_MAJOR}::Core)
+    target_compile_definitions(alog PUBLIC ALOG_HAS_QT_LIBRARY)
+endif()
+
 if(MSVC)
     target_link_options(alog PRIVATE "/ignore:4221")
     set_target_properties(alog PROPERTIES STATIC_LIBRARY_OPTIONS "/ignore:4221")
