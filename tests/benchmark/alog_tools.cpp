@@ -2,6 +2,7 @@
 #include <string>
 #include <optional>
 #include <memory>
+#include <variant>
 #include <alog/tools.h>
 
 
@@ -29,6 +30,56 @@ static void ALog_Tools_int2str_itoa(benchmark::State& state)
 
 BENCHMARK(ALog_Tools_int2str_itoa);
 #endif // !defined(ALOG_MACOSX) && !defined(ALOG_LINUX)
+
+namespace {
+
+struct SomeResult {
+    int a, b, c;
+};
+
+enum ErrorCode {
+    Ok,
+    NotOk
+};
+
+SomeResult someResultProvider(int a, int b, int c, ErrorCode& code)
+{
+    code = Ok;
+    return SomeResult{a, b, c};
+}
+
+std::variant<SomeResult, ErrorCode> someResultProvider(int a, int b, int c)
+{
+    return SomeResult{a, b, c};
+}
+
+} // namespace
+
+static void ALog_Tools_call_with_ref(benchmark::State& state)
+{
+    while (state.KeepRunning()) {
+        ErrorCode code;
+        auto result = someResultProvider(1, 2, 3, code);
+        auto isError = (code != Ok);
+        const auto& result2 = result;
+        (void)result2, (void)isError;
+    }
+}
+
+BENCHMARK(ALog_Tools_call_with_ref);
+
+
+static void ALog_Tools_call_with_variant(benchmark::State& state)
+{
+    while (state.KeepRunning()) {
+        auto result = someResultProvider(1, 2, 3);
+        auto isError = !std::holds_alternative<SomeResult>(result);
+        const auto& result2 = std::get<SomeResult>(result);
+        (void)result2, (void)isError;
+    }
+}
+
+BENCHMARK(ALog_Tools_call_with_variant);
 
 
 static void ALog_Tools_int2str_sprintf(benchmark::State& state)
