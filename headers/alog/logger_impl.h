@@ -6,6 +6,7 @@
 
 namespace ALog {
 
+void alog_breakpoint();
 void alog_abort();
 void alog_exception(const char* msg);
 void alog_exception(const char* msg, size_t sz);
@@ -41,8 +42,6 @@ private:
     void startThread();
     void stopThread();
     void threadFunc();
-    void prepareEasyMultiSink();
-    void addSink(const std::shared_ptr<ISink>& sink, ALog::Severity Severity);
 
 private:
     ALOG_DECLARE_PIMPL

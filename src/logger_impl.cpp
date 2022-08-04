@@ -20,9 +20,14 @@
 
 namespace ALog {
 
-void alog_abort()
+void alog_breakpoint()
 {
     ALOG_STOP_DEBUGGER;
+}
+
+void alog_abort()
+{
+    alog_breakpoint();
     std::abort();
 }
 
