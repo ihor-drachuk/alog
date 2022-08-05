@@ -435,26 +435,24 @@ template <typename T>
 struct is_qt_container : public std::false_type {}; // TODO: Remove?
 
 #ifdef ALOG_HAS_QT_LIBRARY
+template<typename... Args> struct is_container<QCache<Args...>> : public std::true_type { };
+template<typename... Args> struct is_container<QHash<Args...>> : public std::true_type { };
+template<typename... Args> struct is_container<QList<Args...>> : public std::true_type { };
+template<typename... Args> struct is_container<QMap<Args...>> : public std::true_type { };
+template<typename... Args> struct is_container<QMultiHash<Args...>> : public std::true_type { };
+template<typename... Args> struct is_container<QMultiMap<Args...>> : public std::true_type { };
+template<typename... Args> struct is_container<QQueue<Args...>> : public std::true_type { };
+template<typename... Args> struct is_container<QSet<Args...>> : public std::true_type { };
+template<typename... Args> struct is_container<QStack<Args...>> : public std::true_type { };
+template<typename... Args> struct is_container<QVarLengthArray<Args...>> : public std::true_type { };
+template<typename Arg>     struct is_container<QVector<Arg>> : public std::true_type { };
+template<>                 struct is_container<QStringList> : public std::true_type { };
 
-template<typename... Args> struct ALog::Internal::is_container<QCache<Args...>> : public std::true_type { };
-template<typename... Args> struct ALog::Internal::is_container<QHash<Args...>> : public std::true_type { };
-template<typename... Args> struct ALog::Internal::is_container<QList<Args...>> : public std::true_type { };
-template<typename... Args> struct ALog::Internal::is_container<QMap<Args...>> : public std::true_type { };
-template<typename... Args> struct ALog::Internal::is_container<QMultiHash<Args...>> : public std::true_type { };
-template<typename... Args> struct ALog::Internal::is_container<QMultiMap<Args...>> : public std::true_type { };
-template<typename... Args> struct ALog::Internal::is_container<QQueue<Args...>> : public std::true_type { };
-template<typename... Args> struct ALog::Internal::is_container<QSet<Args...>> : public std::true_type { };
-template<typename... Args> struct ALog::Internal::is_container<QStack<Args...>> : public std::true_type { };
-template<typename... Args> struct ALog::Internal::is_container<QVarLengthArray<Args...>> : public std::true_type { };
-template<typename Arg>     struct ALog::Internal::is_container<QVector<Arg>> : public std::true_type { };
-template<>                 struct ALog::Internal::is_container<QStringList> : public std::true_type { };
-
-template<typename... Args> struct ALog::Internal::has_key<QCache<Args...>> : public std::true_type { };
-template<typename... Args> struct ALog::Internal::has_key<QHash<Args...>> : public std::true_type { };
-template<typename... Args> struct ALog::Internal::has_key<QMap<Args...>> : public std::true_type { };
-template<typename... Args> struct ALog::Internal::has_key<QMultiHash<Args...>> : public std::true_type { };
-template<typename... Args> struct ALog::Internal::has_key<QMultiMap<Args...>> : public std::true_type { };
-
+template<typename... Args> struct has_key<QCache<Args...>> : public std::true_type { };
+template<typename... Args> struct has_key<QHash<Args...>> : public std::true_type { };
+template<typename... Args> struct has_key<QMap<Args...>> : public std::true_type { };
+template<typename... Args> struct has_key<QMultiHash<Args...>> : public std::true_type { };
+template<typename... Args> struct has_key<QMultiMap<Args...>> : public std::true_type { };
 #endif // ALOG_HAS_QT_LIBRARY
 
 template <typename T>
