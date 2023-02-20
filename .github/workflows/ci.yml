@@ -68,3 +68,33 @@ jobs:
        cmake -DALOG_CI_SKIP_SORT_TEST=1 -DALOG_ENABLE_TESTS=ON -DALOG_ENABLE_BENCHMARK=ON -DALOG_ENABLE_DEF_SEPARATORS=${{matrix.alog_enable_def_separators}} -DALOG_ENABLE_DEF_AUTO_QUOTES=${{matrix.alog_enable_def_auto_quotes}}  -DALOG_ENABLE_DEBUG=${{matrix.alog_enable_debug}} -DCMAKE_BUILD_TYPE="${{matrix.build_type}}" -G "${{env.GENERATOR}}" -S "${{github.workspace}}/src" -B "${{github.workspace}}/build"
        cmake --build "${{github.workspace}}/build" --config "${{matrix.build_type}}" -j "${{env.CORES}}"
        ctest --rerun-failed --output-on-failure --timeout 60 -C "${{matrix.build_type}}" --test-dir "${{github.workspace}}/build/tests"
+
+  CodeChecker:
+    runs-on: [ubuntu-20.04]
+    steps:
+      - name: "Check out repository"
+        uses: actions/checkout@v2
+
+      # Prepare a build
+      - name: "Prepare build"
+        run: |
+          mkdir -pv Build
+          cd Build
+          cmake -DCMAKE_BUILD_TYPE=Debug -DCMAKE_EXPORT_COMPILE_COMMANDS=ON ..
+
+      # Run the analysis
+      - uses: whisperity/codechecker-analysis-action@v1
+        id: codechecker
+        with:
+          logfile: ${{ github.workspace }}/Build/compile_commands.json
+
+      # Upload the results to the CI.
+      - uses: actions/upload-artifact@v2
+        with:
+          name: "CodeChecker Bug Reports"
+          path: ${{ steps.codechecker.outputs.result-html-dir }}
+
+      # Break the build if there are *ANY* warnings emitted by the analysers.
+      - name: "Break build if CodeChecker reported any findings"
+        if: ${{ steps.codechecker.outputs.warnings == 'true' }}
+        run: exit 1
