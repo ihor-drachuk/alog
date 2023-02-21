@@ -1,0 +1,8 @@
+{
+    "analyze": [
+      "--skip", ".skipfile"
+    ],
+    "parse": [
+      "--skip", ".skipfile"
+    ]
+}
