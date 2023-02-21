@@ -87,6 +87,7 @@ jobs:
         id: codechecker
         with:
           logfile: ${{ github.workspace }}/Build/compile_commands.json
+          config: ${{ github.workspace }}/.codechecker.json
 
       # Upload the results to the CI.
       - uses: actions/upload-artifact@v2
