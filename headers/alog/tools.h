@@ -148,13 +148,13 @@ public:
             size_t newSz = m_sz + sz;
             if (newSz <= sso_limit) {
                 uint8_t* target = m_buf + m_sz;
-                memcpy(target, str, str ? sz : 0); // It's 20x faster, than doing memcpy in `appendString`
+                if (str) memcpy(target, str, sz); // It's 20x faster, than doing memcpy in `appendString`
                 m_sz += sz;
                 m_buf[m_sz] = 0;
                 return target;
             } else {
                 auto target = makeLong(sz);
-                memcpy(target, str, str ? sz : 0);
+                if (str) memcpy(target, str, sz);
                 return target;
             }
         } else {
@@ -163,7 +163,7 @@ public:
             size_t newSz = oldSz + sz;
             m_longBuf->resize(newSz + 1);
             uint8_t* target = m_longBuf->data() + oldSz;
-            memcpy(target, str, str ? sz : 0);
+            if (str) memcpy(target, str, sz);
             *(m_longBuf->data() + newSz) = 0;
             return target;
         }
