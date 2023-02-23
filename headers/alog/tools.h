@@ -401,7 +401,8 @@ public:
 
 public:
     IChain() = default;
-    IChain(const std::initializer_list<ItemPtr>& item) { add(item); }
+    IChain(const std::initializer_list<ItemPtr>& items) { add(items); }
+    virtual ~IChain() = default;
 
     template<typename... Args>
     [[nodiscard]] static ClassPtr create(Args&&... args) { return std::make_shared<Class>(std::forward<Args>(args)...); }
