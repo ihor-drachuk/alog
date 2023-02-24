@@ -1,0 +1,6 @@
+analyzer:
+  - --skip=.skipfile
+  # Allow Rule of Three
+  - --checker-config=clang-tidy:cppcoreguidelines-special-member-functions.AllowMissingMoveFunctions=true
+parse:
+  - --skip=.skipfile
