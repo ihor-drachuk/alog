@@ -63,11 +63,11 @@ class Finally {
 public:
     Finally(Functor f): m_f(f) {}
     Finally(const Finally&) = delete;
-    Finally(Finally&& rhs): m_f(rhs.m_f) { rhs.m_moved = true; }
+    Finally(Finally&& rhs) noexcept : m_f(rhs.m_f) { rhs.m_moved = true; }
     ~Finally() { if (!m_moved) m_f(); }
 
     Finally<Functor>& operator=(const Finally<Functor>&) = delete;
-    Finally<Functor>& operator=(Finally<Functor>&& rhs) {
+    Finally<Functor>& operator=(Finally<Functor>&& rhs) noexcept {
         if (this == &rhs) return *this;
 
         m_f = rhs.m_f;
@@ -101,11 +101,11 @@ public:
         m_longBuf = &cache;
     }
 
-    inline LongSSO(LongSSO&& rhs) {
+    inline LongSSO(LongSSO&& rhs) noexcept {
         *this = std::move(rhs);
     }
 
-    inline LongSSO& operator=(LongSSO&& rhs) {
+    inline LongSSO& operator=(LongSSO&& rhs) noexcept {
         if (this == &rhs) return *this;
 
         if (m_deleteLongBuf)
