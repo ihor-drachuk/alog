@@ -6,6 +6,7 @@ namespace Sinks {
 
 class File : public ISink
 {
+    ALOG_NO_COPY_MOVE(File);
 public:
     File(const char* fileName);
     ~File() override;
