@@ -18,6 +18,13 @@
     template<typename... Args> \
     void createImpl(Args&&... args) { assert(!_impl); _impl = std::make_unique<impl_t>(std::forward<Args>(args)...); }
 
+#define ALOG_NO_COPY_MOVE(classname) \
+    classname(const classname&) = delete; \
+    classname& operator=(const classname&) = delete; \
+    classname(classname&&) = delete; \
+    classname& operator=(classname&&) = delete
+
+
 class QString;
 class QLatin1String;
 class QStringRef;
