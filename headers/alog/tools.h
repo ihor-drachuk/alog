@@ -416,6 +416,8 @@ private:
 template<typename Interface, typename Class>
 class IChain
 {
+    // Whether copy is ok, depends on Class
+    ALOG_NO_COPY_MOVE(IChain);
 public:
     using ItemPtr = std::shared_ptr<Interface>;
     using ClassPtr = std::shared_ptr<Class>;
