@@ -5,6 +5,7 @@ namespace Formatters {
 
 class Default : public IFormatter
 {
+    ALOG_NO_COPY_MOVE(Default);
 public:
     Default();
     ~Default() override;

@@ -10,6 +10,7 @@ namespace Sinks {
 
 class Pipeline : public ISink
 {
+    ALOG_NO_COPY_MOVE(Pipeline);
 public:
     Pipeline();
     ~Pipeline() override;
