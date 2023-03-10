@@ -247,6 +247,8 @@ private:
 template<class T>
 class Singleton
 {
+    // No moving or copying without ref-counting
+    ALOG_NO_COPY_MOVE(Singleton);
 public:
     Singleton() {
         assert(!m_instance);
