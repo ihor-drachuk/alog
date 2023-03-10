@@ -5,6 +5,7 @@
 #include <cstring>
 #include <utility>
 #include <memory>
+#include <stdexcept>
 
 #if defined(_WIN32) || defined(_WIN64)
 #define ALOG_WINDOWS
@@ -203,10 +204,17 @@ public:
 
     template<typename... Args>
     inline void appendFmtString(const char* format, Args&&... args) {
-        size_t sz = snprintf(nullptr, 0, format, std::forward<Args>(args)...);
+        auto sz = snprintf(nullptr, 0, format, std::forward<Args>(args)...);
+        if(sz < 0){
+            appendFmtString("-- ALOG: Failed to format \"%s\" (%s)", format, strerror(errno));
+            return;
+        }; 
         auto target = allocate_copy(sz);
         auto result = snprintf((char*)target, sz+1, format, std::forward<Args>(args)...);
-        assert(result == sz);
+        if(result != sz){
+            // Very unlikely
+            throw std::runtime_error("snprintf did not format to the expected size");
+        }
     }
 
     inline void clear() {
