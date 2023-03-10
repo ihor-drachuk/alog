@@ -316,6 +316,13 @@ public:
         m_created = true;
     }
 
+    SIOS_Entry& operator=(const SIOS_Entry& rhs){
+        m_object = rhs.m_object;
+        m_created = true;
+    }
+
+    ~SIOS_Entry() = default;
+
     const std::shared_ptr<T>& get() {
         assert(m_created);
         renew();
