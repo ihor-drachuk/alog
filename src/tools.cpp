@@ -68,12 +68,12 @@ bool isSeparatorSymbol(char c)
         for (int i = 123; i <= 126; i++)
             isSeparator[i] = true;
 
-        isSeparator[(int)':'] = false;
+        isSeparator[(unsigned char)':'] = false;
 
         isReady = true;
     }
 
-    return isSeparator[(int)c];
+    return isSeparator[(unsigned char)c];
 }
 
 #ifdef ALOG_HAS_QT_LIBRARY
