@@ -8,12 +8,12 @@ namespace ALog {
 
 class QtQmlAdapter : public ALog::Internal::Singleton<QtQmlAdapter>
 {
+    ALOG_NO_COPY_MOVE(QtQmlAdapter);
 #ifdef ALOG_WINDOWS
     friend class ConsoleQt2;
 #endif
 public:
     QtQmlAdapter(bool forwardToNative = false);
-    QtQmlAdapter(const QtQmlAdapter&) = delete;
     ~QtQmlAdapter();
 
 private:

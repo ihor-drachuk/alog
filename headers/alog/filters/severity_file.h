@@ -5,6 +5,7 @@ namespace Filters {
 
 class SeverityFile : public IFilter
 {
+    ALOG_NO_COPY_MOVE(SeverityFile);
 public:
     SeverityFile(::ALog::Severity severity,
                  const std::string& fileName,

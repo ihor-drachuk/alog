@@ -5,6 +5,7 @@ namespace Filters {
 
 class Module : public IFilter
 {
+    ALOG_NO_COPY_MOVE(Module);
 public:
     Module(const char* module, bool pass = true, Mode mode = PassOrReject);
     ~Module();
