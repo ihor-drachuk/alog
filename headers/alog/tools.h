@@ -417,7 +417,11 @@ public:
 
 private:
     bool m_hasValue { false };
-    bool m_value;
+#ifdef __clang_analyzer__ //Make Clang-SA happy
+    bool m_value{};
+#else
+    bool m_value; //This is never used without m_hasValue true
+#endif
 };
 #pragma pack(pop)
 
