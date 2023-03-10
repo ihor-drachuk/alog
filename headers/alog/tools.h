@@ -375,6 +375,8 @@ public:
         m_value = rhs.m_value;
     }
 
+    ~optional_bool() = default;
+
     optional_bool& operator=(const optional_bool& rhs) noexcept {
         if (this != &rhs) {
             m_hasValue = rhs.m_hasValue;
