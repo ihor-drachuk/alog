@@ -363,6 +363,9 @@ const char* currentThreadName();
 
 } // namespace ThreadTools
 
+
+// This implementation is 2 to 3 times faster with O0. And slightly faster with
+// O3, depending on the compiler.
 #pragma pack(push, 1)
 class optional_bool
 {
