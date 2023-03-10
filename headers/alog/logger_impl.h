@@ -13,6 +13,7 @@ void alog_exception(const char* msg, size_t sz);
 
 class Logger
 {
+    ALOG_NO_COPY_MOVE(Logger);
 public:
     enum LoggerMode {
         Synchronous,

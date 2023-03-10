@@ -5,6 +5,7 @@ namespace Filters {
 
 class SeverityModule : public IFilter
 {
+    ALOG_NO_COPY_MOVE(SeverityModule);
 public:
     SeverityModule(::ALog::Severity severity,
                    const char* module,
