@@ -494,7 +494,7 @@ inline ALog::Record&& operator<< (ALog::Record&& record, const std::wstring& val
 template<typename T>
 inline ALog::Record&& operator<< (ALog::Record&& record, const T* value)
 {
-    auto _checkSS = record.updateSkipSeparators(4);
+    [[maybe_unused]] auto _checkSS = record.updateSkipSeparators(4);
     record.appendMessage("(", 1);
     record.appendMessageAL(typeid(T).name());
     record.appendMessage("*)", 2);
@@ -517,7 +517,7 @@ inline ALog::Record&& operator<< (ALog::Record&& record, const void* value)
 
     len = sprintf(str, "0x%p", value);
 
-    auto _checkSS = record.updateSkipSeparators(1);
+    [[maybe_unused]] auto _checkSS = record.updateSkipSeparators(1);
     record.appendMessage(str, len);
     return std::move(record);
 }
