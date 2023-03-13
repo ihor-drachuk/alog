@@ -51,14 +51,13 @@ public:
 
         } else {
             // Add record to queue
-
-            Record throwMe (Record::uninitialized_tag{});
-            bool throwMeValid { false };
+            I::LongSSO<Record::msg_sso_len> message {};
             bool abort { false };
+            bool throwMe { false };
 
             if (record.hasFlags(Record::Flags::Throw)) {
-                throwMe = record;
-                throwMeValid = true;
+                message = record.message;
+                throwMe = true;
             }
 
             if (record.hasFlags(Record::Flags::Abort)) {
@@ -79,8 +78,8 @@ public:
             if (abort)
                 alog_abort();
 
-            if (throwMeValid)
-                alog_exception(throwMe.getMessage(), throwMe.getMessageLen());
+            if (throwMe)
+                alog_exception(message.getString(), message.getStringLen());
         }
     }
 

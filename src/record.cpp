@@ -34,7 +34,7 @@ constexpr int defaultFlags = defaultFlags_Separators + defaultFlags_Quotes;
 namespace ALog {
 
 Record Record::create(Severity severity, int line, const char* file, const char* fileOnly, const char* func) {
-    Record record { uninitialized_tag() };
+    Record record {};
     record.severity = severity;
     record.line = line;
     record.filenameFull = file;
@@ -53,7 +53,7 @@ Record Record::create(Severity severity, int line, const char* file, const char*
 
 Record Record::create(Record::Flags flags)
 {
-    Record record { uninitialized_tag() };
+    Record record {};
     record.flags = (int)flags;
     return record;
 }
@@ -70,19 +70,6 @@ void Record::appendMessage(const wchar_t* msg, size_t len)
     appendMessage(dest.data(), dest.size());
 }
 
-Record::Record()
-{
-    severity = Severity::Minimal;
-    line = 0;
-    filenameFull = nullptr;
-    filenameOnly = nullptr;
-    func = nullptr;
-    threadNum = 0;
-    threadTitle = nullptr;
-    module = nullptr;
-    flags = defaultFlags;
-    skipSeparators = 0;
-}
 
 } // namespace ALog
 
@@ -141,10 +128,10 @@ ALog::Record&& operator<< (ALog::Record&& record, const QJsonArray& value)
 ALog::Record&& operator<< (ALog::Record&& record, const QJsonValue& value)
 {
     if (value.isObject()) {
-        std::move(record) << value.toObject();
+        record = std::move(record) << value.toObject();
 
     } else if (value.isArray()) {
-        std::move(record) << value.toArray();
+        record = std::move(record) << value.toArray();
 
     } else {
         QJsonObject obj;

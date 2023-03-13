@@ -64,6 +64,7 @@ struct Record
         Internal_RestoreSepBckp = 16384,
     };
 
+    // Deprecated: "See inline Record(uninitialized_tag)"
     struct Nothing { };
 
     struct RawData {
@@ -93,7 +94,8 @@ struct Record
     [[nodiscard]] static Record create(Severity severity, int line, const char* file, const char* fileOnly, const char* func);
     [[nodiscard]] static Record create(Flags flags);
 
-    Record();
+    Record() = default;
+    [[deprecated("When setting PODs after creation, the optimizer will set them directly. See https://godbolt.org/z/En8Wb3sqe") ]]
     inline Record(uninitialized_tag) { }
 
     inline void appendMessage(const char* msg, size_t len) { handleSeparators(len ? *msg : 0); message.appendString(msg, len); }
@@ -136,28 +138,28 @@ struct Record
     Record&& quotes() { flagsOn(Flags::AutoQuote); return std::move(*this); }
     Record&& no_quotes() { flagsOn(Flags::NoAutoQuote); return std::move(*this); }
 
-    Severity severity;
-    int line;
-    const char* filenameFull;
-    const char* filenameOnly;
-    const char* func;
-    int threadNum;
-    const char* threadTitle; // Literal ptr
-    const char* module;      // Literal ptr
+    Severity severity {};
+    int line {};
+    const char* filenameFull {};
+    const char* filenameOnly {};
+    const char* func {};
+    int threadNum {};
+    const char* threadTitle {}; // Literal ptr
+    const char* module {};      // Literal ptr
 
-    std::chrono::time_point<std::chrono::steady_clock> startTp;
-    std::chrono::time_point<std::chrono::steady_clock> steadyTp;
-    std::chrono::time_point<std::chrono::system_clock> systemTp;
+    std::chrono::time_point<std::chrono::steady_clock> startTp {};
+    std::chrono::time_point<std::chrono::steady_clock> steadyTp {};
+    std::chrono::time_point<std::chrono::system_clock> systemTp {};
 
-    I::LongSSO<msg_sso_len> message;
+    I::LongSSO<msg_sso_len> message {};
     I::LongSSO<separator_sso_len> separator {" "};
 
 private:
-    int flags;
-    int skipSeparators;
+    int flags{};
+    int skipSeparators{};
 
     I::LongSSO<separator_sso_len> separatorBckp;
-    int flagsBckp;
+    int flagsBckp{};
 
 private:
     inline void handleSeparators(char /*nextSymbol*/) {
