@@ -646,9 +646,9 @@ inline typename std::enable_if_t<std::is_same<T, QPoint>::value, ALog::Record>&&
 
     record.appendMessage("QPoint(");
     record << ALog::Record::Flags::Internal_NoSeparators;
-    std::move(record) << value.x();
+    record = std::move(record) << value.x();
     record.appendMessage(", ");
-    std::move(record) << value.y();
+    record = std::move(record) << value.y();
     record.appendMessage(")");
 
     return std::move(record);
@@ -659,7 +659,7 @@ template<typename T1, typename T2,
          typename std::enable_if<!std::is_same<QPair<T1, T2>, std::pair<T1, T2>>::value>::type* = nullptr>
 inline ALog::Record&& operator<< (ALog::Record&& record, const QPair<T1, T2>& value)
 {
-    std::move(record) << std::pair<T1, T2>{value.first, value.second};
+    record = std::move(record) << std::pair<T1, T2>{value.first, value.second};
     return std::move(record);
 }
 
@@ -699,11 +699,11 @@ inline ALog::Record&& operator<< (ALog::Record&& record, const std::pair<T1, T2>
     record << ALog::Record::Flags::Internal_QuoteLiterals;
 
     record.appendMessage("(");
-    std::move(record) << ALog::Record::SkipSeparator() << value.first;
+    record = std::move(record) << ALog::Record::SkipSeparator() << value.first;
 
     record.updateSkipSeparatorsCF(2);
     record.appendMessage(", ");
-    std::move(record) << value.second;
+    record = std::move(record) << value.second;
 
     record.updateSkipSeparatorsCF(1);
     record.appendMessage(")");
@@ -730,18 +730,18 @@ void logArray(Record& record, size_t sz, Iter begin, Iter end)
     auto it = begin;
 
     record.appendMessage("{Container; Size: ");
-    std::move(record) << Record::SkipSeparator(2) << sz;
+    record = std::move(record) << Record::SkipSeparator(2) << sz;
     record.appendMessage("; Data = ");
 
-    std::move(record) << Record::SkipSeparator(1) << *it++;
+    record = std::move(record) << Record::SkipSeparator(1) << *it++;
 
     while (it != end) {
-        std::move(record) << Record::SkipSeparator(2);
+        record = std::move(record) << Record::SkipSeparator(2);
         record.appendMessage(", ");
-        std::move(record) << *it++;
+        record = std::move(record) << *it++;
     }
 
-    std::move(record) << Record::SkipSeparator(1);
+    record = std::move(record) << Record::SkipSeparator(1);
     record.appendMessage("}");
 }
 
