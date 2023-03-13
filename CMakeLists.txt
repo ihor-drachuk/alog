@@ -23,6 +23,8 @@ endif()
 
 if(Qt5_FOUND OR Qt6_FOUND)
     target_link_libraries(alog PUBLIC Qt${QT_VERSION_MAJOR}::Core)
+
+    set(ALOG_HAS_QT_LIBRARY TRUE)
     target_compile_definitions(alog PUBLIC ALOG_HAS_QT_LIBRARY)
 endif()
 

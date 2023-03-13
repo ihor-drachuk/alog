@@ -630,3 +630,65 @@ TEST(ALog, test_separators_advanced)
     ASSERT_STREQ(records[16].message.getString(), "{Container; Size: 2; Data = {Container; Size: 3; Data = (1, \"1\"), (2, \"2\"), (3, \"3\")}, {Container; Size: 2; Data = (4, \"4\"), (5, \"5\")}}");
 #endif
 }
+
+// -- TEST(ALog, test_enums) context --
+
+#ifdef ALOG_HAS_QT_LIBRARY
+#include <QMetaType>
+#else
+#define Q_NAMESPACE
+#define Q_ENUM_NS(x)
+#endif // ALOG_HAS_QT_LIBRARY
+
+namespace TestNamespace {
+Q_NAMESPACE
+enum class TestEnum {
+    TestValue1 = 1,
+    TestValue2
+};
+Q_ENUM_NS(TestEnum)
+
+enum class RawTestEnum {
+    TestValue1 = 1,
+    TestValue2
+};
+} // namespace TestNamespace
+
+#ifndef ALOG_HAS_QT_LIBRARY
+#undef Q_NAMESPACE
+#undef Q_ENUM_NS
+#endif // !ALOG_HAS_QT_LIBRARY
+
+TEST(ALog, test_enums)
+{
+    std::vector<ALog::Record> records;
+
+    DEFINE_MAIN_ALOGGER;
+    auto sink2 = std::make_shared<ALog::Sinks::Functor2>([&records](const ALog::Buffer&, const ALog::Record& rec){ records.push_back(rec); });
+    ALOGGER_DIRECT->pipeline().sinks().set(sink2);
+    MARK_ALOGGER_READY;
+
+    LOGMD << TestNamespace::TestEnum::TestValue2;
+    LOGMD << static_cast<TestNamespace::TestEnum>(10);
+    LOGMD << TestNamespace::RawTestEnum::TestValue1;
+
+    ALOGGER_DIRECT->flush();
+
+    ASSERT_EQ(records.size(), 3);
+#ifdef ALOG_HAS_QT_LIBRARY
+    ASSERT_STREQ(records[0].message.getString(), "TestEnum(2, TestValue2)");
+    ASSERT_EQ   (records[0].severity,            ALog::Severity::Debug);
+    ASSERT_STREQ(records[1].message.getString(), "TestEnum(10, out-of-range)");
+    ASSERT_EQ   (records[1].severity,            ALog::Severity::Warning);
+    ASSERT_STREQ(records[2].message.getString(), "1");
+    ASSERT_EQ   (records[2].severity,            ALog::Severity::Debug);
+#else
+    ASSERT_STREQ(records[0].message.getString(), "2");
+    ASSERT_STREQ(records[1].message.getString(), "10");
+    ASSERT_STREQ(records[2].message.getString(), "1");
+#endif // ALOG_HAS_QT_LIBRARY
+}
+
+#ifdef ALOG_HAS_QT_LIBRARY
+#include "test3_alog.moc"
+#endif

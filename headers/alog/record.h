@@ -7,6 +7,10 @@
 #include <typeinfo>
 #include <alog/tools.h>
 
+#ifdef ALOG_HAS_QT_LIBRARY
+#include <QMetaEnum>
+#endif // ALOG_HAS_QT_LIBRARY
+
 namespace ALog {
 struct Record;
 namespace Internal {
@@ -541,6 +545,41 @@ inline ALog::Record&& operator<< (ALog::Record&& record, T value) { return (std:
 
 template<typename T, typename std::enable_if_t<std::is_integral<T>::value && std::is_signed<T>::value && sizeof(T) == 8>* = nullptr >
 inline ALog::Record&& operator<< (ALog::Record&& record, T value) { return (std::move(record) << (int64_t)value); }
+
+#ifdef ALOG_HAS_QT_LIBRARY
+template<typename T, typename std::enable_if_t<std::is_enum_v<T> && QtPrivate::IsQEnumHelper<T>::Value>* = nullptr>
+inline ALog::Record&& operator<< (ALog::Record&& record, T value) {
+    const auto metaEnum = QMetaEnum::fromType<T>();
+
+    record.appendMessageAL(metaEnum.enumName());
+    record.appendMessage("(");
+    record = std::move(record) << static_cast<std::underlying_type_t<T>>(value);
+    record.appendMessage(", ");
+
+    const auto valueName = metaEnum.valueToKey(static_cast<int>(value));
+    if (valueName) {
+        record.appendMessageAL(valueName);
+    } else {
+        record.appendMessage("out-of-range");
+
+        if (record.severity < ALog::Severity::Warning)
+            record.severity = ALog::Severity::Warning;
+    }
+
+    record.appendMessage(")");
+    return std::move(record);
+}
+
+template<typename T, typename std::enable_if_t<std::is_enum_v<T> && !QtPrivate::IsQEnumHelper<T>::Value>* = nullptr>
+inline ALog::Record&& operator<< (ALog::Record&& record, T value) {
+    return (std::move(record) << static_cast<std::underlying_type_t<T>>(value));
+}
+#else
+template<typename T, typename std::enable_if_t<std::is_enum_v<T>>* = nullptr>
+inline ALog::Record&& operator<< (ALog::Record&& record, T value) {
+    return (std::move(record) << static_cast<std::underlying_type_t<T>>(value));
+}
+#endif // ALOG_HAS_QT_LIBRARY
 
 ALog::Record&& operator<< (ALog::Record&& record, const ALog::Record::RawData& value);
 
