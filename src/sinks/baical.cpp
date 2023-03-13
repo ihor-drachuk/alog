@@ -2,15 +2,12 @@
 
 #ifdef ALOG_HAS_P7_LIBRARY
 #include <P7_Trace.h>
-#endif
 
 #include <locale>
 #include <codecvt>
 #include <string>
 
 namespace ALog {
-
-#ifdef ALOG_HAS_P7_LIBRARY
 
 static_assert (sizeof(char) == 1, "Unexpected char size!");
 static_assert (sizeof(wchar_t) == 2, "Unexpected wchar_t size!");
@@ -41,7 +38,8 @@ struct StringConv<char> {
     StringConv(const char* value) { convert(value); }
 
     const char* convert(const char* value) {
-        return value;
+        m_buffer = value;
+        return m_buffer;
     }
 
     const char* getBuffer() const { return m_buffer; }
@@ -101,6 +99,7 @@ void SinkBaical::write(const Buffer& /*buffer*/, const Record& record)
                         msg);
 }
 
-#endif // ALOG_HAS_P7_LIBRARY
 
 } // namespace ALog
+
+#endif // ALOG_HAS_P7_LIBRARY

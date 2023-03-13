@@ -46,12 +46,16 @@ void QtQmlAdapter::messageOutput(QtMsgType type, const QMessageLogContext& conte
         case QtCriticalMsg: severity = Severity::Error;   break;
         case QtFatalMsg:    severity = Severity::Fatal;   break;
         default:
-            assert(!"Unexpected type in `messageOutput`!");
+            assert(false && "Unexpected type in `messageOutput`!");
     }
 
     static const char* const emptyString = "";
 
-    auto record = Record::create(severity, context.line, context.file ? context.file : emptyString, context.file ? ALog::Internal::extractFileNameOnly(context.file) : emptyString, context.function ? context.function : emptyString);
+    auto record = Record::create(severity,
+                                 context.line,
+                                 context.file ? context.file : emptyString,
+                                 context.file ? ALog::Internal::extractFileNameOnly(context.file) : emptyString,
+                                 context.function ? context.function : emptyString);
     record.module = context.category;
 
     record.flagsOn(Record::Flags::Flush);

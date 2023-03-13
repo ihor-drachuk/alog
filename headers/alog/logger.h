@@ -3,6 +3,11 @@
 #include <vector>
 #include <alog/logger_impl.h>
 
+// Notes
+// - To disable short macros (LOGW, LOGW_IF, FLUSH, ...) and declare
+//   original only (ALOGW, ALOGW_IF, ALOG_FL_FLUSH, ...) do
+//   #define ALOG_NO_SHORT_MACROS
+
 namespace ALog {
 
 struct MockRecord { };
