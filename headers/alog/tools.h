@@ -144,8 +144,10 @@ public:
     }
 
     inline ~LongSSO() {
-        if (m_deleteLongBuf)
+        if (m_deleteLongBuf){
             delete m_longBuf;
+            m_deleteLongBuf = false; //False positive, but should do no harm
+        }
     }
 
     inline operator bool() const { return getStringLen() != 0; }
