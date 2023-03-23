@@ -258,5 +258,91 @@ static void LongSSO_move_x2(benchmark::State& state)
 
 BENCHMARK(LongSSO_move_x2);
 
+static inline void touchChar(char c) { (void)c; }
+
+static void LoopDirection_bkwd(benchmark::State& state)
+{
+    std::string s(1024, 'a');
+
+    while (state.KeepRunning()) {
+        for (int i = s.size() - 1; i >= 0; i--)
+            touchChar(s.at(i));
+    }
+}
+
+BENCHMARK(LoopDirection_bkwd);
+
+static void LoopDirection_bkwd_rev_it(benchmark::State& state)
+{
+    std::string s(1024, 'a');
+
+    while (state.KeepRunning()) {
+        for (auto it = s.crbegin(), end = s.crend(); it != end; it++)
+            touchChar(*it);
+    }
+}
+
+BENCHMARK(LoopDirection_bkwd_rev_it);
+
+static void LoopDirection_fwd(benchmark::State& state)
+{
+    std::string s(1024, 'a');
+
+    while (state.KeepRunning()) {
+        for (int i = 0; i < s.size(); i++)
+            touchChar(s.at(i));
+    }
+}
+
+BENCHMARK(LoopDirection_fwd);
+
+static void LoopDirection_fwd_s(benchmark::State& state)
+{
+    std::string s(1024, 'a');
+
+    while (state.KeepRunning()) {
+        for (int i = 0, sz = s.size(); i < sz; i++)
+            touchChar(s.at(i));
+    }
+}
+
+BENCHMARK(LoopDirection_fwd_s);
+
+static void LoopDirection_fwd_it(benchmark::State& state)
+{
+    std::string s(1024, 'a');
+
+    while (state.KeepRunning()) {
+        for (auto it = s.cbegin(); it != s.cend(); it++)
+            touchChar(*it);
+    }
+}
+
+BENCHMARK(LoopDirection_fwd_it);
+
+static void LoopDirection_fwd_it_s(benchmark::State& state)
+{
+    std::string s(1024, 'a');
+
+    while (state.KeepRunning()) {
+        for (auto it = s.cbegin(), end = s.cend(); it != end; it++)
+            touchChar(*it);
+    }
+}
+
+BENCHMARK(LoopDirection_fwd_it_s);
+
+static void LoopDirection_foreach(benchmark::State& state)
+{
+    std::string s(1024, 'a');
+
+    while (state.KeepRunning()) {
+        for (const auto& x : s)
+            touchChar(x);
+    }
+}
+
+BENCHMARK(LoopDirection_foreach);
+
 
 BENCHMARK_MAIN();

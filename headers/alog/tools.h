@@ -202,13 +202,13 @@ public:
     template<typename... Args>
     inline void appendFmtString(const char* format, Args&&... args) {
         auto sz = snprintf(nullptr, 0, format, std::forward<Args>(args)...);
-        if(sz < 0){
+        if (sz < 0) {
             appendFmtString("-- ALOG: Failed to format \"%s\" (%s)", format, strerror(errno));
             return;
         }; 
         auto target = allocate_copy(sz);
         auto result = snprintf((char*)target, sz+1, format, std::forward<Args>(args)...);
-        if(result != sz){
+        if (result != sz) {
             // Very unlikely
             throw std::runtime_error("snprintf did not format to the expected size");
         }
@@ -489,10 +489,7 @@ template<typename... Args> struct has_key<QMultiMap<Args...>> : public std::true
 #endif // ALOG_HAS_QT_LIBRARY
 
 template <typename T>
-struct array_size
-{
-    static constexpr size_t size = 0;
-};
+struct array_size { };
 
 template <typename T, size_t N>
 struct array_size<T[N]>

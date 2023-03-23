@@ -1,5 +1,9 @@
 #include <gtest/gtest.h>
 #include <alog/tools.h>
+#include <alog/tools_internal.h>
+#include <vector>
+#include <string>
+#include <cassert>
 
 TEST(ALog_Tools, extractFileNameOnly)
 {
@@ -35,4 +39,42 @@ TEST(ALog_Tools, CombineInt)
     ASSERT_EQ(ALog::I::combineInt(SE::A), 1);
     ASSERT_EQ(ALog::I::combineInt(SE::A, SE::C), 5);
     ASSERT_EQ(ALog::I::combineInt(SE::A, SE::B, SE::C, SE::D), 15);
+}
+
+TEST(ALog_Tools, AnalyzePath)
+{
+    const std::vector<std::string> inputs {
+        "C:\\file.txt",
+        "C:\\dir\\file.txt",
+        "C:\\dir.smth\\file",
+        "/file.txt",
+        "file.txt",
+        "/some.dir/file.txt",
+        "file",
+        "dir/subdir/file.txt",
+        "dir/.txt",
+        ".txt",
+        ""
+    };
+
+    const std::vector<ALog::Internal::FilePathDetails> results {
+        {"C:\\", "file", ".txt"},
+        {"C:\\dir\\", "file", ".txt"},
+        {"C:\\dir.smth\\", "file", ""},
+        {"/", "file", ".txt"},
+        {"", "file", ".txt"},
+        {"/some.dir/", "file", ".txt"},
+        {"", "file", ""},
+        {"dir/subdir/", "file", ".txt"},
+        {"dir/", "", ".txt"},
+        {"", "", ".txt"},
+        {}
+    };
+
+    assert(inputs.size() == results.size());
+
+    for (int i = 0; i < inputs.size(); i++) {
+        const auto actualResult = ALog::Internal::analyzePath(inputs.at(i));
+        ASSERT_EQ(actualResult, results.at(i));
+    }
 }
