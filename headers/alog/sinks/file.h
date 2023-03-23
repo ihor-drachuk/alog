@@ -11,7 +11,7 @@ public:
     File(const char* fileName);
     ~File() override;
 
-    void write(const Buffer& buffer, const Record& record) override;
+    void write(const Buffer& buffer, const Record&) override;
     void flush() override;
 
 private:
