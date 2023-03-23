@@ -1,5 +1,6 @@
 #include <alog/sinks/file.h>
 
+#include <alog/tools_internal.h>
 #include <stdexcept>
 
 namespace ALog {
@@ -7,6 +8,7 @@ namespace Sinks {
 
 File::File(const char* fileName)
 {
+    m_size = Internal::getFileSize(fileName).value_or(0);
     m_handle = fopen(fileName, "ab+");
 
     if (!m_handle)
@@ -23,16 +25,25 @@ void File::flush()
     fflush(m_handle);
 }
 
+size_t File::expectedNewSize(const Buffer& buffer) const
+{
+    return m_size + buffer.size() + 1;
+}
+
 void File::write(const Buffer& buffer, const Record&)
 {
+#ifndef NDEBUG // Is debug
+    const auto expectedSize = expectedNewSize(buffer);
+#endif // !NDEBUG (Is debug)
+
     const auto sz = buffer.size();
 
     m_buffer.resize(sz + 1);
     memcpy(m_buffer.data(), buffer.data(), sz);
+    m_buffer.back() = '\n';
 
-    *(char*)(m_buffer.data() + sz) = '\n';
-
-    fwrite((const char*)m_buffer.data(), 1, m_buffer.size(), m_handle);
+    m_size += fwrite(m_buffer.data(), 1, m_buffer.size(), m_handle); // error not handled
+    assert(m_size == expectedSize);
 }
 
 } // namespace Sinks
