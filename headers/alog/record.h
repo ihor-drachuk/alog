@@ -32,6 +32,7 @@ enum Severity {
     Maximal = Fatal
 };
 
+/* codechecker_false_positive [core.uninitialized.Assign] See https://github.com/llvm/llvm-project/issues/61687 */
 struct Record
 {
     friend inline void onStringQuote1(Record& record, bool literal);
