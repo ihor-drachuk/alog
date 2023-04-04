@@ -59,7 +59,8 @@ Record Record::create(Record::Flags flags)
 }
 
 static std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>,wchar_t>& utf8_utf16_converter() {
-    // TODO: static liveliness assert required
+    static I::StaticCheck sc;
+    assert(sc.value && "utf8_utf16_converter: static data already deleted!");
     static thread_local std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>,wchar_t> converter;
     return converter;
 }
