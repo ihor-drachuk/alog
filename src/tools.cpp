@@ -12,14 +12,6 @@
 namespace ALog {
 namespace Internal {
 
-struct StaticCheck
-{
-    ALOG_NO_COPY_MOVE(StaticCheck);
-    StaticCheck() { value = true; }
-    ~StaticCheck() { value = false; }
-    bool value;
-};
-
 namespace ThreadTools {
 
 int currentThreadId()

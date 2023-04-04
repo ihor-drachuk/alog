@@ -560,6 +560,14 @@ inline T (max)(T a, T b) { return a > b ? a : b; }
 void logJsonData(Record& record, const QString& jsonType, const QString& jsonContent);
 #endif // ALOG_HAS_QT_LIBRARY
 
+struct StaticCheck
+{
+    ALOG_NO_COPY_MOVE(StaticCheck);
+    StaticCheck() { value = true; }
+    ~StaticCheck() { value = false; }
+    bool value;
+};
+
 } // namespace Internal
 } // namespace ALog
 

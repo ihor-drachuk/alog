@@ -37,9 +37,9 @@ struct Record
 {
     friend inline void onStringQuote1(Record& record, bool literal);
     friend inline void onStringQuote2(Record& record);
-    static constexpr size_t msg_sso_len = 79;
     static constexpr size_t separator_sso_len = 8;
 
+    // Deprecated: "See inline Record(uninitialized_tag)"
     struct uninitialized_tag {};
 
     enum class Flags {
@@ -64,9 +64,6 @@ struct Record
         Internal_QuoteLiterals   = 8192,
         Internal_RestoreSepBckp = 16384,
     };
-
-    // Deprecated: "See inline Record(uninitialized_tag)"
-    struct Nothing { };
 
     struct RawData {
         [[nodiscard]] static inline RawData create(const void* ptr, size_t sz) { RawData r; r.ptr = ptr; r.sz = sz; return r; };
@@ -124,6 +121,7 @@ struct Record
     [[nodiscard]] inline auto verifySkipSeparators(int delta = 0) { return I::CreateFinally([this, ss = (I::max)(skipSeparators + delta, 0)](){ assert(ss == skipSeparators); }); }
     #define VERIFY_SKIP_SEPARATORS(record, num) auto _checkSS = record.verifySkipSeparators(num);
 #else
+    struct Nothing { };
     [[nodiscard]] inline Nothing verifySkipSeparators(int = 0) { return {}; }
     #define VERIFY_SKIP_SEPARATORS(record, num)
 #endif
@@ -148,11 +146,11 @@ struct Record
     const char* threadTitle {}; // Literal ptr
     const char* module {};      // Literal ptr
 
-    std::chrono::time_point<std::chrono::steady_clock> startTp {};
-    std::chrono::time_point<std::chrono::steady_clock> steadyTp {};
-    std::chrono::time_point<std::chrono::system_clock> systemTp {};
+    std::chrono::time_point<std::chrono::steady_clock> startTp;
+    std::chrono::time_point<std::chrono::steady_clock> steadyTp;
+    std::chrono::time_point<std::chrono::system_clock> systemTp;
 
-    I::LongSSO<msg_sso_len> message {};
+    I::LongSSO<> message;
     I::LongSSO<separator_sso_len> separator {" "};
 
 private:

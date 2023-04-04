@@ -51,7 +51,7 @@ public:
 
         } else {
             // Add record to queue
-            I::LongSSO<Record::msg_sso_len> message {};
+            I::LongSSO<> message {};
             bool abort { false };
             bool throwMe { false };
 
