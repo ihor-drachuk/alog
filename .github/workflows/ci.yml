@@ -8,7 +8,7 @@ on:
     types: [opened, edited, synchronize]
 
 jobs:
-  build:
+  Build:
     strategy:
       matrix:
         os: [ubuntu-20.04, macos-11, windows-2019]
@@ -73,7 +73,7 @@ jobs:
     runs-on: [ubuntu-20.04]
     steps:
       - name: "Check out repository"
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
       # Prepare a build
       - name: "Prepare build"
@@ -90,7 +90,7 @@ jobs:
           config: ${{ github.workspace }}/.codechecker.yml
 
       # Upload the results to the CI.
-      - uses: actions/upload-artifact@v2
+      - uses: actions/upload-artifact@v3
         with:
           name: "CodeChecker Bug Reports"
           path: ${{ steps.codechecker.outputs.result-html-dir }}
@@ -99,3 +99,13 @@ jobs:
       - name: "Break build if CodeChecker reported any findings"
         if: ${{ steps.codechecker.outputs.warnings == 'true' }}
         run: exit 1
+
+  Done:
+    needs: [Build, CodeChecker]
+    runs-on: [ubuntu-20.04]
+    steps:
+    - name: "Done"
+      shell: bash
+      run: |
+       echo "Done"
+       exit 0
