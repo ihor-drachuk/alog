@@ -4,6 +4,8 @@ on:
   push:
     branches:
       - '**'
+      - '!wip**'
+      - '!**wip'
   pull_request:
     types: [opened, edited, synchronize]
 
