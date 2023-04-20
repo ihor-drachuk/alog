@@ -2,7 +2,11 @@
 #include <sys/stat.h>
 
 #ifdef ALOG_WINDOWS
-#define stat64 _stat64
+    #define statX _stat64
+#elif ALOG_LINUX
+    #define statX stat64
+#elif ALOG_MACOSX
+    #define statX stat
 #endif // ALOG_WINDOWS
 
 namespace ALog {
@@ -10,9 +14,9 @@ namespace Internal {
 
 std::optional<std::chrono::system_clock::time_point> getFileCreationTime(const char* fileName)
 {
-    struct stat64 fileInfo;
+    struct statX fileInfo;
 
-    if (auto error = stat64(fileName, &fileInfo); error)
+    if (auto error = statX(fileName, &fileInfo); error)
         return {};
 
     return std::chrono::system_clock::from_time_t(fileInfo.st_ctime);
@@ -20,9 +24,9 @@ std::optional<std::chrono::system_clock::time_point> getFileCreationTime(const c
 
 std::optional<size_t> getFileSize(const char* fileName)
 {
-    struct stat64 fileInfo;
+    struct statX fileInfo;
 
-    if (auto error = stat64(fileName, &fileInfo); error)
+    if (auto error = statX(fileName, &fileInfo); error)
         return {};
 
     return fileInfo.st_size;
