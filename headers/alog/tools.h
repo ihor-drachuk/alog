@@ -7,10 +7,6 @@
 #include <memory>
 #include <stdexcept>
 
-#if defined(_WIN32) || defined(_WIN64)
-#define ALOG_WINDOWS
-#endif
-
 #define ALOG_DECLARE_PIMPL  \
     struct impl_t; \
     std::unique_ptr<impl_t> _impl; \
@@ -24,7 +20,6 @@
     classname& operator=(const classname&) = delete; \
     classname(classname&&) = delete; \
     classname& operator=(classname&&) = delete
-
 
 class QString;
 class QLatin1String;
