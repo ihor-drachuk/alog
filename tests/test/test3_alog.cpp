@@ -7,6 +7,7 @@
 #include <condition_variable>
 #include <chrono>
 #include <numeric>
+#include <regex>
 
 #include <string>
 #include <vector>
@@ -19,6 +20,7 @@
 
 #include <alog/all.h>
 
+namespace {
 
 template<typename T,
          typename std::enable_if<std::is_floating_point<T>::value, int>::type = 0>
@@ -26,6 +28,27 @@ bool floatsEquality(T a, T b)
 {
     return ((a - b) <= std::numeric_limits<T>::epsilon());
 }
+
+std::string escapeRegex(const std::string& str)
+{
+    return std::regex_replace(str, std::regex(R"([-[\]{}()*+?.,\^$|#\s])"), R"(\$&)");
+}
+
+bool regexMatch(const std::string& str, const std::string& regex)
+{
+    return std::regex_match(str, std::regex(regex));
+}
+
+std::string stringReplace(const std::string& str, const std::string& from, const std::string& to)
+{
+    if (auto offset = str.find(from); offset != std::string::npos) {
+        return std::string(str).replace(offset, from.size(), to);
+    } else {
+        return str;
+    }
+}
+
+} // namespace
 
 
 TEST(ALog, test0)
@@ -374,11 +397,14 @@ TEST(ALog, test_defaultFormatter)
     record.startTp = record.steadyTp - std::chrono::milliseconds(14);
     auto str1 = formatter.format(record);
 
-    std::string str2;
-    str2.resize(str1.size());
-    memcpy(str2.data(), str1.data(), str1.size());
+    std::string recordedLog;
+    recordedLog.resize(str1.size());
+    memcpy(recordedLog.data(), str1.data(), str1.size());
 
-    ASSERT_EQ(str2, "[    0.014] T#0  [Info    ] [::TestBody:373]  Test");
+    const auto reference1 = stringReplace(
+                                escapeRegex("[    0.014] T#0  [Info    ] [::TestBody:NNNN]  Test"),
+                                "NNNN", R"(\d+)");
+    ASSERT_TRUE(regexMatch(recordedLog, reference1));
 
     // #2
     record = _ALOG_RECORD(ALog::Severity::Info) << "Test";
@@ -386,9 +412,13 @@ TEST(ALog, test_defaultFormatter)
     record.threadTitle = "Worker";
     str1 = formatter.format(record);
 
-    str2.resize(str1.size());
-    memcpy(str2.data(), str1.data(), str1.size());
-    ASSERT_EQ(str2, "[    0.014] T#0  (Worker) [Info    ] [::TestBody:384]  Test");
+    recordedLog.resize(str1.size());
+    memcpy(recordedLog.data(), str1.data(), str1.size());
+
+    const auto reference2 = stringReplace(
+                                escapeRegex("[    0.014] T#0  (Worker) [Info    ] [::TestBody:NNNN]  Test"),
+                                "NNNN", R"(\d+)");
+    ASSERT_TRUE(regexMatch(recordedLog, reference2));
 
     // #3
     record = _ALOG_RECORD(ALog::Severity::Info) << "Test";
@@ -396,9 +426,13 @@ TEST(ALog, test_defaultFormatter)
     record.module = "Module";
     str1 = formatter.format(record);
 
-    str2.resize(str1.size());
-    memcpy(str2.data(), str1.data(), str1.size());
-    ASSERT_EQ(str2, "[    0.014] T#0  [Info    ] [Module               ] [::TestBody:394]  Test");
+    recordedLog.resize(str1.size());
+    memcpy(recordedLog.data(), str1.data(), str1.size());
+
+    const auto reference3 = stringReplace(
+                                escapeRegex("[    0.014] T#0  [Info    ] [Module               ] [::TestBody:NNNN]  Test"),
+                                "NNNN", R"(\d+)");
+    ASSERT_TRUE(regexMatch(recordedLog, reference3));
 
     // #4
     record = _ALOG_RECORD(ALog::Severity::Info) << "Test";
@@ -407,17 +441,21 @@ TEST(ALog, test_defaultFormatter)
     record.module = "Module";
     str1 = formatter.format(record);
 
-    str2.resize(str1.size());
-    memcpy(str2.data(), str1.data(), str1.size());
-    ASSERT_EQ(str2, "[   13.014] T#0  (Worker) [Info    ] [Module               ] [::TestBody:404]  Test");
+    recordedLog.resize(str1.size());
+    memcpy(recordedLog.data(), str1.data(), str1.size());
+
+    const auto reference4 = stringReplace(
+                                escapeRegex("[   13.014] T#0  (Worker) [Info    ] [Module               ] [::TestBody:NNNN]  Test"),
+                                "NNNN", R"(\d+)");
+    ASSERT_TRUE(regexMatch(recordedLog, reference4));
 
     // #5
     record.flagsOn(ALog::Record::Flags::Abort);
     str1 = formatter.format(record);
 
-    str2.resize(str1.size());
-    memcpy(str2.data(), str1.data(), str1.size());
-    ASSERT_NE(strstr(str2.data(), "test3_alog.cpp"), nullptr);
+    recordedLog.resize(str1.size());
+    memcpy(recordedLog.data(), str1.data(), str1.size());
+    ASSERT_NE(strstr(recordedLog.data(), "test3_alog.cpp"), nullptr);
 }
 
 TEST(ALog, test_defaultFormatterLate)
