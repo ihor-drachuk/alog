@@ -7,6 +7,7 @@
 #include <condition_variable>
 #include <chrono>
 #include <numeric>
+#include <filesystem>
 #include <regex>
 
 #include <string>
@@ -725,6 +726,195 @@ TEST(ALog, test_enums)
     ASSERT_STREQ(records[1].message.getString(), "10");
     ASSERT_STREQ(records[2].message.getString(), "1");
 #endif // ALOG_HAS_QT_LIBRARY
+}
+
+// -- --
+
+
+TEST(ALog, test_sink_file_rotated)
+{
+    using Clock = std::chrono::system_clock;
+
+    struct FileInfo {
+        std::string name;
+        size_t size;
+        std::string content;
+
+        bool operator< (const FileInfo& rhs) const {
+            if (name.size() < rhs.name.size())
+                return true;
+
+            return name < rhs.name;
+        }
+    };
+
+    auto fetchFiles = [](const std::string& path){
+        std::vector<FileInfo> result;
+
+        for (const auto& x : std::filesystem::directory_iterator(path)) {
+            FileInfo info;
+            info.name = x.path().filename().string();
+            info.size = x.file_size();
+
+            FILE* f = fopen(x.path().string().c_str(), "r");
+            assert(f);
+            info.content.resize(info.size);
+            const auto rd = fread(info.content.data(), 1, info.content.size(), f);
+            assert(rd == info.size);
+            fclose(f);
+
+            result.push_back(std::move(info));
+        }
+
+        std::sort(result.begin(), result.end());
+
+        return result;
+    };
+
+    // Prepare sandbox
+    const std::string sandboxFolder = "alog-test-" + std::to_string(Clock::now().time_since_epoch().count());
+    const auto sandboxPath = std::filesystem::path(sandboxFolder + "/fn").remove_filename();
+    const bool folderAlreadyExists = std::filesystem::exists(sandboxPath);
+    ASSERT_FALSE(folderAlreadyExists);
+
+    std::filesystem::create_directory(sandboxPath); // throws
+    const auto _undo_create_directory = ALog::Internal::CreateFinally([sandboxPath](){ std::filesystem::remove_all(sandboxPath); });
+
+    // Initial test
+    {
+        {
+            DEFINE_MAIN_ALOGGER;
+            ALOGGER_DIRECT->setMode(ALog::Logger::Synchronous);
+            ALOGGER_DIRECT->pipeline().sinks().set(std::make_shared<ALog::Sinks::FileRotated>(sandboxFolder + "/application.log", 12, std::optional<size_t>{}, 4));
+            ALOGGER_DIRECT->pipeline().formatter() = std::make_shared<ALog::Formatters::Minimal>();
+            ALOGGER_DIRECT.markReady();
+            DEFINE_ALOGGER_MODULE(ALogTest);
+            LOGI << "Some";
+        }
+
+        {
+            DEFINE_MAIN_ALOGGER;
+            ALOGGER_DIRECT->setMode(ALog::Logger::Synchronous);
+            ALOGGER_DIRECT->pipeline().sinks().set(std::make_shared<ALog::Sinks::FileRotated>(sandboxFolder + "/application.log", 12, std::optional<size_t>{}, 4));
+            ALOGGER_DIRECT->pipeline().formatter() = std::make_shared<ALog::Formatters::Minimal>();
+            ALOGGER_DIRECT.markReady();
+            DEFINE_ALOGGER_MODULE(ALogTest);
+            LOGI << " log";
+        }
+
+        auto files = fetchFiles(sandboxFolder);
+
+        ASSERT_EQ(files.size(), 1);
+        ASSERT_EQ(files[0].name, "application.log");
+        ASSERT_EQ(files[0].content, "Some\n log\n");
+    }
+
+    // Size rotation test
+    {
+        {
+            DEFINE_MAIN_ALOGGER;
+            ALOGGER_DIRECT->setMode(ALog::Logger::Synchronous);
+            ALOGGER_DIRECT->pipeline().sinks().set(std::make_shared<ALog::Sinks::FileRotated>(sandboxFolder + "/application.log", 12, std::optional<size_t>{}, 4));
+            ALOGGER_DIRECT->pipeline().formatter() = std::make_shared<ALog::Formatters::Minimal>();
+            ALOGGER_DIRECT.markReady();
+            DEFINE_ALOGGER_MODULE(ALogTest);
+            LOGI << "Some log2";
+        }
+
+        auto files = fetchFiles(sandboxFolder);
+
+        ASSERT_EQ(files.size(), 2);
+        ASSERT_EQ(files[1].name, "application.log.2");
+        ASSERT_EQ(files[1].content, "Some\n log\n");
+
+        ASSERT_EQ(files[0].name, "application.log");
+        ASSERT_EQ(files[0].content, "Some log2\n");
+    }
+
+    // Size rotation test #2 + limit test
+    {
+        {
+            DEFINE_MAIN_ALOGGER;
+            ALOGGER_DIRECT->setMode(ALog::Logger::Synchronous);
+            ALOGGER_DIRECT->pipeline().sinks().set(std::make_shared<ALog::Sinks::FileRotated>(sandboxFolder + "/application.log", 12, std::optional<size_t>{}, 4));
+            ALOGGER_DIRECT->pipeline().formatter() = std::make_shared<ALog::Formatters::Minimal>();
+            ALOGGER_DIRECT.markReady();
+            DEFINE_ALOGGER_MODULE(ALogTest);
+            LOGI << "Some log3";
+        }
+
+        auto files = fetchFiles(sandboxFolder);
+
+        ASSERT_EQ(files.size(), 3);
+        ASSERT_EQ(files[2].name, "application.log.3");
+        ASSERT_EQ(files[2].content, "Some\n log\n");
+
+        ASSERT_EQ(files[1].name, "application.log.2");
+        ASSERT_EQ(files[1].content, "Some log2\n");
+
+        ASSERT_EQ(files[0].name, "application.log");
+        ASSERT_EQ(files[0].content, "Some log3\n");
+    }
+
+    {
+        {
+            DEFINE_MAIN_ALOGGER;
+            ALOGGER_DIRECT->setMode(ALog::Logger::Synchronous);
+            ALOGGER_DIRECT->pipeline().sinks().set(std::make_shared<ALog::Sinks::FileRotated>(sandboxFolder + "/application.log", 12, std::optional<size_t>{}, 4));
+            ALOGGER_DIRECT->pipeline().formatter() = std::make_shared<ALog::Formatters::Minimal>();
+            ALOGGER_DIRECT.markReady();
+            DEFINE_ALOGGER_MODULE(ALogTest);
+            LOGI << "Some log4";
+            LOGI << "Some log5";
+        }
+
+        auto files = fetchFiles(sandboxFolder);
+
+        ASSERT_EQ(files.size(), 4);
+        ASSERT_EQ(files[3].name, "application.log.4");
+        ASSERT_EQ(files[3].content, "Some log2\n");
+
+        ASSERT_EQ(files[2].name, "application.log.3");
+        ASSERT_EQ(files[2].content, "Some log3\n");
+
+        ASSERT_EQ(files[1].name, "application.log.2");
+        ASSERT_EQ(files[1].content, "Some log4\n");
+
+        ASSERT_EQ(files[0].name, "application.log");
+        ASSERT_EQ(files[0].content, "Some log5\n");
+    }
+
+    // Redundant files count limit test (on start)
+    {
+        for (int i = 5; i < 10; i++) {
+            FILE* f = fopen((sandboxFolder + "/application.log." + std::to_string(i)).c_str(), "w");
+            fclose(f);
+        }
+
+        {
+            DEFINE_MAIN_ALOGGER;
+            ALOGGER_DIRECT->setMode(ALog::Logger::Asynchronous);
+            ALOGGER_DIRECT->pipeline().sinks().set(std::make_shared<ALog::Sinks::FileRotated>(sandboxFolder + "/application.log", 12, std::optional<size_t>{}, 4));
+            ALOGGER_DIRECT->pipeline().formatter() = std::make_shared<ALog::Formatters::Minimal>();
+            ALOGGER_DIRECT.markReady();
+            DEFINE_ALOGGER_MODULE(ALogTest);
+        }
+
+        auto files = fetchFiles(sandboxFolder);
+
+        ASSERT_EQ(files.size(), 4);
+        ASSERT_EQ(files[3].name, "application.log.4");
+        ASSERT_EQ(files[3].content, "Some log2\n");
+
+        ASSERT_EQ(files[2].name, "application.log.3");
+        ASSERT_EQ(files[2].content, "Some log3\n");
+
+        ASSERT_EQ(files[1].name, "application.log.2");
+        ASSERT_EQ(files[1].content, "Some log4\n");
+
+        ASSERT_EQ(files[0].name, "application.log");
+        ASSERT_EQ(files[0].content, "Some log5\n");
+    }
 }
 
 #ifdef ALOG_HAS_QT_LIBRARY
