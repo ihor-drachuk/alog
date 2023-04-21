@@ -6,6 +6,7 @@
 #include <QTextStream>
 
 namespace ALog {
+namespace Sinks {
 
 struct ConsoleQt::impl_t
 {
@@ -51,6 +52,7 @@ void ConsoleQt::write(const Buffer& buffer, const Record&)
     impl().stream->flush();
 }
 
+} // namespace Sinks
 } // namespace ALog
 
 #endif // ALOG_HAS_QT_LIBRARY
