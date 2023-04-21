@@ -5,6 +5,7 @@
 class QTextStream;
 
 namespace ALog {
+namespace Sinks {
 
 #ifdef ALOG_WINDOWS
 
@@ -30,4 +31,5 @@ using ConsoleQt = ::ALog::Sinks::Console;
 
 #endif // ALOG_WINDOWS
 
+} // namespace Sinks
 } // namespace ALog

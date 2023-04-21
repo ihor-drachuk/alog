@@ -2,6 +2,7 @@
 #include <alog/record.h>
 
 namespace ALog {
+namespace Sinks {
 
 #ifdef ALOG_HAS_P7_LIBRARY
 
@@ -21,4 +22,5 @@ private:
 
 #endif // ALOG_HAS_P7_LIBRARY
 
+} // namespace Sinks
 } // namespace ALog

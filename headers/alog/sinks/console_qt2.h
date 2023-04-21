@@ -3,6 +3,7 @@
 #include <alog/sinks/console.h>
 
 namespace ALog {
+namespace Sinks {
 
 #ifdef ALOG_WINDOWS
 
@@ -23,4 +24,5 @@ using ConsoleQt2 = ALog::Sinks::Console;
 
 #endif // ALOG_WINDOWS
 
+} // namespace Sinks
 } // namespace ALog

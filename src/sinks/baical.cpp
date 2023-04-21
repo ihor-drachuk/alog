@@ -8,6 +8,7 @@
 #include <string>
 
 namespace ALog {
+namespace Sinks {
 
 static_assert (sizeof(char) == 1, "Unexpected char size!");
 static_assert (sizeof(wchar_t) == 2, "Unexpected wchar_t size!");
@@ -100,6 +101,7 @@ void SinkBaical::write(const Buffer& /*buffer*/, const Record& record)
 }
 
 
+} // namespace Sinks
 } // namespace ALog
 
 #endif // ALOG_HAS_P7_LIBRARY

@@ -7,6 +7,7 @@
 #include <alog/adapters/qt_qml_adapter.h>
 
 namespace ALog {
+namespace Sinks {
 
 void ConsoleQt2::write(const Buffer& buffer, const Record& record)
 {
@@ -56,6 +57,7 @@ void ConsoleQt2::write(const Buffer& buffer, const Record& record)
     }
 }
 
+} // namespace Sinks
 } // namespace ALog
 
 #endif // ALOG_HAS_QT_LIBRARY
