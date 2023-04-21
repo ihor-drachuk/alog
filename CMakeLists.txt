@@ -64,7 +64,7 @@ elseif(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
 elseif(UNIX)
     set(ALOG_LINUX TRUE)
     target_compile_definitions(alog PUBLIC ALOG_LINUX=1)
-    target_link_libraries(alog PRIVATE pthread)
+    target_link_libraries(alog PRIVATE pthread -lstdc++fs)
 endif()
 
 add_subdirectory(tests)

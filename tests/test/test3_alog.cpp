@@ -7,7 +7,6 @@
 #include <condition_variable>
 #include <chrono>
 #include <numeric>
-#include <filesystem>
 #include <regex>
 
 #include <string>
@@ -19,6 +18,7 @@
 #include <unordered_map>
 #include <utility>
 
+#include <alog/tools_filesystem.h>
 #include <alog/all.h>
 
 namespace {
@@ -754,7 +754,7 @@ TEST(ALog, test_sink_file_rotated)
         for (const auto& x : std::filesystem::directory_iterator(path)) {
             FileInfo info;
             info.name = x.path().filename().string();
-            info.size = x.file_size();
+            info.size = fsSize(x);
 
             FILE* f = fopen(x.path().string().c_str(), "r");
             assert(f);
