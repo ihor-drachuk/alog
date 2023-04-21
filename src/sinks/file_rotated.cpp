@@ -2,8 +2,8 @@
 
 #include <alog/sinks/file.h>
 #include <alog/tools_internal.h>
+#include <alog/tools_filesystem.h>
 
-#include <filesystem>
 #include <stdexcept>
 #include <regex>
 #include <unordered_set>
@@ -78,8 +78,11 @@ FileRotated::FileRotated(const std::string& fileName,
     if (impl().maxFilesCount.value_or(1) < 1)
         throw std::runtime_error("Invalid 'maxFilesCount' provided!");
 
-    if (!std::filesystem::directory_entry(impl().filePathDetails.path).exists())
+    if (!fsExists(std::filesystem::directory_entry(impl().filePathDetails.path)) ||
+        !fsIsDirectory(std::filesystem::directory_entry(impl().filePathDetails.path)))
+    {
         throw std::runtime_error("No such directory!");
+    }
 
     // Find all matching logs
     const auto logsFileNameBase = impl().filePathDetails.baseName + impl().filePathDetails.extension;
@@ -87,7 +90,7 @@ FileRotated::FileRotated(const std::string& fileName,
     std::regex logFileRegex ("^" + fileNameEscaped + R"((\.\d+)?$)");
 
     for (const auto& item : std::filesystem::directory_iterator(impl().filePathDetails.path)) {
-        if (item.is_directory()) continue;
+        if (fsIsDirectory(item)) continue;
 
         const auto itemFn = item.path().filename().u8string();
         std::smatch itemFnMatch;
@@ -98,7 +101,7 @@ FileRotated::FileRotated(const std::string& fileName,
         context.path = item;
         if (itemFnMatch[1].matched)
             context.currentRotNo = std::stoul(itemFnMatch[1].str().substr(1)); // throws
-        context.currentSize = item.file_size();
+        context.currentSize = fsSize(item);
         context.creationTime = Internal::getFileCreationTime(item.path().u8string().c_str()).value(); // throws
 
         impl().files.push_back(std::move(context));
