@@ -10,9 +10,10 @@ class FileRotated : public ISink
 {
 public:
     FileRotated(const std::string& fileName,
-                std::optional<size_t> maxFileSize,
-                std::optional<size_t> maxFileAge, // days
-                std::optional<size_t> maxFilesCount); // throws
+                bool createPath = false,
+                std::optional<size_t> maxFileSize /* bytes */ = {},
+                std::optional<size_t> maxFileAge /* days */ = {},
+                std::optional<size_t> maxFilesCount = {});  // throws
     ~FileRotated() override;
 
     void write(const Buffer& buffer, const Record& record) override;

@@ -57,6 +57,7 @@ struct FileRotated::impl_t
 };
 
 FileRotated::FileRotated(const std::string& fileName,
+                         bool createPath,
                          std::optional<size_t> maxFileSize,
                          std::optional<size_t> maxFileAge,
                          std::optional<size_t> maxFilesCount)
@@ -81,7 +82,11 @@ FileRotated::FileRotated(const std::string& fileName,
     if (!fsExists(std::filesystem::directory_entry(impl().filePathDetails.path)) ||
         !fsIsDirectory(std::filesystem::directory_entry(impl().filePathDetails.path)))
     {
-        throw std::runtime_error("No such directory!");
+        if (createPath) {
+            std::filesystem::create_directories(impl().filePathDetails.path); // throws
+        } else {
+            throw std::runtime_error("No such directory!");
+        }
     }
 
     // Find all matching logs
