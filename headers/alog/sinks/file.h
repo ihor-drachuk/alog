@@ -8,7 +8,7 @@ class File : public ISink
 {
     ALOG_NO_COPY_MOVE(File);
 public:
-    File(const char* fileName);
+    File(const char* fileName, bool createPath = false); // throws
     ~File() override;
 
     void write(const Buffer& buffer, const Record&) override;

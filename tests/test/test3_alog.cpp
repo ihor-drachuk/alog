@@ -733,6 +733,7 @@ TEST(ALog, test_enums)
 
 TEST(ALog, test_sink_file_rotated)
 {
+    // Tools
     using Clock = std::chrono::system_clock;
 
     struct FileInfo {
@@ -771,6 +772,10 @@ TEST(ALog, test_sink_file_rotated)
         return result;
     };
 
+    auto createFileRotated = [](const std::string& fileName){
+        return std::make_shared<ALog::Sinks::FileRotated>(fileName, false, 12, std::optional<size_t>{}, 4);
+    };
+
     // Prepare sandbox
     const std::string sandboxFolder = "alog-test-" + std::to_string(Clock::now().time_since_epoch().count());
     const auto sandboxPath = std::filesystem::path(sandboxFolder + "/fn").remove_filename();
@@ -785,7 +790,7 @@ TEST(ALog, test_sink_file_rotated)
         {
             DEFINE_MAIN_ALOGGER;
             ALOGGER_DIRECT->setMode(ALog::Logger::Synchronous);
-            ALOGGER_DIRECT->pipeline().sinks().set(std::make_shared<ALog::Sinks::FileRotated>(sandboxFolder + "/application.log", 12, std::optional<size_t>{}, 4));
+            ALOGGER_DIRECT->pipeline().sinks().set(createFileRotated(sandboxFolder + "/application.log"));
             ALOGGER_DIRECT->pipeline().formatter() = std::make_shared<ALog::Formatters::Minimal>();
             ALOGGER_DIRECT.markReady();
             DEFINE_ALOGGER_MODULE(ALogTest);
@@ -795,7 +800,7 @@ TEST(ALog, test_sink_file_rotated)
         {
             DEFINE_MAIN_ALOGGER;
             ALOGGER_DIRECT->setMode(ALog::Logger::Synchronous);
-            ALOGGER_DIRECT->pipeline().sinks().set(std::make_shared<ALog::Sinks::FileRotated>(sandboxFolder + "/application.log", 12, std::optional<size_t>{}, 4));
+            ALOGGER_DIRECT->pipeline().sinks().set(createFileRotated(sandboxFolder + "/application.log"));
             ALOGGER_DIRECT->pipeline().formatter() = std::make_shared<ALog::Formatters::Minimal>();
             ALOGGER_DIRECT.markReady();
             DEFINE_ALOGGER_MODULE(ALogTest);
@@ -814,7 +819,7 @@ TEST(ALog, test_sink_file_rotated)
         {
             DEFINE_MAIN_ALOGGER;
             ALOGGER_DIRECT->setMode(ALog::Logger::Synchronous);
-            ALOGGER_DIRECT->pipeline().sinks().set(std::make_shared<ALog::Sinks::FileRotated>(sandboxFolder + "/application.log", 12, std::optional<size_t>{}, 4));
+            ALOGGER_DIRECT->pipeline().sinks().set(createFileRotated(sandboxFolder + "/application.log"));
             ALOGGER_DIRECT->pipeline().formatter() = std::make_shared<ALog::Formatters::Minimal>();
             ALOGGER_DIRECT.markReady();
             DEFINE_ALOGGER_MODULE(ALogTest);
@@ -836,7 +841,7 @@ TEST(ALog, test_sink_file_rotated)
         {
             DEFINE_MAIN_ALOGGER;
             ALOGGER_DIRECT->setMode(ALog::Logger::Synchronous);
-            ALOGGER_DIRECT->pipeline().sinks().set(std::make_shared<ALog::Sinks::FileRotated>(sandboxFolder + "/application.log", 12, std::optional<size_t>{}, 4));
+            ALOGGER_DIRECT->pipeline().sinks().set(createFileRotated(sandboxFolder + "/application.log"));
             ALOGGER_DIRECT->pipeline().formatter() = std::make_shared<ALog::Formatters::Minimal>();
             ALOGGER_DIRECT.markReady();
             DEFINE_ALOGGER_MODULE(ALogTest);
@@ -860,7 +865,7 @@ TEST(ALog, test_sink_file_rotated)
         {
             DEFINE_MAIN_ALOGGER;
             ALOGGER_DIRECT->setMode(ALog::Logger::Synchronous);
-            ALOGGER_DIRECT->pipeline().sinks().set(std::make_shared<ALog::Sinks::FileRotated>(sandboxFolder + "/application.log", 12, std::optional<size_t>{}, 4));
+            ALOGGER_DIRECT->pipeline().sinks().set(createFileRotated(sandboxFolder + "/application.log"));
             ALOGGER_DIRECT->pipeline().formatter() = std::make_shared<ALog::Formatters::Minimal>();
             ALOGGER_DIRECT.markReady();
             DEFINE_ALOGGER_MODULE(ALogTest);
@@ -894,7 +899,7 @@ TEST(ALog, test_sink_file_rotated)
         {
             DEFINE_MAIN_ALOGGER;
             ALOGGER_DIRECT->setMode(ALog::Logger::Asynchronous);
-            ALOGGER_DIRECT->pipeline().sinks().set(std::make_shared<ALog::Sinks::FileRotated>(sandboxFolder + "/application.log", 12, std::optional<size_t>{}, 4));
+            ALOGGER_DIRECT->pipeline().sinks().set(createFileRotated(sandboxFolder + "/application.log"));
             ALOGGER_DIRECT->pipeline().formatter() = std::make_shared<ALog::Formatters::Minimal>();
             ALOGGER_DIRECT.markReady();
             DEFINE_ALOGGER_MODULE(ALogTest);

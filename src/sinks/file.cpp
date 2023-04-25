@@ -1,13 +1,20 @@
 #include <alog/sinks/file.h>
 
 #include <alog/tools_internal.h>
+#include <alog/tools_filesystem.h>
 #include <stdexcept>
+#include <cassert>
 
 namespace ALog {
 namespace Sinks {
 
-File::File(const char* fileName)
+File::File(const char* fileName, bool createPath)
 {
+    assert(std::filesystem::path(fileName).has_filename());
+
+    if (createPath)
+        std::filesystem::create_directories(std::filesystem::path(fileName).remove_filename()); // throws
+
     m_size = Internal::getFileSize(fileName).value_or(0);
     m_handle = fopen(fileName, "ab+");
 
