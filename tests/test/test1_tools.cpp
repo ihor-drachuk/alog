@@ -1,9 +1,12 @@
 #include <gtest/gtest.h>
 #include <alog/tools.h>
 #include <alog/tools_internal.h>
+#include <alog/tools_jeaiii_to_text.h>
 #include <vector>
 #include <string>
 #include <cassert>
+#include <numeric>
+#include <sstream>
 
 TEST(ALog_Tools, extractFileNameOnly)
 {
@@ -77,4 +80,44 @@ TEST(ALog_Tools, AnalyzePath)
         const auto actualResult = ALog::Internal::analyzePath(inputs.at(i));
         ASSERT_EQ(actualResult, results.at(i));
     }
+}
+
+TEST(ALog_Tools, IntToStr)
+{
+    auto nativeIntToStr = [](auto value){
+        std::stringstream ss;
+        ss << value;
+        return ss.str();
+    };
+
+    auto fastIntToStr = [](auto value) {
+        char buffer[std::numeric_limits<decltype(value)>::digits + 2];
+        char* const end = jeaiii::to_text_from_integer(buffer, value);
+        return std::string(buffer, end);
+    };
+
+    auto makeDataPair = [&](auto value) {
+        auto nativeResult = nativeIntToStr(value);
+        auto fastResult = fastIntToStr(value);
+        return std::pair(nativeResult, fastResult);
+    };
+
+    auto verifier = [](const std::pair<std::string, std::string>& pair) {
+        ASSERT_EQ(pair.first, pair.second);
+    };
+
+    const auto datasetSource = std::make_tuple(
+        -1, 0, 1,
+         10,  100,  1000,  10001,
+        -10, -100, -1000, -10001,
+        34623,
+        -87123,
+        std::numeric_limits<int64_t>::min(),
+        std::numeric_limits<int64_t>::max(),
+        std::numeric_limits<uint64_t>::min(),
+        std::numeric_limits<uint64_t>::max()
+    );
+
+    const auto dataset = std::apply([&](auto... xs){ return std::make_tuple(makeDataPair(xs)...); }, datasetSource);
+    std::apply([&](auto... xs){ (verifier(xs), ...); }, dataset);
 }
