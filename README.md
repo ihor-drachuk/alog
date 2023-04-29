@@ -41,7 +41,6 @@ _<sup>(Thanks to [ekalinin/github-markdown-toc](https://github.com/ekalinin/gith
 - Functional
   - Log anything: containers, pointers, raw buffers, custom types
   - Based on UTF-8 encoding - log any unicode character
-  - Qt-friendly
   - Conditional logging
     - `LOGE_IF(errorFlag) << "Error!";`
   - Flags. Call `std::abort` or throw exception right from log-record!
@@ -69,8 +68,7 @@ _<sup>(Thanks to [ekalinin/github-markdown-toc](https://github.com/ekalinin/gith
 #### Currently implemented sinks, formatters & filters
  - Sinks
    - Console
-   - ConsoleUTF8
-   - File
+   - File and FileRotated
    - Baical (for Baical log server)
    - ...special: Null, Functor, Chain, Pipeline
  - Formatters:
@@ -82,7 +80,6 @@ _<sup>(Thanks to [ekalinin/github-markdown-toc](https://github.com/ekalinin/gith
    - By severity
    - By severity & module
    - By severity & file
-   - By tag: sensitive information, low-level IO dumps, etc.
    - ...special: Always, Functor, Chain
 
 #### Currently supported log-flags
@@ -153,7 +150,7 @@ int main() {
 Source:
 ```C++
 #include <alog/logger.h>
-DEFINE_ALOGGER_MODULE(Satellite_Main_Loop);
+DEFINE_ALOGGER_MODULE_NS(Satellite_Main_Loop);
 
 int main() {
     SIMPLE_SETUP_ALOG;
@@ -178,7 +175,7 @@ Output:
 ### #3. Extended (non-simple) logger setup
 ```C++
 #include <alog/logger.h>
-DEFINE_ALOGGER_MODULE(Main);
+DEFINE_ALOGGER_MODULE_NS(Main);
 
 int main() {
     ALog::DefaultLogger logger;                                    //      During trace debug recommended to set:
@@ -200,7 +197,7 @@ int main() {
 ### #4. Duplicate logs to file
 ```C++
 #include <alog/all.h>
-DEFINE_ALOGGER_MODULE(Main);
+DEFINE_ALOGGER_MODULE_NS(Main);
 
 int main() {
     ALog::DefaultLogger logger;
@@ -220,7 +217,7 @@ int main() {
 ### #5. Filter out non-important logs
 ```C++
 #include <alog/all.h>
-DEFINE_ALOGGER_MODULE(Main);
+DEFINE_ALOGGER_MODULE_NS(Main);
 
 int main() {
     ALog::DefaultLogger logger;
@@ -239,7 +236,7 @@ int main() {
 ### #6. Advanced I - Part 1: Filters chain
 ```C++
 #include <alog/all.h>
-DEFINE_ALOGGER_MODULE(Main);
+DEFINE_ALOGGER_MODULE_NS(Main);
 
 int main() {
     auto filters = ALog::Filters::Chain::create({
@@ -287,7 +284,7 @@ There are 3 modes:
 ### #8. Advanced II: different filters for different sinks
 ```C++
 #include <alog/all.h>
-DEFINE_ALOGGER_MODULE(Main);
+DEFINE_ALOGGER_MODULE_NS(Main);
 
 int main() {
     // If less than 'Warning' ==> stdout
