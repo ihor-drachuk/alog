@@ -6,6 +6,7 @@
 #include <cinttypes>
 #include <typeinfo>
 #include <alog/tools.h>
+#include <alog/tools_jeaiii_to_text.h>
 
 #ifdef ALOG_HAS_QT_LIBRARY
 #include <QMetaEnum>
@@ -262,47 +263,13 @@ inline ALog::Record&& operator<< (ALog::Record&& record, bool value)
 
 namespace ALog {
 namespace Internal {
-#if defined(ALOG_COMPILER_APPLE_CLANG) || defined(ALOG_COMPILER_GCC)
-    inline void itoa(int value, char* dst, int radix) {
-        assert(radix == 10);
-        sprintf(dst, "%d", value);
-    }
-
-    inline void ltoa(long value, char* dst, int radix) {
-        assert(radix == 10);
-        sprintf(dst, "%ld", value);
-    }
-
-    inline void ultoa(unsigned long value, char* dst, int radix) {
-        assert(radix == 10);
-        sprintf(dst, "%lu", value);
-    }
-#endif // ALOG_COMPILER_APPLE_CLANG || ALOG_COMPILER_GCC
 
 template<typename T>
 inline void addInteger(ALog::Record& record, T value)
 {
-    constexpr size_t bufSz = std::numeric_limits<T>::digits + 2;
-    char str[bufSz];
-    size_t len;
-
-    if constexpr (sizeof(T) < sizeof(int)) {
-        itoa(value, str, 10);
-    } else if constexpr (sizeof(T) == sizeof(int) && std::numeric_limits<T>::is_signed) {
-        itoa(value, str, 10);
-    } else if constexpr (sizeof(T) <= sizeof(long) && std::numeric_limits<T>::is_signed) {
-        ltoa(value, str, 10);
-    } else if constexpr (sizeof(T) <= sizeof(long) && !std::numeric_limits<T>::is_signed) {
-#ifdef __MINGW32__
-        sprintf(str, "%lu", value);
-#else
-        ultoa(value, str, 10);
-#endif
-    }
-
-    len = strlen(str);
-
-    record.appendMessage(str, len);
+    char str[std::numeric_limits<T>::digits + 2];
+    char* const end = jeaiii::to_text_from_integer(str, value);
+    record.appendMessage(str, end - str);
 }
 } // namespace Internal
 } // namespace ALog
@@ -346,25 +313,13 @@ inline ALog::Record&& operator<< (ALog::Record&& record, int32_t value)
 
 inline ALog::Record&& operator<< (ALog::Record&& record, uint64_t value)
 {
-    constexpr size_t bufSz = std::numeric_limits<decltype(value)>::digits + 2;
-    char str[bufSz];
-    size_t len;
-
-    len = sprintf(str, "%" PRIu64, value);
-
-    record.appendMessage(str, len);
+    ALog::Internal::addInteger(record, value);
     return std::move(record);
 }
 
 inline ALog::Record&& operator<< (ALog::Record&& record, int64_t value)
 {
-    constexpr size_t bufSz = std::numeric_limits<decltype(value)>::digits + 2;
-    char str[bufSz];
-    size_t len;
-
-    len = sprintf(str, "%" PRId64, value);
-
-    record.appendMessage(str, len);
+    ALog::Internal::addInteger(record, value);
     return std::move(record);
 }
 
