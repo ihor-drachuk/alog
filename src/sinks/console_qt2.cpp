@@ -1,6 +1,6 @@
 #include <alog/sinks/console_qt2.h>
 
-#ifdef ALOG_WINDOWS
+#ifdef ALOG_OS_WINDOWS
 #ifdef ALOG_HAS_QT_LIBRARY
 
 #include <QDebug>
@@ -61,4 +61,4 @@ void ConsoleQt2::write(const Buffer& buffer, const Record& record)
 } // namespace ALog
 
 #endif // ALOG_HAS_QT_LIBRARY
-#endif // ALOG_WINDOWS
+#endif // ALOG_OS_WINDOWS

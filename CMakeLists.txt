@@ -55,16 +55,38 @@ if(ALOG_ENABLE_DEBUG)
     target_compile_definitions(alog PUBLIC ALOG_ENABLE_DEBUG)
 endif()
 
+
+# Detect OS
 if (WIN32)
-    set(ALOG_WINDOWS TRUE)
-    target_compile_definitions(alog PUBLIC ALOG_WINDOWS=1)
+    set(ALOG_OS_WINDOWS TRUE)
+    target_compile_definitions(alog PUBLIC ALOG_OS_WINDOWS=1)
+
 elseif(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
-    set(ALOG_MACOSX TRUE)
-    target_compile_definitions(alog PUBLIC ALOG_MACOSX=1)
+    set(ALOG_OS_MACOS TRUE)
+    target_compile_definitions(alog PUBLIC ALOG_OS_MACOS=1)
 elseif(UNIX)
-    set(ALOG_LINUX TRUE)
-    target_compile_definitions(alog PUBLIC ALOG_LINUX=1)
+    set(ALOG_OS_LINUX TRUE)
+    target_compile_definitions(alog PUBLIC ALOG_OS_LINUX=1)
     target_link_libraries(alog PRIVATE pthread -lstdc++fs)
+endif()
+
+# Detect compiler
+if (MSVC)
+    set(ALOG_COMPILER_MSVC TRUE)
+    target_compile_definitions(alog PUBLIC ALOG_COMPILER_MSVC=1)
+
+elseif (CMAKE_CXX_COMPILER_ID MATCHES "GNU")
+    set(ALOG_COMPILER_GCC TRUE)
+    target_compile_definitions(alog PUBLIC ALOG_COMPILER_GCC=1)
+
+elseif (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+    set(ALOG_COMPILER_CLANG TRUE)
+    target_compile_definitions(alog PUBLIC ALOG_COMPILER_CLANG=1)
+
+    if (CMAKE_CXX_COMPILER_ID MATCHES "Apple")
+        set(ALOG_COMPILER_APPLE_CLANG TRUE)
+        target_compile_definitions(alog PUBLIC ALOG_COMPILER_APPLE_CLANG=1)
+    endif()
 endif()
 
 add_subdirectory(tests)

@@ -5,7 +5,7 @@
 namespace ALog {
 namespace Sinks {
 
-#ifdef ALOG_WINDOWS
+#ifdef ALOG_OS_WINDOWS
 
 #ifdef ALOG_HAS_QT_LIBRARY
 class ConsoleQt2 : public ISink
@@ -22,7 +22,7 @@ public:
 
 using ConsoleQt2 = ALog::Sinks::Console;
 
-#endif // ALOG_WINDOWS
+#endif // ALOG_OS_WINDOWS
 
 } // namespace Sinks
 } // namespace ALog

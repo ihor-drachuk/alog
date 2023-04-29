@@ -162,13 +162,13 @@ TEST(ALog_LongSSO, format_fail)
     ALog::I::LongSSO<> sso("1");
     sso.appendFmtString("%d", 2);
     sso.appendFmtString("%q", 1);
-    // Passing an undefined formatter is UB. Thus the behavior depends on the lib uesed and my change in the future
+    // Passing an undefined formatter is UB. Thus the behavior depends on the lib used and might change in the future.
     // It might also be necessary to adjust this test to the system it is running on.
-    #if defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__NT__)
-        ASSERT_STREQ(sso.getString(), "12q"); //Msvc ignores the %
-    #elif __APPLE__
-        ASSERT_STREQ(sso.getString(), "12");// Xcode ignores the type
+    #if ALOG_COMPILER_MSVC
+        ASSERT_STREQ(sso.getString(), "12q"); // Msvc ignores the %
+    #elif ALOG_COMPILER_APPLE_CLANG
+        ASSERT_STREQ(sso.getString(), "12");  // Xcode ignores the type
     #else // Linux
-        ASSERT_STREQ(sso.getString(), "12-- ALOG: Failed to format \"%q\" (Invalid argument)"); //Linux returns an error
+        ASSERT_STREQ(sso.getString(), "12-- ALOG: Failed to format \"%q\" (Invalid argument)"); // Linux returns an error
     #endif
 }

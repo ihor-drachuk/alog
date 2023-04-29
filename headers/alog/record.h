@@ -262,7 +262,7 @@ inline ALog::Record&& operator<< (ALog::Record&& record, bool value)
 
 namespace ALog {
 namespace Internal {
-#if defined(ALOG_MACOSX) || defined(ALOG_LINUX)
+#if defined(ALOG_COMPILER_APPLE_CLANG) || defined(ALOG_COMPILER_GCC)
     inline void itoa(int value, char* dst, int radix) {
         assert(radix == 10);
         sprintf(dst, "%d", value);
@@ -277,7 +277,7 @@ namespace Internal {
         assert(radix == 10);
         sprintf(dst, "%lu", value);
     }
-#endif // ALOG_LINUX || ALOG_MACOSX
+#endif // ALOG_COMPILER_APPLE_CLANG || ALOG_COMPILER_GCC
 
 template<typename T>
 inline void addInteger(ALog::Record& record, T value)

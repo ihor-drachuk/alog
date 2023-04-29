@@ -5,7 +5,7 @@
 namespace ALog {
 namespace Sinks {
 
-#ifdef ALOG_WINDOWS
+#ifdef ALOG_OS_WINDOWS
 
 class ConsoleUTF8 : public ISink
 {
@@ -25,7 +25,7 @@ private:
 
 using ConsoleUTF8 = Console;
 
-#endif // ALOG_WINDOWS
+#endif // ALOG_OS_WINDOWS
 
 } // namespace Sinks
 } // namespace ALog
