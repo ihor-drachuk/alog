@@ -7,18 +7,18 @@
 namespace ALog {
 
 namespace Sinks {
-#ifdef ALOG_WINDOWS
+#ifdef ALOG_OS_WINDOWS
 class ConsoleQt2;
 #else
 class Console;
 using ConsoleQt2 = ALog::Sinks::Console;
-#endif // ALOG_WINDOWS
+#endif // ALOG_OS_WINDOWS
 } // namespace Sinks
 
 class QtQmlAdapter : public ALog::Internal::Singleton<QtQmlAdapter>
 {
     ALOG_NO_COPY_MOVE(QtQmlAdapter);
-#ifdef ALOG_WINDOWS
+#ifdef ALOG_OS_WINDOWS
     friend class Sinks::ConsoleQt2;
 #endif
 public:

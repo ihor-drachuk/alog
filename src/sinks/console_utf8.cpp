@@ -1,6 +1,6 @@
 #include <alog/sinks/console_utf8.h>
 
-#ifdef ALOG_WINDOWS
+#ifdef ALOG_OS_WINDOWS
 #include <alog/tools.h>
 #include <Windows.h>
 #include <iostream>
@@ -84,4 +84,4 @@ void ConsoleUTF8::write(const Buffer& buffer, const Record&)
 } // namespace Sinks
 } // namespace ALog
 
-#endif // ALOG_WINDOWS
+#endif // ALOG_OS_WINDOWS

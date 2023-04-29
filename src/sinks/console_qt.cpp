@@ -1,6 +1,6 @@
 #include <alog/sinks/console_qt.h>
 
-#ifdef ALOG_WINDOWS
+#ifdef ALOG_OS_WINDOWS
 #ifdef ALOG_HAS_QT_LIBRARY
 
 #include <QTextStream>
@@ -56,4 +56,4 @@ void ConsoleQt::write(const Buffer& buffer, const Record&)
 } // namespace ALog
 
 #endif // ALOG_HAS_QT_LIBRARY
-#endif // ALOG_WINDOWS
+#endif // ALOG_OS_WINDOWS

@@ -7,7 +7,7 @@ class QTextStream;
 namespace ALog {
 namespace Sinks {
 
-#ifdef ALOG_WINDOWS
+#ifdef ALOG_OS_WINDOWS
 
 #ifdef ALOG_HAS_QT_LIBRARY
 class ConsoleQt : public ISink
@@ -25,11 +25,11 @@ private:
 };
 #endif // ALOG_HAS_QT_LIBRARY
 
-#else // ALOG_WINDOWS
+#else // ALOG_OS_WINDOWS
 
 using ConsoleQt = ::ALog::Sinks::Console;
 
-#endif // ALOG_WINDOWS
+#endif // ALOG_OS_WINDOWS
 
 } // namespace Sinks
 } // namespace ALog

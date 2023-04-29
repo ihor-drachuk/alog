@@ -1,13 +1,13 @@
 #include <alog/tools_internal.h>
 #include <sys/stat.h>
 
-#ifdef ALOG_WINDOWS
+#ifdef ALOG_OS_WINDOWS
     #define statX _stat64
-#elif ALOG_LINUX
+#elif ALOG_OS_LINUX
     #define statX stat64
-#elif ALOG_MACOSX
+#elif ALOG_OS_MACOS
     #define statX stat
-#endif // ALOG_WINDOWS
+#endif // ALOG_OS_WINDOWS
 
 namespace ALog {
 namespace Internal {

@@ -350,7 +350,7 @@ static void IntToStr_sprintf(benchmark::State& state)
 BENCHMARK(IntToStr_sprintf);
 
 
-#if !defined(ALOG_MACOSX) && !defined(ALOG_LINUX)
+#if !defined(ALOG_OS_MACOS) && !defined(ALOG_OS_LINUX)
 static void IntToStr_itoa(benchmark::State& state)
 {
     while (state.KeepRunning()) {
@@ -361,7 +361,7 @@ static void IntToStr_itoa(benchmark::State& state)
 }
 
 BENCHMARK(IntToStr_itoa);
-#endif // !defined(ALOG_MACOSX) && !defined(ALOG_LINUX)
+#endif // !defined(ALOG_OS_MACOS) && !defined(ALOG_OS_LINUX)
 
 
 static void IntToStr_jeaiii(benchmark::State& state)
