@@ -3,8 +3,11 @@
 #include <optional>
 #include <memory>
 #include <variant>
+#include <sstream>
+#include <numeric>
+#include <cinttypes>
 #include <alog/tools.h>
-
+#include <alog/tools_jeaiii_to_text.h>
 
 class ALogToolsFixture : public ::benchmark::Fixture {
 public:
@@ -19,17 +22,6 @@ public:
     ALog::Buffer m_buffer;
 };
 
-#if !defined(ALOG_MACOSX) && !defined(ALOG_LINUX)
-static void ALog_Tools_int2str_itoa(benchmark::State& state)
-{
-    char buffer[10];
-    while (state.KeepRunning()) {
-        itoa(-812394, buffer, 10);
-    }
-}
-
-BENCHMARK(ALog_Tools_int2str_itoa);
-#endif // !defined(ALOG_MACOSX) && !defined(ALOG_LINUX)
 
 namespace {
 
@@ -80,17 +72,6 @@ static void ALog_Tools_call_with_variant(benchmark::State& state)
 }
 
 BENCHMARK(ALog_Tools_call_with_variant);
-
-
-static void ALog_Tools_int2str_sprintf(benchmark::State& state)
-{
-    char buffer[10];
-    while (state.KeepRunning()) {
-        sprintf(buffer, "%d", -812394);
-    }
-}
-
-BENCHMARK(ALog_Tools_int2str_sprintf);
 
 
 static void ALog_Tools_construct_string(benchmark::State& state)
@@ -344,5 +325,54 @@ static void LoopDirection_foreach(benchmark::State& state)
 
 BENCHMARK(LoopDirection_foreach);
 
+
+static void IntToStr_sstream(benchmark::State& state)
+{
+    while (state.KeepRunning()) {
+        std::stringstream ss;
+        ss << std::numeric_limits<uint16_t>::max();
+        (void)ss.str();
+    }
+}
+
+BENCHMARK(IntToStr_sstream);
+
+
+static void IntToStr_sprintf(benchmark::State& state)
+{
+    while (state.KeepRunning()) {
+        char buffer[std::numeric_limits<uint16_t>::digits+2];
+        sprintf(buffer, "%" PRIu16, std::numeric_limits<uint16_t>::max());
+        (void)buffer;
+    }
+}
+
+BENCHMARK(IntToStr_sprintf);
+
+
+#if !defined(ALOG_MACOSX) && !defined(ALOG_LINUX)
+static void IntToStr_itoa(benchmark::State& state)
+{
+    while (state.KeepRunning()) {
+        char buffer[std::numeric_limits<uint16_t>::digits+2];
+        itoa(std::numeric_limits<uint16_t>::max(), buffer, 10);
+        (void)buffer;
+    }
+}
+
+BENCHMARK(IntToStr_itoa);
+#endif // !defined(ALOG_MACOSX) && !defined(ALOG_LINUX)
+
+
+static void IntToStr_jeaiii(benchmark::State& state)
+{
+    while (state.KeepRunning()) {
+        char buffer[std::numeric_limits<uint16_t>::digits+2];
+        *(jeaiii::to_text_from_integer(buffer, std::numeric_limits<uint16_t>::max())) = 0;
+        (void)buffer;
+    }
+}
+
+BENCHMARK(IntToStr_jeaiii);
 
 BENCHMARK_MAIN();
