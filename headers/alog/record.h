@@ -101,8 +101,15 @@ struct Record
     template<size_t N>
     inline void appendMessage(const char(&msg)[N]) { appendMessage(msg, N-1); }
     inline void appendMessageAL(const char* msg) { appendMessage(msg, strlen(msg)); }
-
     void appendMessage(const wchar_t* msg, size_t len);
+
+    template<typename T>
+    inline void appendInteger(T value)
+    {
+        char str[std::numeric_limits<T>::digits + 2];
+        char* const end = jeaiii::to_text_from_integer(str, value);
+        appendMessage(str, end - str);
+    }
 
     inline const char* getMessage() const { return message.getString(); }
     inline size_t getMessageLen() const { return message.getStringLen(); }
@@ -261,65 +268,51 @@ inline ALog::Record&& operator<< (ALog::Record&& record, bool value)
     return std::move(record);
 }
 
-namespace ALog {
-namespace Internal {
-
-template<typename T>
-inline void addInteger(ALog::Record& record, T value)
-{
-    char str[std::numeric_limits<T>::digits + 2];
-    char* const end = jeaiii::to_text_from_integer(str, value);
-    record.appendMessage(str, end - str);
-}
-} // namespace Internal
-} // namespace ALog
-
-
 inline ALog::Record&& operator<< (ALog::Record&& record, uint8_t value)
 {
-    ALog::Internal::addInteger(record, value);
+    record.appendInteger(value);
     return std::move(record);
 }
 
 inline ALog::Record&& operator<< (ALog::Record&& record, int8_t value)
 {
-    ALog::Internal::addInteger(record, value);
+    record.appendInteger(value);
     return std::move(record);
 }
 
 inline ALog::Record&& operator<< (ALog::Record&& record, uint16_t value)
 {
-    ALog::Internal::addInteger(record, value);
+    record.appendInteger(value);
     return std::move(record);
 }
 
 inline ALog::Record&& operator<< (ALog::Record&& record, int16_t value)
 {
-    ALog::Internal::addInteger(record, value);
+    record.appendInteger(value);
     return std::move(record);
 }
 
 inline ALog::Record&& operator<< (ALog::Record&& record, uint32_t value)
 {
-    ALog::Internal::addInteger(record, value);
+    record.appendInteger(value);
     return std::move(record);
 }
 
 inline ALog::Record&& operator<< (ALog::Record&& record, int32_t value)
 {
-    ALog::Internal::addInteger(record, value);
+    record.appendInteger(value);
     return std::move(record);
 }
 
 inline ALog::Record&& operator<< (ALog::Record&& record, uint64_t value)
 {
-    ALog::Internal::addInteger(record, value);
+    record.appendInteger(value);
     return std::move(record);
 }
 
 inline ALog::Record&& operator<< (ALog::Record&& record, int64_t value)
 {
-    ALog::Internal::addInteger(record, value);
+    record.appendInteger(value);
     return std::move(record);
 }
 
