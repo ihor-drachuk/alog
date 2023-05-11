@@ -732,3 +732,6 @@ inline typename std::enable_if_t<std::is_array<T>::value, ALog::Record>&& operat
     ALog::Internal::logArray(record, sz, value, value + sz);
     return std::move(record);
 }
+
+template<typename T> inline ALog::Record& operator<< (ALog::Record& record, T&& value) { std::move(record) << std::forward<T&&>(value); return record; }
+template<typename T> inline ALog::Record& operator<< (ALog::Record& record, const T& value) { std::move(record) << value; return record; }
