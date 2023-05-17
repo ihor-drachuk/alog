@@ -442,7 +442,12 @@ public:
 
     void set(const ItemPtr& item) { clear(); add(item); };
     void set(const std::initializer_list<ItemPtr>& items) { clear(); add(items); };
+    template<typename T, typename... Args>
+    void set(const Args&... args) { set(std::make_shared<T>(args...)); };
+
     IChain<Interface, Class>& add(const ItemPtr& item) { m_items.push_back(item); return *this; };
+    template<typename T, typename... Args>
+    IChain<Interface, Class>& add(const Args&... args) { return add(std::make_shared<T>(args...)); };
     IChain<Interface, Class>& add(const std::initializer_list<ItemPtr>& items) {
         for (const auto& x : items) m_items.push_back(x);
         return *this;
