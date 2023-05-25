@@ -145,7 +145,7 @@ public:
         }
     }
 
-    inline operator bool() const { return getStringLen() != 0; }
+    inline explicit operator bool() const { return getStringLen() != 0; }
 
     inline uint8_t* allocate_copy(size_t sz, const char* str = nullptr) {
         if (m_isShortBuf) {
