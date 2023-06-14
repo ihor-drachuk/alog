@@ -65,10 +65,10 @@ static std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>,wchar_t>& utf8_utf1
     return converter;
 }
 
-void Record::appendMessage(const wchar_t* msg, size_t len)
+void Record::appendMessage(const wchar_t* msg, size_t len, size_t width, char padding)
 {
     std::string dest = utf8_utf16_converter().to_bytes(msg, msg+len);
-    appendMessage(dest.data(), dest.size());
+    appendMessage(dest.data(), dest.size(), width, padding);
 }
 
 

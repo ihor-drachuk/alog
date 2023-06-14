@@ -21,7 +21,14 @@
 #include <alog/tools_filesystem.h>
 #include <alog/all.h>
 
+#include <alog/containers/all.h>
+
 namespace {
+
+constexpr std::chrono::hours operator""_d(unsigned long long d)
+{
+    return std::chrono::hours(d*24);
+}
 
 template<typename T,
          typename std::enable_if<std::is_floating_point<T>::value, int>::type = 0>
@@ -628,7 +635,7 @@ TEST(ALog, test_separators_advanced)
     LOGMD << std::wstring(L"String (wide)");
     LOGMD << std::pair<int, std::string>(11, "Hi") << "SSS";
     LOGMD << std::pair<std::string, int>("Hi", 11) << "SSS";
-    LOGMD << NO_SEPARATOR << std::pair<int, std::string>(11, "Hi") << "SSS-no-sep";
+    LOGMD << NO_SEPARATORS << std::pair<int, std::string>(11, "Hi") << "SSS-no-sep";
     LOGMD << std::pair<int, std::pair<int, std::string>>(11, {12, "Hi"}) ;
 
     LOGMD << std::pair<std::pair<std::string, std::string>, std::pair<std::string, std::string>>({"1", "2"}, {"3", "4"});
@@ -921,6 +928,89 @@ TEST(ALog, test_sink_file_rotated)
         ASSERT_EQ(files[0].content, "Some log5\n");
     }
 }
+
+TEST(ALog, test_optional)
+{
+    std::vector<ALog::Record> records;
+    auto sink = std::make_shared<ALog::Sinks::Functor2>([&records](const ALog::Buffer&, const ALog::Record& rec){ records.push_back(rec); });
+
+    DEFINE_MAIN_ALOGGER;
+    ALOGGER_DIRECT->setMode(ALog::Logger::Synchronous);
+    ALOGGER_DIRECT->pipeline().sinks().set(sink);
+    ALOGGER_DIRECT->pipeline().formatter() = std::make_shared<ALog::Formatters::Minimal>();
+    ALOGGER_DIRECT.markReady();
+    DEFINE_ALOGGER_MODULE(ALogTest);
+
+    LOGI << std::optional<int>();
+    LOGI << std::optional<int>(10);
+
+    ASSERT_EQ(records.size(), 2);
+    ASSERT_STREQ(records[0].getMessage(), "std::optional()");
+    ASSERT_STREQ(records[1].getMessage(), "std::optional(10)");
+}
+
+TEST(ALog, test_variant)
+{
+    std::vector<ALog::Record> records;
+    auto sink = std::make_shared<ALog::Sinks::Functor2>([&records](const ALog::Buffer&, const ALog::Record& rec){ records.push_back(rec); });
+
+    DEFINE_MAIN_ALOGGER;
+    ALOGGER_DIRECT->setMode(ALog::Logger::Synchronous);
+    ALOGGER_DIRECT->pipeline().sinks().set(sink);
+    ALOGGER_DIRECT->pipeline().formatter() = std::make_shared<ALog::Formatters::Minimal>();
+    ALOGGER_DIRECT.markReady();
+    DEFINE_ALOGGER_MODULE(ALogTest);
+
+    std::variant<std::monostate, int, std::string> value;
+
+    LOGI << value;
+
+    value = 10;
+    LOGI << value;
+
+    value = "Hello";
+    LOGI << value;
+
+    ASSERT_EQ(records.size(), 3);
+    ASSERT_STREQ(records[0].getMessage(), R"(std::variant(std::monostate()))");
+    ASSERT_STREQ(records[1].getMessage(), R"(std::variant(10))");
+#ifdef ALOG_ENABLE_DEF_AUTO_QUOTES
+    ASSERT_STREQ(records[2].getMessage(), R"(std::variant("Hello"))");
+#else
+    ASSERT_STREQ(records[2].getMessage(), R"(std::variant(Hello))");
+#endif // ALOG_ENABLE_DEF_AUTO_QUOTES
+}
+
+TEST(ALog, test_chrono_duration)
+{
+    using namespace std::literals::chrono_literals;
+
+    std::vector<ALog::Record> records;
+    auto sink = std::make_shared<ALog::Sinks::Functor2>([&records](const ALog::Buffer&, const ALog::Record& rec){ records.push_back(rec); });
+
+    DEFINE_MAIN_ALOGGER;
+    ALOGGER_DIRECT->setMode(ALog::Logger::Synchronous);
+    ALOGGER_DIRECT->pipeline().sinks().set(sink);
+    ALOGGER_DIRECT->pipeline().formatter() = std::make_shared<ALog::Formatters::Minimal>();
+    ALOGGER_DIRECT.markReady();
+    DEFINE_ALOGGER_MODULE(ALogTest);
+
+    LOGI << (2_d + 15h);
+    LOGI << 8h + 13min + 20s;
+    LOGI << 10min + 20s + 113ms;
+    LOGI << 20s + 113ms;
+    LOGI << 25ms;
+    LOGI << 5ms + 62us;
+
+    ASSERT_EQ(records.size(), 6);
+    ASSERT_STREQ(records[0].getMessage(), R"(std::chrono::duration(2d 15h))");
+    ASSERT_STREQ(records[1].getMessage(), R"(std::chrono::duration(8:13:20))");
+    ASSERT_STREQ(records[2].getMessage(), R"(std::chrono::duration(10:20))");
+    ASSERT_STREQ(records[3].getMessage(), R"(std::chrono::duration(20.113 sec))");
+    ASSERT_STREQ(records[4].getMessage(), R"(std::chrono::duration(25 ms))");
+    ASSERT_STREQ(records[5].getMessage(), R"(std::chrono::duration(5.062 ms))");
+}
+
 
 #ifdef ALOG_HAS_QT_LIBRARY
 #include "test3_alog.moc"
