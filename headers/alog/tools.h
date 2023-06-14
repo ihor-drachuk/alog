@@ -6,6 +6,7 @@
 #include <utility>
 #include <memory>
 #include <stdexcept>
+#include <variant>
 
 #define ALOG_DECLARE_PIMPL  \
     struct impl_t; \
@@ -30,6 +31,8 @@ class QJsonObject;
 class QJsonArray;
 class QJsonValue;
 class QJsonDocument;
+class QDir;
+class QHostAddress;
 
 #ifdef ALOG_HAS_QT_LIBRARY
 #include <QtContainerFwd>
@@ -174,8 +177,18 @@ public:
         }
     }
 
-    inline void appendString(const char* str, size_t sz) {
-        allocate_copy(sz, str);
+    inline void appendString(const char* str, size_t sz, size_t width = 0, char padding = ' ') {
+        if (sz >= width) {
+            allocate_copy(sz, str);
+        } else {
+            const auto lack = width - sz;
+            const auto currentSz = getStringLen();
+            allocate_copy(lack);
+            auto it = getStringRw() + currentSz - 1;
+            const auto end = it + lack;
+            while (it != end) *++it = padding;
+            allocate_copy(sz, str);
+        }
     }
 
     inline void appendStringAL(const char* str) {
@@ -194,6 +207,7 @@ public:
 
     static_assert (sizeof(uint8_t) == sizeof(char), "Cast validity verification - failed");
     inline const char* getString() const { return reinterpret_cast<const char*>(m_isShortBuf ? m_buf : m_longBuf->data()); }
+    inline char* getStringRw() { return const_cast<char*>(const_cast<const LongSSO<sso_limit>*>(this)->getString()); }
     inline size_t getStringLen() const { return m_isShortBuf ? m_sz : (m_longBuf->size() - 1); }
 
     inline size_t getSsoLimit() const { return sso_limit; }
@@ -369,8 +383,7 @@ const char* currentThreadName();
 } // namespace ThreadTools
 
 
-// This implementation is 2 to 3 times faster with O0. And slightly faster with
-// O3, depending on the compiler.
+// This implementation is 2 to 3 times faster
 #pragma pack(push, 1)
 class optional_bool
 {

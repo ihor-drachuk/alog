@@ -6,6 +6,8 @@
 #include <cinttypes>
 #include <typeinfo>
 #include <utility>
+#include <optional>
+#include <variant>
 #include <alog/tools.h>
 #include <alog/tools_jeaiii_to_text.h>
 
@@ -86,7 +88,7 @@ struct Record
         inline SkipSeparator(): count(1) { }
         inline SkipSeparator(int count): count(count) { }
         [[nodiscard]] static inline SkipSeparator create(int count) { return SkipSeparator(count); };
-        int count { 0 };
+        int count {};
     };
 
     // -----
@@ -98,18 +100,18 @@ struct Record
     [[deprecated("When setting PODs after creation, the optimizer will set them directly. See https://godbolt.org/z/En8Wb3sqe") ]]
     inline Record(uninitialized_tag) { }
 
-    inline void appendMessage(const char* msg, size_t len) { handleSeparators(len ? *msg : 0); message.appendString(msg, len); }
+    inline void appendMessage(const char* msg, size_t len, size_t width = 0, char padding = ' ') { handleSeparators(len ? *msg : 0); message.appendString(msg, len, width, padding); }
     template<size_t N>
     inline void appendMessage(const char(&msg)[N]) { appendMessage(msg, N-1); }
-    inline void appendMessageAL(const char* msg) { appendMessage(msg, strlen(msg)); }
-    void appendMessage(const wchar_t* msg, size_t len);
+    inline void appendMessageAL(const char* msg, size_t width = 0, char padding = ' ') { appendMessage(msg, strlen(msg), width, padding); }
+    void appendMessage(const wchar_t* msg, size_t len, size_t width = 0, char padding = ' ');
 
     template<typename T>
-    inline void appendInteger(T value)
+    inline void appendInteger(T value, size_t width = 0, char padding = ' ')
     {
         char str[std::numeric_limits<T>::digits + 2];
         char* const end = jeaiii::to_text_from_integer(str, value);
-        appendMessage(str, end - str);
+        appendMessage(str, end - str, width, padding);
     }
 
     inline const char* getMessage() const { return message.getString(); }
@@ -258,6 +260,15 @@ inline typename std::enable_if_t<std::is_array<T>::value, ALog::Record>&& operat
 
 template<typename T1, typename T2>
 inline ALog::Record&& operator<< (ALog::Record&& record, const std::pair<T1, T2>& value);
+
+template<typename T>
+ALog::Record&& operator<< (ALog::Record&& record, const std::optional<T>& value);
+
+template<typename... Ts>
+ALog::Record&& operator<< (ALog::Record&& record, const std::variant<Ts...>& value);
+
+template<typename... Ts>
+ALog::Record&& operator<< (ALog::Record&& record, const std::chrono::duration<Ts...>& value);
 // -----
 
 
@@ -497,6 +508,12 @@ inline ALog::Record&& operator<< (ALog::Record&& record, const void* value)
     return std::move(record);
 }
 
+inline ALog::Record&& operator<< (ALog::Record&& record, std::monostate)
+{
+    record.appendMessage("std::monostate()");
+    return std::move(record);
+}
+
 template<typename T, typename std::enable_if_t<std::is_integral<T>::value && !std::is_signed<T>::value && sizeof(T) == 1>* = nullptr >
 inline ALog::Record&& operator<< (ALog::Record&& record, T value) { return (std::move(record) << (uint8_t)value); }
 
@@ -629,6 +646,32 @@ inline typename std::enable_if_t<std::is_same<T, QPoint>::value, ALog::Record>&&
     return std::move(record);
 }
 
+template<typename T>
+inline typename std::enable_if_t<std::is_same<T, QDir>::value, ALog::Record>&& operator<< (ALog::Record&& record, const T& value)
+{
+    auto _flagsRestorer = record.backupFlags();
+
+    record.appendMessage("QDir(");
+    record << ALog::Record::Flags::Internal_NoSeparators << ALog::Record::Flags::NoAutoQuote;
+    record = std::move(record) << value.path();
+    record.appendMessage(")");
+
+    return std::move(record);
+}
+
+template<typename T>
+inline typename std::enable_if_t<std::is_same<T, QHostAddress>::value, ALog::Record>&& operator<< (ALog::Record&& record, const T& value)
+{
+    auto _flagsRestorer = record.backupFlags();
+
+    record.appendMessage("QHostAddress(");
+    record << ALog::Record::Flags::Internal_NoSeparators << ALog::Record::Flags::NoAutoQuote;
+    record = std::move(record) << value.toString();
+    record.appendMessage(")");
+
+    return std::move(record);
+}
+
 #ifdef ALOG_HAS_QT_LIBRARY
 template<typename T1, typename T2,
          typename std::enable_if<!std::is_same<QPair<T1, T2>, std::pair<T1, T2>>::value>::type* = nullptr>
@@ -737,6 +780,112 @@ inline typename std::enable_if_t<std::is_array<T>::value, ALog::Record>&& operat
     ALog::Internal::logArray(record, sz, value, value + sz);
     return std::move(record);
 }
+
+template<typename T>
+ALog::Record&& operator<< (ALog::Record&& record, const std::optional<T>& value)
+{
+    record.appendMessage("std::optional(");
+
+    auto _flagsRestorer = record.backupFlags();
+    record << ALog::Record::Flags::NoSeparators;
+
+    if (value) {
+        record = std::move(record) << *value;
+    }
+
+    record.appendMessage(")");
+    return std::move(record);
+}
+
+template<typename... Ts>
+ALog::Record&& operator<< (ALog::Record&& record, const std::variant<Ts...>& value)
+{
+    record.appendMessage("std::variant(");
+
+    auto _flagsRestorer = record.backupFlags();
+    record << ALog::Record::Flags::NoSeparators;
+
+    std::visit([&record](const auto& x){
+        record = std::move(record) << x;
+    }, value);
+
+    record.appendMessage(")");
+    return std::move(record);
+}
+
+template<typename... Ts>
+ALog::Record&& operator<< (ALog::Record&& record, const std::chrono::duration<Ts...>& value)
+{
+    record.appendMessage("std::chrono::duration(");
+    auto _flagsRestorer = record.backupFlags();
+    record << ALog::Record::Flags::NoSeparators;
+
+    if (value >= std::chrono::hours(24)) {
+        // Days, hours (if != 0)
+        const auto days = std::chrono::duration_cast<std::chrono::hours>(value).count() / 24;
+        record.appendInteger(days);
+        record.appendMessage("d");
+
+        const auto hours = std::chrono::duration_cast<std::chrono::hours>(value).count() - days * 24;
+        if (hours > 0) {
+            record.appendMessage(" ");
+            record.appendInteger(hours);
+            record.appendMessage("h");
+        }
+
+    } else if (value >= std::chrono::hours(1)) {
+        // HH:MM:SS
+        const auto hours = std::chrono::duration_cast<std::chrono::hours>(value).count();
+        const auto valueMin = value - std::chrono::hours(hours);
+        const auto minutes = std::chrono::duration_cast<std::chrono::minutes>(valueMin).count();
+        const auto valueSec = valueMin - std::chrono::minutes(minutes);
+        const auto seconds = std::chrono::duration_cast<std::chrono::seconds>(valueSec).count();
+        record.appendInteger(hours);
+        record.appendMessage(":");
+        record.appendInteger(minutes, 2, '0');
+        record.appendMessage(":");
+        record.appendInteger(seconds, 2, '0');
+
+    } else if (value >= std::chrono::minutes(1)) {
+        // MM:SS
+        const auto minutes = std::chrono::duration_cast<std::chrono::minutes>(value).count();
+        const auto valueSec = value - std::chrono::minutes(minutes);
+        const auto seconds = std::chrono::duration_cast<std::chrono::seconds>(valueSec).count();
+        record.appendInteger(minutes);
+        record.appendMessage(":");
+        record.appendInteger(seconds, 2, '0');
+
+    } else if (value >= std::chrono::seconds(1)) {
+        // SS.000
+        const auto seconds = std::chrono::duration_cast<std::chrono::seconds>(value).count();
+        const auto valueMs = value - std::chrono::seconds(seconds);
+        const auto ms = std::chrono::duration_cast<std::chrono::milliseconds>(valueMs).count();
+        record.appendInteger(seconds);
+        record.appendMessage(".");
+        record.appendInteger(ms, 3, '0');
+        record.appendMessage(" sec");
+
+    } else if (value >= std::chrono::milliseconds(10)) {
+        // N ms
+        const auto ms = std::chrono::duration_cast<std::chrono::milliseconds>(value).count();
+        record.appendInteger(ms);
+        record.appendMessage(" ms");
+
+    } else {
+        // N.000 ms
+        const auto ms = std::chrono::duration_cast<std::chrono::milliseconds>(value).count();
+        const auto valueUs = value - std::chrono::milliseconds(ms);
+        const auto us = std::chrono::duration_cast<std::chrono::microseconds>(valueUs).count();
+        record.appendInteger(ms);
+        record.appendMessage(".");
+        record.appendInteger(us, 3, '0');
+        record.appendMessage(" ms");
+    }
+
+    record.appendMessage(")");
+    return std::move(record);
+}
+
 
 template<typename T> inline ALog::Record& operator<< (ALog::Record& record, T&& value) { std::move(record) << std::forward<T&&>(value); return record; }
 template<typename T> inline ALog::Record& operator<< (ALog::Record& record, const T& value) { std::move(record) << value; return record; }
