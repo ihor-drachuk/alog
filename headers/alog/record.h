@@ -5,6 +5,7 @@
 #include <cstring>
 #include <cinttypes>
 #include <typeinfo>
+#include <utility>
 #include <alog/tools.h>
 #include <alog/tools_jeaiii_to_text.h>
 
@@ -233,6 +234,31 @@ inline void onStringQuote2(Record& record) {
 }
 
 } // namespace ALog
+
+
+// --- Forward declarations specially for clang compiler (Mac OS) ---
+namespace ALog {
+namespace Internal {
+template<typename Iter>
+void logArray(Record& record, size_t sz, Iter begin, Iter end);
+} // namespace Internal
+} // namespace ALog
+
+template <typename T>
+inline typename std::enable_if_t<ALog::I::is_container<T>::value && ALog::I::has_key<T>::value && ALog::I::is_qt_container<T>::value, ALog::Record>&& operator<< (ALog::Record&& record, const T& value);
+
+template <typename T>
+inline typename std::enable_if_t<ALog::I::is_container<T>::value && ALog::I::has_key<T>::value && !ALog::I::is_qt_container<T>::value, ALog::Record>&& operator<< (ALog::Record&& record, const T& value);
+
+template <typename T>
+inline typename std::enable_if_t<ALog::I::is_container<T>::value && !ALog::I::has_key<T>::value, ALog::Record>&& operator<< (ALog::Record&& record, const T& value);
+
+template <typename T>
+inline typename std::enable_if_t<std::is_array<T>::value, ALog::Record>&& operator<< (ALog::Record&& record, const T& value);
+
+template<typename T1, typename T2>
+inline ALog::Record&& operator<< (ALog::Record&& record, const std::pair<T1, T2>& value);
+// -----
 
 
 inline ALog::Record& operator<< (ALog::Record& record, ALog::Record::Flags flag)
@@ -617,27 +643,6 @@ ALog::Record&& operator<< (ALog::Record&& record, const QJsonArray& value);
 ALog::Record&& operator<< (ALog::Record&& record, const QJsonValue& value);
 ALog::Record&& operator<< (ALog::Record&& record, const QJsonDocument& value);
 #endif // ALOG_HAS_QT_LIBRARY
-
-// --- Forward declarations specially for clang compiler (Mac OS) ---
-namespace ALog {
-namespace Internal {
-template<typename Iter>
-void logArray(Record& record, size_t sz, Iter begin, Iter end);
-} // namespace Internal
-} // namespace ALog
-
-template <typename T>
-inline typename std::enable_if_t<ALog::I::is_container<T>::value && ALog::I::has_key<T>::value && ALog::I::is_qt_container<T>::value, ALog::Record>&& operator<< (ALog::Record&& record, const T& value);
-
-template <typename T>
-inline typename std::enable_if_t<ALog::I::is_container<T>::value && ALog::I::has_key<T>::value && !ALog::I::is_qt_container<T>::value, ALog::Record>&& operator<< (ALog::Record&& record, const T& value);
-
-template <typename T>
-inline typename std::enable_if_t<ALog::I::is_container<T>::value && !ALog::I::has_key<T>::value, ALog::Record>&& operator<< (ALog::Record&& record, const T& value);
-
-template <typename T>
-inline typename std::enable_if_t<std::is_array<T>::value, ALog::Record>&& operator<< (ALog::Record&& record, const T& value);
-// -----
 
 template<typename T1, typename T2>
 inline ALog::Record&& operator<< (ALog::Record&& record, const std::pair<T1, T2>& value)

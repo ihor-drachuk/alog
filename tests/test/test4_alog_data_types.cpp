@@ -13,6 +13,7 @@
 #include <QList>
 #include <QMap>
 #include <QSet>
+#include <QPair>
 #include <QJsonValue>
 #include <QJsonObject>
 #include <QJsonArray>
