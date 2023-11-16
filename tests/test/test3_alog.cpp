@@ -1,3 +1,7 @@
+/* License:  MIT
+ * Source:   https://github.com/ihor-drachuk/alog
+ * Contact:  ihor-drachuk-libs@pm.me  */
+
 #define QT_DISABLE_DEPRECATED_BEFORE 0x0A0000
 
 #include <gtest/gtest.h>

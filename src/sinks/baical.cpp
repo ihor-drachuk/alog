@@ -1,3 +1,7 @@
+/* License:  MIT
+ * Source:   https://github.com/ihor-drachuk/alog
+ * Contact:  ihor-drachuk-libs@pm.me  */
+
 #include <alog/sinks/baical.h>
 
 #ifdef ALOG_HAS_P7_LIBRARY

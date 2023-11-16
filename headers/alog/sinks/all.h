@@ -1,3 +1,7 @@
+/* License:  MIT
+ * Source:   https://github.com/ihor-drachuk/alog
+ * Contact:  ihor-drachuk-libs@pm.me  */
+
 #pragma once
 #include <alog/sinks/console.h>
 #include <alog/sinks/console_utf8.h>

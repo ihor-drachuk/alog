@@ -1,3 +1,7 @@
+/* License:  MIT
+ * Source:   https://github.com/ihor-drachuk/alog
+ * Contact:  ihor-drachuk-libs@pm.me  */
+
 #include <alog/sinks/console_qt.h>
 
 #ifdef ALOG_OS_WINDOWS
