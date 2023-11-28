@@ -33,7 +33,7 @@ std::optional<size_t> getFileSize(const char* fileName)
     if (auto error = statX(fileName, &fileInfo); error)
         return {};
 
-    return fileInfo.st_size;
+    return static_cast<size_t>(fileInfo.st_size);
 }
 
 FilePathDetails analyzePath(const std::string& path)
