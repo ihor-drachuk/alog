@@ -12,11 +12,11 @@ namespace Sinks {
 
 #define ALOG_HAS_SINK_BAICAL 1
 
-class SinkBaical : public ISink
+class Baical : public ISink
 {
 public:
-    SinkBaical();
-    ~SinkBaical() override;
+    Baical();
+    ~Baical() override;
 
     void write(const Buffer& buffer, const Record& record) override;
 
