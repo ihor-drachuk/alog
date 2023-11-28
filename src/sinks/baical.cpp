@@ -54,7 +54,7 @@ private:
 };
 
 
-struct SinkBaical::impl_t
+struct Baical::impl_t
 {
     IP7_Client* client { nullptr };
     IP7_Trace* trace { nullptr };
@@ -65,7 +65,7 @@ struct SinkBaical::impl_t
 };
 
 
-SinkBaical::SinkBaical()
+Baical::Baical()
 {
     createImpl();
 
@@ -78,7 +78,7 @@ SinkBaical::SinkBaical()
     impl().trace->Register_Module(TM(""), &impl().hModule);
 }
 
-SinkBaical::~SinkBaical()
+Baical::~Baical()
 {
     if (impl().trace)
         impl().trace->Release();
@@ -87,7 +87,7 @@ SinkBaical::~SinkBaical()
         impl().client->Release();
 }
 
-void SinkBaical::write(const Buffer& /*buffer*/, const Record& record)
+void Baical::write(const Buffer& /*buffer*/, const Record& record)
 {
     if (!impl().client || !impl().trace) return;
 
