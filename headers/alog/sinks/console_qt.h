@@ -20,7 +20,7 @@ public:
     enum class Stream {StdOut, StdErr};
 
     ConsoleQt(Stream stream);
-    ~ConsoleQt();
+    ~ConsoleQt() override;
 
     void write(const Buffer& buffer, const Record&) override;
 

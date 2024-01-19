@@ -16,7 +16,7 @@ class ConsoleQt2 : public ISink
 {
 public:
     ConsoleQt2() = default;
-    ~ConsoleQt2() = default;
+    ~ConsoleQt2() override = default;
 
     void write(const Buffer& buffer, const Record& record) override;
 };

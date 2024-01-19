@@ -17,9 +17,9 @@ public:
     enum class Stream {StdOut, StdErr};
 
     ConsoleUTF8(Stream stream);
-    ~ConsoleUTF8();
+    ~ConsoleUTF8() override;
 
-    void write(const Buffer& buffer, const Record& record);
+    void write(const Buffer& buffer, const Record& record) override;
 
 private:
     ALOG_DECLARE_PIMPL
