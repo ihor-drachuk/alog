@@ -15,11 +15,11 @@
 
 class ALogToolsFixture : public ::benchmark::Fixture {
 public:
-    void SetUp(const ::benchmark::State&) {
+    void SetUp(const ::benchmark::State&) override {
         m_str = std::string(200, 'a');
     }
 
-    void TearDown(const ::benchmark::State&) {
+    void TearDown(const ::benchmark::State&) override {
     }
 
     std::string m_str;
