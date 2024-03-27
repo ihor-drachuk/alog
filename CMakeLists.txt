@@ -7,6 +7,11 @@ option(ALOG_ENABLE_DEF_SEPARATORS    "ALog: Enable space-separators by default" 
 option(ALOG_ENABLE_DEF_AUTO_QUOTES   "ALog: Enable auto quotes" ON)
 option(ALOG_ENABLE_DEBUG             "ALog: Enable additional debug checks" OFF)
 
+set(ALOG_QT_SEARCH_MODE "Auto" CACHE STRING "ALog: Set Qt search mode")
+set_property(CACHE ALOG_QT_SEARCH_MODE PROPERTY STRINGS "Auto" "Force" "Skip")
+set(ALOG_GTEST_SEARCH_MODE "Auto" CACHE STRING "ALog: Set GTest search mode")
+set_property(CACHE ALOG_GTEST_SEARCH_MODE PROPERTY STRINGS "Auto" "Force" "Skip")
+
 FILE(GLOB_RECURSE SOURCES src/*.cpp src/*.h headers/*.h)
 
 add_library(alog STATIC ${SOURCES})
@@ -15,6 +20,20 @@ target_include_directories(alog PUBLIC headers)
 
 find_package(QT NAMES Qt6 Qt5 OPTIONAL_COMPONENTS Core)
 find_package(Qt${QT_VERSION_MAJOR} QUIET OPTIONAL_COMPONENTS Core)
+
+if (NOT ${ALOG_QT_SEARCH_MODE} STREQUAL "Skip")
+
+    if (${ALOG_QT_SEARCH_MODE} STREQUAL "Auto")
+        set(ALOG__INTERNAL_QT_SEARCH_MODE QUIET)
+    else()
+        set(ALOG__INTERNAL_QT_SEARCH_MODE REQUIRED)
+    endif()
+
+    find_package(Qt6 COMPONENTS Core Gui QUIET)
+    if (NOT Qt6_FOUND)
+        find_package(Qt5 5.15 COMPONENTS Core Gui ${ALOG__INTERNAL_QT_SEARCH_MODE})
+    endif()
+endif()
 
 if(TARGET p7)
     target_link_libraries(alog PRIVATE p7)

@@ -4,107 +4,292 @@ on:
   push:
     branches:
       - '**'
-      - '!wip**'
-      - '!**wip'
   pull_request:
     types: [opened, edited, synchronize]
 
 jobs:
-  Build:
+  Build-Linux:
     strategy:
+      fail-fast: false
       matrix:
-        os: [ubuntu-20.04, macos-11, windows-2019]
-        build_type: [Release, Debug]
+        os: [linux]
+        compiler: [gcc, clang]
+        test_libs: [tl_preinstalled, tl_missing]
+        qt: [qt_no, qt_5.15.2, qt_6.6.1]
+        build_type: [Debug, Release]
+
+    runs-on: ubuntu-latest
+
+    container:
+      image: ihordrachuk/id-build-env:${{ matrix.os }}-${{ matrix.compiler }}-${{ matrix.test_libs }}-${{ matrix.qt }}-${{ matrix.arch || 'default' }}
+      options: --workdir ${{ github.workspace }}
+
+    if: "!contains(github.event.head_commit.message, 'CI skip') && !contains(github.event.head_commit.message, 'Skip CI')"
+    timeout-minutes: 30
+
+    steps:
+      - name: "Set env values"
+        shell: bash
+        run: |
+         echo "CORES=$(nproc --all)" >> $GITHUB_ENV
+         echo "WORKSPACE=$(pwd)" >> $GITHUB_ENV
+
+      - uses: actions/checkout@v4
+        with:
+          path: ${{github.workspace}}/src
+          submodules: true
+
+      - name: Build
+        working-directory: ${{github.workspace}}
+        shell: bash
+        run: |
+          QT_SEARCH_MODE=$([[ "${{ matrix.qt }}" == "qt_no" ]] && echo "Skip" || echo "Force")
+          GTEST_SEARCH_MODE=$([[ "${{ matrix.test_libs }}" == "tl_missing" ]] && echo "Skip" || echo "Force")
+          
+          cmake -DALOG_CI_SKIP_SORT_TEST=1 \
+                -DALOG_ENABLE_TESTS=ON \
+                -DALOG_ENABLE_BENCHMARK=ON \
+                -DALOG_ENABLE_DEF_SEPARATORS=${{matrix.alog_enable_def_separators}} \
+                -DALOG_ENABLE_DEF_AUTO_QUOTES=${{matrix.alog_enable_def_auto_quotes}} \
+                -DALOG_ENABLE_DEBUG=${{matrix.alog_enable_debug}} \
+                -DALOG_QT_SEARCH_MODE:STRING=$QT_SEARCH_MODE \
+                -DALOG_GTEST_SEARCH_MODE:STRING=$GTEST_SEARCH_MODE \
+                -DCMAKE_BUILD_TYPE="${{matrix.build_type}}" \
+                -G "Unix Makefiles" \
+                -S "./src" \
+                -B "./build"
+          cmake --build "./build" --config "${{matrix.build_type}}" -j "${{env.CORES}}"
+          cd ./build/tests
+          ctest --no-tests=error --rerun-failed --output-on-failure --timeout 30 -C "${{matrix.build_type}}"
+
+
+  Build-Linux-Unconventional:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [linux]
+        compiler: [gcc]
+        test_libs: [tl_preinstalled]
+        qt: [qt_no, qt_5.15.2, qt_6.6.1]
+        build_type: [Debug]
         alog_enable_def_separators: [ON, OFF]
         alog_enable_def_auto_quotes: [ON, OFF]
         alog_enable_debug: [ON, OFF]
 
-    runs-on: ${{ matrix.os }}
-    if: "!contains(github.event.head_commit.message, 'CI skip')"
-    timeout-minutes: 15
+    runs-on: ubuntu-latest
+
+    container:
+      image: ihordrachuk/id-build-env:${{ matrix.os }}-${{ matrix.compiler }}-${{ matrix.test_libs }}-${{ matrix.qt }}-${{ matrix.arch || 'default' }}
+      options: --workdir ${{ github.workspace }}
+
+    if: "!contains(github.event.head_commit.message, 'CI skip') && !contains(github.event.head_commit.message, 'Skip CI')"
+    timeout-minutes: 30
 
     steps:
-    - name: "Set OS-specific values (Linux)"
-      if: ${{ runner.os == 'Linux' }}
-      shell: bash
-      run: |
-       echo "GENERATOR=Unix Makefiles" >> $GITHUB_ENV
-       echo "CORES=$(nproc --all)" >> $GITHUB_ENV
+      - name: "Set env values"
+        shell: bash
+        run: |
+         echo "CORES=$(nproc --all)" >> $GITHUB_ENV
+         echo "WORKSPACE=$(pwd)" >> $GITHUB_ENV
 
-    - name: "Set OS-specific values (Mac)"
-      if: ${{ runner.os == 'macOS' }}
-      shell: bash
-      run: |
-       echo "GENERATOR=Unix Makefiles" >> $GITHUB_ENV
-       echo "CORES=$(sysctl -n hw.ncpu)" >> $GITHUB_ENV
+      - uses: actions/checkout@v4
+        with:
+          path: ${{github.workspace}}/src
+          submodules: true
 
-    - name: "Set OS-specific values (Win; 2017)"
-      if: ${{ matrix.os == 'windows-2016' }}
-      shell: bash
-      run: |
-       echo "GENERATOR=Visual Studio 15 2017" >> $GITHUB_ENV
-       echo "CORES=$NUMBER_OF_PROCESSORS" >> $GITHUB_ENV
+      - name: Build
+        working-directory: ${{github.workspace}}
+        shell: bash
+        run: |
+          QT_SEARCH_MODE=$([[ "${{ matrix.qt }}" == "qt_no" ]] && echo "Skip" || echo "Force")
+          GTEST_SEARCH_MODE=$([[ "${{ matrix.test_libs }}" == "tl_missing" ]] && echo "Skip" || echo "Force")
+          
+          cmake -DALOG_CI_SKIP_SORT_TEST=1 \
+                -DALOG_ENABLE_TESTS=ON \
+                -DALOG_ENABLE_BENCHMARK=ON \
+                -DALOG_ENABLE_DEF_SEPARATORS=${{matrix.alog_enable_def_separators}} \
+                -DALOG_ENABLE_DEF_AUTO_QUOTES=${{matrix.alog_enable_def_auto_quotes}} \
+                -DALOG_ENABLE_DEBUG=${{matrix.alog_enable_debug}} \
+                -DALOG_QT_SEARCH_MODE:STRING=$QT_SEARCH_MODE \
+                -DALOG_GTEST_SEARCH_MODE:STRING=$GTEST_SEARCH_MODE \
+                -DCMAKE_BUILD_TYPE="${{matrix.build_type}}" \
+                -G "Unix Makefiles" \
+                -S "./src" \
+                -B "./build"
+          cmake --build "./build" --config "${{matrix.build_type}}" -j "${{env.CORES}}"
+          cd ./build/tests
+          ctest --no-tests=error --rerun-failed --output-on-failure --timeout 30 -C "${{matrix.build_type}}"
 
-    - name: "Set OS-specific values (Win; 2019)"
-      if: ${{ matrix.os == 'windows-2019' }}
-      shell: bash
-      run: |
-       echo "GENERATOR=Visual Studio 16 2019" >> $GITHUB_ENV
-       echo "CORES=$NUMBER_OF_PROCESSORS" >> $GITHUB_ENV
 
-    - name: "Set OS-specific values (Win; 2022)"
-      if: ${{ matrix.os == 'windows-2022' }}
-      shell: bash
-      run: |
-       echo "GENERATOR=Visual Studio 17 2022" >> $GITHUB_ENV
-       echo "CORES=$NUMBER_OF_PROCESSORS" >> $GITHUB_ENV
+  Build-Windows:
+    strategy:
+      fail-fast: false
+      matrix:
+        compiler_arch: [x64]
+        qt_arch: [win64_msvc2019_64]
+        qt: [qt_no, 5.15.2, 6.6.1]
+        build_type: [Debug, Release]
+        include:
+          - compiler_arch: Win32
+            qt_arch: win32_msvc2019
+            qt: 5.15.2
+            build_type: Debug
 
-    - uses: actions/checkout@v4
-      with:
-        path: src
+    runs-on: windows-latest
 
-    - name: Build
-      working-directory: ${{github.workspace}}/src
-      shell: bash
-      run: |
-       cmake -DALOG_CI_SKIP_SORT_TEST=1 -DALOG_ENABLE_TESTS=ON -DALOG_ENABLE_BENCHMARK=ON -DALOG_ENABLE_DEF_SEPARATORS=${{matrix.alog_enable_def_separators}} -DALOG_ENABLE_DEF_AUTO_QUOTES=${{matrix.alog_enable_def_auto_quotes}}  -DALOG_ENABLE_DEBUG=${{matrix.alog_enable_debug}} -DCMAKE_BUILD_TYPE="${{matrix.build_type}}" -G "${{env.GENERATOR}}" -S "${{github.workspace}}/src" -B "${{github.workspace}}/build"
-       cmake --build "${{github.workspace}}/build" --config "${{matrix.build_type}}" -j "${{env.CORES}}"
-       ctest --rerun-failed --output-on-failure --timeout 60 -C "${{matrix.build_type}}" --test-dir "${{github.workspace}}/build/tests"
+    if: "!contains(github.event.head_commit.message, 'CI skip') && !contains(github.event.head_commit.message, 'Skip CI')"
+    timeout-minutes: 30
+
+    steps:
+      - name: "Set env values"
+        shell: bash
+        run: |
+          echo "CORES=$NUMBER_OF_PROCESSORS" >> $GITHUB_ENV
+
+      - name: Install Qt
+        if: ${{ matrix.qt != 'qt_no' }}
+        uses: jurplel/install-qt-action@v3
+        with:
+          version: ${{ matrix.qt }}
+          host: windows
+          target: desktop
+          arch: ${{ matrix.qt_arch }}
+          dir: ${{github.workspace}}/qt
+          cache: true
+          setup-python: false
+
+      - name: "Add Qt to PATH"
+        if: ${{ matrix.qt != 'qt_no' }}
+        shell: bash
+        run: |
+          echo "${{github.workspace}}/qt" >> $GITHUB_PATH
+
+      - uses: actions/checkout@v4
+        with:
+          path: ${{github.workspace}}/src
+          submodules: true
+
+      - name: Build
+        working-directory: ${{github.workspace}}
+        shell: bash
+        run: |
+          QT_SEARCH_MODE=$([[ "${{ matrix.qt }}" == "qt_no" ]] && echo "Skip" || echo "Force")
+          
+          cmake -DALOG_CI_SKIP_SORT_TEST=1 -DALOG_ENABLE_TESTS=ON -DALOG_ENABLE_BENCHMARK=ON -DALOG_QT_SEARCH_MODE:STRING=$QT_SEARCH_MODE -DCMAKE_BUILD_TYPE="${{matrix.build_type}}" -A "${{matrix.compiler_arch}}" -G "Visual Studio 17 2022" -S "./src" -B "./build"
+          cmake --build "./build" --config "${{matrix.build_type}}" -j "${{env.CORES}}"
+          cd ./build/tests
+          ctest --no-tests=error --rerun-failed --output-on-failure --timeout 30 -C "${{matrix.build_type}}"
+
+
+  Build-MacOS:
+    strategy:
+      fail-fast: false
+      matrix:
+        qt: [qt_no, 5.15.2, 6.6.1]
+        build_type: [Debug, Release]
+
+    runs-on: macos-latest
+
+    if: "!contains(github.event.head_commit.message, 'CI skip') && !contains(github.event.head_commit.message, 'Skip CI')"
+    timeout-minutes: 30
+
+    steps:
+      - name: "Set env values"
+        shell: bash
+        run: |
+          echo "CORES=$(sysctl -n hw.ncpu)" >> $GITHUB_ENV
+
+      - name: Install Qt
+        if: ${{ matrix.qt != 'qt_no' }}
+        uses: jurplel/install-qt-action@v3
+        with:
+          version: ${{ matrix.qt }}
+          host: mac
+          target: desktop
+          arch: clang_64
+          dir: ${{github.workspace}}/qt
+          cache: true
+          setup-python: false
+
+      - name: "Add Qt to PATH"
+        if: ${{ matrix.qt != 'qt_no' }}
+        shell: bash
+        run: |
+          echo "${{github.workspace}}/qt" >> $GITHUB_PATH
+
+      - uses: actions/checkout@v4
+        with:
+          path: ${{github.workspace}}/src
+          submodules: true
+
+      - name: Build
+        working-directory: ${{github.workspace}}
+        shell: bash
+        run: |
+          QT_SEARCH_MODE=$([[ "${{ matrix.qt }}" == "qt_no" ]] && echo "Skip" || echo "Force")
+          
+          cmake -DALOG_CI_SKIP_SORT_TEST=1 -DALOG_ENABLE_TESTS=ON -DALOG_ENABLE_BENCHMARK=ON -DALOG_QT_SEARCH_MODE:STRING=$QT_SEARCH_MODE -DCMAKE_BUILD_TYPE="${{matrix.build_type}}" -G "Unix Makefiles" -S "./src" -B "./build"
+          cmake --build "./build" --config "${{matrix.build_type}}" -j "${{env.CORES}}"
+          cd ./build/tests
+          ctest --no-tests=error --rerun-failed --output-on-failure --timeout 30 -C "${{matrix.build_type}}"
+
 
   CodeChecker:
-    runs-on: [ubuntu-20.04]
+    runs-on: [ubuntu-22.04]
+
+    container:
+      image: ihordrachuk/id-build-env:linux-clang-tl_missing-qt_5.15.2-codechecker
+      options: --workdir ${{ github.workspace }}
+
     steps:
+      - name: "Set environment variables"
+        working-directory: ${{github.workspace}}
+        shell: bash
+        run: |
+         echo "WORKSPACE=$(pwd)" >> $GITHUB_ENV
+
       - name: "Check out repository"
         uses: actions/checkout@v4
+        with:
+          path: ${{github.workspace}}/src
+          submodules: true
 
-      # Prepare a build
-      - name: "Prepare build"
+      - name: "Prepare analysis - build"
+        working-directory: ${{github.workspace}}
         run: |
-          mkdir -pv Build
-          cd Build
-          cmake -DCMAKE_BUILD_TYPE=Debug -DCMAKE_EXPORT_COMPILE_COMMANDS=ON ..
+          mkdir build
+          echo "-/usr/include/*" >> build/skipfile.txt
+          echo "-/opt/Qt/*" >> build/skipfile.txt
+          echo "-$(pwd)/build*" >> build/skipfile.txt
+          cmake -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DCMAKE_BUILD_TYPE="Debug" -S "./src" -B "./build" -G "Unix Makefiles"
+          cmake --build "./build" --config "Debug" -j $(nproc --all)
 
-      # Run the analysis
-      - uses: whisperity/codechecker-analysis-action@v1
-        id: codechecker
+      - name: "Run the analysis"
+        working-directory: ${{github.workspace}}
+        run: |
+          mkdir codechecker-reports
+          # Also 'cppcheck' can be added to analyzers list
+          CodeChecker analyze -i build/skipfile.txt build/compile_commands.json -j $(nproc --all) -o report --analyzers clang-tidy clangsa
+          CodeChecker parse ./report --trim-path-prefix "$(pwd)/src" | tee ./codechecker-reports/results.txt || true
+          CodeChecker parse ./report --trim-path-prefix "$(pwd)/src" -e html -o ./codechecker-reports/html > /dev/null || true
+          CodeChecker parse ./report --trim-path-prefix "$(pwd)/src" > /dev/null && touch ./ccOK || true
+
+      - name: "Upload the results"
+        uses: actions/upload-artifact@v4
         with:
-          logfile: ${{ github.workspace }}/Build/compile_commands.json
-          config: ${{ github.workspace }}/.codechecker.yml
+          name: "CodeChecker report"
+          path: ${{github.workspace}}/codechecker-reports
 
-      # Upload the results to the CI.
-      - uses: actions/upload-artifact@v4
-        with:
-          name: "CodeChecker Bug Reports"
-          path: ${{ steps.codechecker.outputs.result-html-dir }}
-
-      # Break the build if there are *ANY* warnings emitted by the analysers.
       - name: "Break build if CodeChecker reported any findings"
-        if: ${{ steps.codechecker.outputs.warnings == 'true' }}
-        run: exit 1
+        working-directory: ${{github.workspace}}
+        run: |
+          [ -f "./ccOK" ] || exit 1
+          exit 0
+
 
   Done:
-    needs: [Build, CodeChecker]
-    runs-on: [ubuntu-20.04]
+    needs: [Build-Linux, Build-Linux-Unconventional, Build-Windows, Build-MacOS, CodeChecker]
+    runs-on: [ubuntu-latest]
     steps:
     - name: "Done"
       shell: bash

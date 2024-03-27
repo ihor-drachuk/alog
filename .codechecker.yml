@@ -1,8 +1,0 @@
-analyzer:
-  - --skip=.skipfile
-  # Allow Rule of Three
-  - --checker-config=clang-tidy:cppcoreguidelines-special-member-functions.AllowMissingMoveFunctions=true
-  # The move does not harm here
-  - --checker-config=clang-tidy:performance-move-const-arg.CheckTriviallyCopyableMove=false
-parse:
-  - --skip=.skipfile
