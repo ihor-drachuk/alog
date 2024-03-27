@@ -81,7 +81,7 @@ TEST(ALog, test_simple_setup)
 TEST(ALog, test_unicode)
 {
     SIMPLE_SETUP_ALOG;
-    LOGMD << "Привет!";
+    LOGMD << "Привіт!";
 }
 
 
@@ -111,8 +111,8 @@ TEST(ALog, test_sink)
     DEFINE_ALOGGER_MODULE(ALogerTest);
     LOGD;
     std::this_thread::sleep_for(std::chrono::milliseconds(100));
-    ASSERT_EQ(record.severity, ALog::Severity::Debug);
-    ASSERT_EQ(strcmp(record.module, "ALogerTest"), 0);
+    EXPECT_EQ(record.severity, ALog::Severity::Debug);
+    EXPECT_EQ(strcmp(record.module, "ALogerTest"), 0);
 }
 
 TEST(ALog, test_sinkWithLateMaster)
@@ -136,8 +136,8 @@ TEST(ALog, test_sinkWithLateMaster)
 
     ASSERT_EQ(records.size(), 2);
     for (const auto& x : records) {
-        ASSERT_EQ(x.severity, ALog::Severity::Debug);
-        ASSERT_EQ(strcmp(x.module, "ALogerTest"), 0);
+        EXPECT_EQ(x.severity, ALog::Severity::Debug);
+        EXPECT_EQ(strcmp(x.module, "ALogerTest"), 0);
     }
 }
 
@@ -153,8 +153,8 @@ TEST(ALog, test_syncMode)
 
     DEFINE_ALOGGER_MODULE(ALogerTest);
     LOGD;
-    ASSERT_EQ(record.severity, ALog::Severity::Debug);
-    ASSERT_EQ(strcmp(record.module, "ALogerTest"), 0);
+    EXPECT_EQ(record.severity, ALog::Severity::Debug);
+    EXPECT_EQ(strcmp(record.module, "ALogerTest"), 0);
 }
 
 TEST(ALog, test_threadNames)
@@ -169,19 +169,19 @@ TEST(ALog, test_threadNames)
     std::thread t1([&](){
         ALog::I::ThreadTools::setCurrentThreadName(thrName1);
         std::this_thread::sleep_for(std::chrono::milliseconds(20));
-        ASSERT_EQ(thrName1, ALog::I::ThreadTools::currentThreadName());
+        EXPECT_EQ(thrName1, ALog::I::ThreadTools::currentThreadName());
     });
 
     std::thread t2([&](){
         ALog::I::ThreadTools::setCurrentThreadName(thrName2);
         std::this_thread::sleep_for(std::chrono::milliseconds(10));
-        ASSERT_EQ(thrName2, ALog::I::ThreadTools::currentThreadName());
+        EXPECT_EQ(thrName2, ALog::I::ThreadTools::currentThreadName());
     });
 
     std::thread t3([&](){
         ALog::I::ThreadTools::setCurrentThreadName(thrName3);
         std::this_thread::sleep_for(std::chrono::milliseconds(20));
-        ASSERT_EQ(thrName3, ALog::I::ThreadTools::currentThreadName());
+        EXPECT_EQ(thrName3, ALog::I::ThreadTools::currentThreadName());
     });
 
     t1.join();
@@ -214,10 +214,10 @@ TEST(ALog, test_threadNames)
 
     std::this_thread::sleep_for(std::chrono::milliseconds(100));
     ASSERT_EQ(records.size(), 2);
-    ASSERT_EQ(strcmp(records[0].threadTitle, thrName4), 0);
-    ASSERT_EQ(strcmp(records[1].threadTitle, thrName5), 0);
-    ASSERT_EQ(records[0].threadTitle, thrName4);
-    ASSERT_EQ(records[1].threadTitle, thrName5);
+    EXPECT_EQ(strcmp(records[0].threadTitle, thrName4), 0);
+    EXPECT_EQ(strcmp(records[1].threadTitle, thrName5), 0);
+    EXPECT_EQ(records[0].threadTitle, thrName4);
+    EXPECT_EQ(records[1].threadTitle, thrName5);
 }
 
 #ifndef ALOG_CI_SKIP_SORT_TEST
@@ -291,27 +291,27 @@ TEST(ALog, test_flush)
         DEFINE_ALOGGER_MODULE(ALogerTest);
         LOGD;
         logger->flush();
-        ASSERT_EQ(record.severity, ALog::Severity::Debug);
-        ASSERT_EQ(strcmp(record.module, "ALogerTest"), 0);
+        EXPECT_EQ(record.severity, ALog::Severity::Debug);
+        EXPECT_EQ(strcmp(record.module, "ALogerTest"), 0);
 
         record.severity = ALog::Severity::Minimal;
         record.module = nullptr;
         LOGD << ALog::Record::Flags::Flush;
-        ASSERT_EQ(record.severity, ALog::Severity::Debug);
-        ASSERT_EQ(strcmp(record.module, "ALogerTest"), 0);
+        EXPECT_EQ(record.severity, ALog::Severity::Debug);
+        EXPECT_EQ(strcmp(record.module, "ALogerTest"), 0);
 
         record.severity = ALog::Severity::Minimal;
         record.module = nullptr;
         LOGD;
         ACCESS_ALOGGER_MODULE.flush();
-        ASSERT_EQ(record.severity, ALog::Severity::Debug);
-        ASSERT_EQ(strcmp(record.module, "ALogerTest"), 0);
+        EXPECT_EQ(record.severity, ALog::Severity::Debug);
+        EXPECT_EQ(strcmp(record.module, "ALogerTest"), 0);
 
         record.severity = ALog::Severity::Minimal;
         record.module = nullptr;
         LOGD << ALog::Record::Flags::FlushAndDrop;
-        ASSERT_EQ(record.severity, ALog::Severity::Minimal);
-        ASSERT_EQ(record.module, nullptr);
+        EXPECT_EQ(record.severity, ALog::Severity::Minimal);
+        EXPECT_EQ(record.module, nullptr);
     }
 }
 
@@ -337,39 +337,39 @@ TEST(ALog, test_operatorPutStream)
     LOGD << (int64_t)1 << ALOG_FL_FLUSH;
 
     for (const auto& x : records)
-        ASSERT_EQ(std::string(x.getMessage()), "1");
+        EXPECT_EQ(std::string(x.getMessage()), "1");
 
     // Min, Max
     LOGD << std::numeric_limits<uint8_t>::max() << ALOG_FL_FLUSH;
-    ASSERT_EQ( strcmp(records.back().getMessage(), std::to_string(std::numeric_limits<uint8_t>::max()).data()), 0);
+    EXPECT_EQ( strcmp(records.back().getMessage(), std::to_string(std::numeric_limits<uint8_t>::max()).data()), 0);
 
     LOGD << std::numeric_limits<uint8_t>::min() << ALOG_FL_FLUSH;
-    ASSERT_EQ( strcmp(records.back().getMessage(), std::to_string(std::numeric_limits<uint8_t>::min()).data()), 0);
+    EXPECT_EQ( strcmp(records.back().getMessage(), std::to_string(std::numeric_limits<uint8_t>::min()).data()), 0);
 
     LOGD << std::numeric_limits<uint16_t>::max() << ALOG_FL_FLUSH;
-    ASSERT_EQ( strcmp(records.back().getMessage(), std::to_string(std::numeric_limits<uint16_t>::max()).data()), 0);
+    EXPECT_EQ( strcmp(records.back().getMessage(), std::to_string(std::numeric_limits<uint16_t>::max()).data()), 0);
 
     LOGD << std::numeric_limits<uint16_t>::min() << ALOG_FL_FLUSH;
-    ASSERT_EQ( strcmp(records.back().getMessage(), std::to_string(std::numeric_limits<uint16_t>::min()).data()), 0);
+    EXPECT_EQ( strcmp(records.back().getMessage(), std::to_string(std::numeric_limits<uint16_t>::min()).data()), 0);
 
     LOGD << std::numeric_limits<uint32_t>::max() << ALOG_FL_FLUSH;
-    ASSERT_EQ( strcmp(records.back().getMessage(), std::to_string(std::numeric_limits<uint32_t>::max()).data()), 0);
+    EXPECT_EQ( strcmp(records.back().getMessage(), std::to_string(std::numeric_limits<uint32_t>::max()).data()), 0);
 
     LOGD << std::numeric_limits<uint32_t>::min() << ALOG_FL_FLUSH;
-    ASSERT_EQ( strcmp(records.back().getMessage(), std::to_string(std::numeric_limits<uint32_t>::min()).data()), 0);
+    EXPECT_EQ( strcmp(records.back().getMessage(), std::to_string(std::numeric_limits<uint32_t>::min()).data()), 0);
 
     LOGD << std::numeric_limits<uint64_t>::max() << ALOG_FL_FLUSH;
-    ASSERT_EQ( strcmp(records.back().getMessage(), std::to_string(std::numeric_limits<uint64_t>::max()).data()), 0);
+    EXPECT_EQ( strcmp(records.back().getMessage(), std::to_string(std::numeric_limits<uint64_t>::max()).data()), 0);
 
     LOGD << std::numeric_limits<uint64_t>::min() << ALOG_FL_FLUSH;
-    ASSERT_EQ( strcmp(records.back().getMessage(), std::to_string(std::numeric_limits<uint64_t>::min()).data()), 0);
+    EXPECT_EQ( strcmp(records.back().getMessage(), std::to_string(std::numeric_limits<uint64_t>::min()).data()), 0);
 
     records.clear();
     LOGD << (float)1.1;
     LOGD << (double)1.1;
     LOGD << (long double)1.1 << ALOG_FL_FLUSH;
     for (const auto& x : records)
-        ASSERT_TRUE(floatsEquality( std::stof(std::string(x.getMessage(), x.getMessage() + x.getMessageLen()).data()), (float)1.1 ));
+        EXPECT_TRUE(floatsEquality( std::stof(std::string(x.getMessage(), x.getMessage() + x.getMessageLen()).data()), (float)1.1 ));
 
     records.clear();
     LOGD << "Test";
@@ -378,14 +378,14 @@ TEST(ALog, test_operatorPutStream)
     LOGD << NO_AUTO_QUOTES << std::wstring(L"Test");
     logger->flush();
     for (const auto& x : records)
-        ASSERT_EQ(std::string(x.getMessage()), "Test");
+        EXPECT_EQ(std::string(x.getMessage()), "Test");
 
     records.clear();
     LOGD << QUOTE_LITERALS << "Test";
     LOGD << QUOTE_LITERALS << L"Test";
     logger->flush();
     for (const auto& x : records)
-        ASSERT_EQ(std::string(x.getMessage()), "\"Test\"");
+        EXPECT_EQ(std::string(x.getMessage()), "\"Test\"");
 
     records.clear();
     LOGD << std::string("Test");
@@ -393,10 +393,10 @@ TEST(ALog, test_operatorPutStream)
     logger->flush();
 #ifdef ALOG_ENABLE_DEF_AUTO_QUOTES
     for (const auto& x : records)
-        ASSERT_EQ(std::string(x.getMessage()), "\"Test\"");
+        EXPECT_EQ(std::string(x.getMessage()), "\"Test\"");
 #else
     for (const auto& x : records)
-        ASSERT_EQ(std::string(x.getMessage()), "Test");
+        EXPECT_EQ(std::string(x.getMessage()), "Test");
 #endif
 }
 
@@ -416,7 +416,7 @@ TEST(ALog, test_defaultFormatter)
     const auto reference1 = stringReplace(
                                 escapeRegex("[    0.014] T#0  [Info    ] [::TestBody:NNNN]  Test"),
                                 "NNNN", R"(\d+)");
-    ASSERT_TRUE(regexMatch(recordedLog, reference1));
+    EXPECT_TRUE(regexMatch(recordedLog, reference1));
 
     // #2
     record = _ALOG_RECORD(ALog::Severity::Info) << "Test";
@@ -430,7 +430,7 @@ TEST(ALog, test_defaultFormatter)
     const auto reference2 = stringReplace(
                                 escapeRegex("[    0.014] T#0  (Worker) [Info    ] [::TestBody:NNNN]  Test"),
                                 "NNNN", R"(\d+)");
-    ASSERT_TRUE(regexMatch(recordedLog, reference2));
+    EXPECT_TRUE(regexMatch(recordedLog, reference2));
 
     // #3
     record = _ALOG_RECORD(ALog::Severity::Info) << "Test";
@@ -444,7 +444,7 @@ TEST(ALog, test_defaultFormatter)
     const auto reference3 = stringReplace(
                                 escapeRegex("[    0.014] T#0  [Info    ] [Module               ] [::TestBody:NNNN]  Test"),
                                 "NNNN", R"(\d+)");
-    ASSERT_TRUE(regexMatch(recordedLog, reference3));
+    EXPECT_TRUE(regexMatch(recordedLog, reference3));
 
     // #4
     record = _ALOG_RECORD(ALog::Severity::Info) << "Test";
@@ -459,7 +459,7 @@ TEST(ALog, test_defaultFormatter)
     const auto reference4 = stringReplace(
                                 escapeRegex("[   13.014] T#0  (Worker) [Info    ] [Module               ] [::TestBody:NNNN]  Test"),
                                 "NNNN", R"(\d+)");
-    ASSERT_TRUE(regexMatch(recordedLog, reference4));
+    EXPECT_TRUE(regexMatch(recordedLog, reference4));
 
     // #5
     record.flagsOn(ALog::Record::Flags::Abort);
@@ -467,7 +467,7 @@ TEST(ALog, test_defaultFormatter)
 
     recordedLog.resize(str1.size());
     memcpy(recordedLog.data(), str1.data(), str1.size());
-    ASSERT_NE(strstr(recordedLog.data(), "test3_alog.cpp"), nullptr);
+    EXPECT_NE(strstr(recordedLog.data(), "test3_alog.cpp"), nullptr);
 }
 
 TEST(ALog, test_defaultFormatterLate)
@@ -491,13 +491,13 @@ TEST(ALog, test_defaultFormatterLate)
 
     str2.resize(str1.size());
     memcpy(str2.data(), str1.data(), str1.size());
-    ASSERT_NE(strstr(str2.data(), "test3_alog.cpp"), nullptr);
+    EXPECT_NE(strstr(str2.data(), "test3_alog.cpp"), nullptr);
 
     str1 = formatter.format(record[1]);
     str2.resize(str1.size());
     memcpy(str2.data(), str1.data(), str1.size());
-    ASSERT_EQ(strstr(str2.data(), "test3_alog.cpp"), nullptr);
-    ASSERT_NE(strstr(str2.data(), "Just trigger"), nullptr);
+    EXPECT_EQ(strstr(str2.data(), "test3_alog.cpp"), nullptr);
+    EXPECT_NE(strstr(str2.data(), "Just trigger"), nullptr);
 }
 
 TEST(ALog, test_hex)
@@ -507,11 +507,11 @@ TEST(ALog, test_hex)
 
     auto record = _ALOG_RECORD(ALog::Severity::Info) << BUFFER(buffer, sizeof(buffer));
     sprintf(buffer2, "{Buffer; Size: 6, Ptr = 0x%p, Data = 0x010203040506}", buffer);
-    ASSERT_EQ(strcmp(record.getMessage(), buffer2), 0);
+    EXPECT_STREQ(record.getMessage(), buffer2);
 
     record = _ALOG_RECORD(ALog::Severity::Info) << BUFFER(buffer, 0);
     sprintf(buffer2, "{Buffer; Size: 0, Ptr = 0x%p. No data}", buffer);
-    ASSERT_EQ(strcmp(record.getMessage(), buffer2), 0);
+    EXPECT_STREQ(record.getMessage(), buffer2);
 }
 
 TEST(ALog, test_flags)
@@ -545,19 +545,19 @@ TEST(ALog, test_separators)
     MainALogger_0->flush();
 
     ASSERT_EQ(records.size(), 9);
-    ASSERT_STREQ(records[0].message.getString(), "String-1 1 String-2");
-    ASSERT_STREQ(records[1].message.getString(), "String-1 1 String-2");
+    EXPECT_STREQ(records[0].message.getString(), "String-1 1 String-2");
+    EXPECT_STREQ(records[1].message.getString(), "String-1 1 String-2");
 #ifdef ALOG_ENABLE_DEF_SEPARATORS
-    ASSERT_STREQ(records[2].message.getString(), "String-1 1 String-2");
+    EXPECT_STREQ(records[2].message.getString(), "String-1 1 String-2");
 #else
-    ASSERT_STREQ(records[2].message.getString(), "String-11String-2");
+    EXPECT_STREQ(records[2].message.getString(), "String-11String-2");
 #endif
-    ASSERT_STREQ(records[3].message.getString(), "String-11String-2");
-    ASSERT_STREQ(records[4].message.getString(), "String-11String-2");
-    ASSERT_STREQ(records[5].message.getString(), "String-1, 1, String-2");
-    ASSERT_STREQ(records[6].message.getString(), "String-1_1 String-2");
-    ASSERT_STREQ(records[7].message.getString(), "String-1_1String-2");
-    ASSERT_STREQ(records[8].message.getString(), "String-11_String-2");
+    EXPECT_STREQ(records[3].message.getString(), "String-11String-2");
+    EXPECT_STREQ(records[4].message.getString(), "String-11String-2");
+    EXPECT_STREQ(records[5].message.getString(), "String-1, 1, String-2");
+    EXPECT_STREQ(records[6].message.getString(), "String-1_1 String-2");
+    EXPECT_STREQ(records[7].message.getString(), "String-1_1String-2");
+    EXPECT_STREQ(records[8].message.getString(), "String-11_String-2");
 }
 
 TEST(ALog, test_filters)
@@ -615,11 +615,11 @@ TEST(ALog, test_filters)
         items.insert(x.getMessage());
 
     for (const auto& x : expected) {
-        ASSERT_GE(items.count(x), 1);
+        EXPECT_GE(items.count(x), 1);
     }
 
     for (const auto& x : unexpected) {
-        ASSERT_EQ(items.count(x), 0);
+        EXPECT_EQ(items.count(x), 0);
     }
 }
 
@@ -661,23 +661,23 @@ TEST(ALog, test_separators_advanced)
     MainALogger_0->flush();
 
     ASSERT_EQ(records.size(), 17);
-    ASSERT_STREQ(records[0].message.getString(), "Literal string SSS(SSS)");
-    ASSERT_STREQ(records[1].message.getString(), "Literal string (wide)");
-    ASSERT_STREQ(records[2].message.getString(), "\"String\"");
-    ASSERT_STREQ(records[3].message.getString(), "\"String (wide)\"");
-    ASSERT_STREQ(records[4].message.getString(), "(11, \"Hi\") SSS");
-    ASSERT_STREQ(records[5].message.getString(), "(\"Hi\", 11) SSS");
-    ASSERT_STREQ(records[6].message.getString(), "(11, \"Hi\")SSS-no-sep");
-    ASSERT_STREQ(records[7].message.getString(), "(11, (12, \"Hi\"))");
-    ASSERT_STREQ(records[8].message.getString(), "((\"1\", \"2\"), (\"3\", \"4\"))");
-    ASSERT_STREQ(records[9].message.getString(), "{Container; Size: 4; Data = 1, 2, 3, 4} SSS");
-    ASSERT_STREQ(records[10].message.getString(), "{Container; Size: 4; Data = 1, 2, 3, 4}");
-    ASSERT_STREQ(records[11].message.getString(), "{Container; Size: 4; Data = 1, 2, 3, 4}");
-    //ASSERT_STREQ(records[12].str.getString(), "{Container; Size: 4; Data = 1, 2, 3, 4}");
-    ASSERT_STREQ(records[13].message.getString(), "{Container; Size: 4; Data = (1, \"1\"), (2, \"2\"), (3, \"3\"), (4, \"4\")}");
-    //ASSERT_STREQ(records[14].str.getString(), "{Container; Size: 4; Data = (1, \"1\"), (2, \"2\"), (3, \"3\"), (4, \"4\")} SSS");
-    ASSERT_STREQ(records[15].message.getString(), "{Container; Size: 3; Data = (1, \"1\"), (2, \"2\"), (3, \"3\")}");
-    ASSERT_STREQ(records[16].message.getString(), "{Container; Size: 2; Data = {Container; Size: 3; Data = (1, \"1\"), (2, \"2\"), (3, \"3\")}, {Container; Size: 2; Data = (4, \"4\"), (5, \"5\")}}");
+    EXPECT_STREQ(records[0].message.getString(), "Literal string SSS(SSS)");
+    EXPECT_STREQ(records[1].message.getString(), "Literal string (wide)");
+    EXPECT_STREQ(records[2].message.getString(), "\"String\"");
+    EXPECT_STREQ(records[3].message.getString(), "\"String (wide)\"");
+    EXPECT_STREQ(records[4].message.getString(), "(11, \"Hi\") SSS");
+    EXPECT_STREQ(records[5].message.getString(), "(\"Hi\", 11) SSS");
+    EXPECT_STREQ(records[6].message.getString(), "(11, \"Hi\")SSS-no-sep");
+    EXPECT_STREQ(records[7].message.getString(), "(11, (12, \"Hi\"))");
+    EXPECT_STREQ(records[8].message.getString(), "((\"1\", \"2\"), (\"3\", \"4\"))");
+    EXPECT_STREQ(records[9].message.getString(), "{Container; Size: 4; Data = 1, 2, 3, 4} SSS");
+    EXPECT_STREQ(records[10].message.getString(), "{Container; Size: 4; Data = 1, 2, 3, 4}");
+    EXPECT_STREQ(records[11].message.getString(), "{Container; Size: 4; Data = 1, 2, 3, 4}");
+    //EXPECT_STREQ(records[12].str.getString(), "{Container; Size: 4; Data = 1, 2, 3, 4}");
+    EXPECT_STREQ(records[13].message.getString(), "{Container; Size: 4; Data = (1, \"1\"), (2, \"2\"), (3, \"3\"), (4, \"4\")}");
+    //EXPECT_STREQ(records[14].str.getString(), "{Container; Size: 4; Data = (1, \"1\"), (2, \"2\"), (3, \"3\"), (4, \"4\")} SSS");
+    EXPECT_STREQ(records[15].message.getString(), "{Container; Size: 3; Data = (1, \"1\"), (2, \"2\"), (3, \"3\")}");
+    EXPECT_STREQ(records[16].message.getString(), "{Container; Size: 2; Data = {Container; Size: 3; Data = (1, \"1\"), (2, \"2\"), (3, \"3\")}, {Container; Size: 2; Data = (4, \"4\"), (5, \"5\")}}");
 #endif
 }
 
@@ -726,16 +726,16 @@ TEST(ALog, test_enums)
 
     ASSERT_EQ(records.size(), 3);
 #ifdef ALOG_HAS_QT_LIBRARY
-    ASSERT_STREQ(records[0].message.getString(), "TestEnum(2, TestValue2)");
-    ASSERT_EQ   (records[0].severity,            ALog::Severity::Debug);
-    ASSERT_STREQ(records[1].message.getString(), "TestEnum(10, out-of-range)");
-    ASSERT_EQ   (records[1].severity,            ALog::Severity::Warning);
-    ASSERT_STREQ(records[2].message.getString(), "1");
-    ASSERT_EQ   (records[2].severity,            ALog::Severity::Debug);
+    EXPECT_STREQ(records[0].message.getString(), "TestEnum(2, TestValue2)");
+    EXPECT_EQ   (records[0].severity,            ALog::Severity::Debug);
+    EXPECT_STREQ(records[1].message.getString(), "TestEnum(10, out-of-range)");
+    EXPECT_EQ   (records[1].severity,            ALog::Severity::Warning);
+    EXPECT_STREQ(records[2].message.getString(), "1");
+    EXPECT_EQ   (records[2].severity,            ALog::Severity::Debug);
 #else
-    ASSERT_STREQ(records[0].message.getString(), "2");
-    ASSERT_STREQ(records[1].message.getString(), "10");
-    ASSERT_STREQ(records[2].message.getString(), "1");
+    EXPECT_STREQ(records[0].message.getString(), "2");
+    EXPECT_STREQ(records[1].message.getString(), "10");
+    EXPECT_STREQ(records[2].message.getString(), "1");
 #endif // ALOG_HAS_QT_LIBRARY
 }
 
@@ -821,8 +821,8 @@ TEST(ALog, test_sink_file_rotated)
         auto files = fetchFiles(sandboxFolder);
 
         ASSERT_EQ(files.size(), 1);
-        ASSERT_EQ(files[0].name, "application.log");
-        ASSERT_EQ(files[0].content, "Some\n log\n");
+        EXPECT_EQ(files[0].name, "application.log");
+        EXPECT_EQ(files[0].content, "Some\n log\n");
     }
 
     // Size rotation test
@@ -840,11 +840,11 @@ TEST(ALog, test_sink_file_rotated)
         auto files = fetchFiles(sandboxFolder);
 
         ASSERT_EQ(files.size(), 2);
-        ASSERT_EQ(files[1].name, "application.log.2");
-        ASSERT_EQ(files[1].content, "Some\n log\n");
+        EXPECT_EQ(files[1].name, "application.log.2");
+        EXPECT_EQ(files[1].content, "Some\n log\n");
 
-        ASSERT_EQ(files[0].name, "application.log");
-        ASSERT_EQ(files[0].content, "Some log2\n");
+        EXPECT_EQ(files[0].name, "application.log");
+        EXPECT_EQ(files[0].content, "Some log2\n");
     }
 
     // Size rotation test #2 + limit test
@@ -862,14 +862,14 @@ TEST(ALog, test_sink_file_rotated)
         auto files = fetchFiles(sandboxFolder);
 
         ASSERT_EQ(files.size(), 3);
-        ASSERT_EQ(files[2].name, "application.log.3");
-        ASSERT_EQ(files[2].content, "Some\n log\n");
+        EXPECT_EQ(files[2].name, "application.log.3");
+        EXPECT_EQ(files[2].content, "Some\n log\n");
 
-        ASSERT_EQ(files[1].name, "application.log.2");
-        ASSERT_EQ(files[1].content, "Some log2\n");
+        EXPECT_EQ(files[1].name, "application.log.2");
+        EXPECT_EQ(files[1].content, "Some log2\n");
 
-        ASSERT_EQ(files[0].name, "application.log");
-        ASSERT_EQ(files[0].content, "Some log3\n");
+        EXPECT_EQ(files[0].name, "application.log");
+        EXPECT_EQ(files[0].content, "Some log3\n");
     }
 
     {
@@ -887,17 +887,17 @@ TEST(ALog, test_sink_file_rotated)
         auto files = fetchFiles(sandboxFolder);
 
         ASSERT_EQ(files.size(), 4);
-        ASSERT_EQ(files[3].name, "application.log.4");
-        ASSERT_EQ(files[3].content, "Some log2\n");
+        EXPECT_EQ(files[3].name, "application.log.4");
+        EXPECT_EQ(files[3].content, "Some log2\n");
 
-        ASSERT_EQ(files[2].name, "application.log.3");
-        ASSERT_EQ(files[2].content, "Some log3\n");
+        EXPECT_EQ(files[2].name, "application.log.3");
+        EXPECT_EQ(files[2].content, "Some log3\n");
 
-        ASSERT_EQ(files[1].name, "application.log.2");
-        ASSERT_EQ(files[1].content, "Some log4\n");
+        EXPECT_EQ(files[1].name, "application.log.2");
+        EXPECT_EQ(files[1].content, "Some log4\n");
 
-        ASSERT_EQ(files[0].name, "application.log");
-        ASSERT_EQ(files[0].content, "Some log5\n");
+        EXPECT_EQ(files[0].name, "application.log");
+        EXPECT_EQ(files[0].content, "Some log5\n");
     }
 
     // Redundant files count limit test (on start)
@@ -919,17 +919,17 @@ TEST(ALog, test_sink_file_rotated)
         auto files = fetchFiles(sandboxFolder);
 
         ASSERT_EQ(files.size(), 4);
-        ASSERT_EQ(files[3].name, "application.log.4");
-        ASSERT_EQ(files[3].content, "Some log2\n");
+        EXPECT_EQ(files[3].name, "application.log.4");
+        EXPECT_EQ(files[3].content, "Some log2\n");
 
-        ASSERT_EQ(files[2].name, "application.log.3");
-        ASSERT_EQ(files[2].content, "Some log3\n");
+        EXPECT_EQ(files[2].name, "application.log.3");
+        EXPECT_EQ(files[2].content, "Some log3\n");
 
-        ASSERT_EQ(files[1].name, "application.log.2");
-        ASSERT_EQ(files[1].content, "Some log4\n");
+        EXPECT_EQ(files[1].name, "application.log.2");
+        EXPECT_EQ(files[1].content, "Some log4\n");
 
-        ASSERT_EQ(files[0].name, "application.log");
-        ASSERT_EQ(files[0].content, "Some log5\n");
+        EXPECT_EQ(files[0].name, "application.log");
+        EXPECT_EQ(files[0].content, "Some log5\n");
     }
 }
 
@@ -949,8 +949,8 @@ TEST(ALog, test_optional)
     LOGI << std::optional<int>(10);
 
     ASSERT_EQ(records.size(), 2);
-    ASSERT_STREQ(records[0].getMessage(), "std::optional()");
-    ASSERT_STREQ(records[1].getMessage(), "std::optional(10)");
+    EXPECT_STREQ(records[0].getMessage(), "std::optional()");
+    EXPECT_STREQ(records[1].getMessage(), "std::optional(10)");
 }
 
 TEST(ALog, test_variant)
@@ -976,12 +976,12 @@ TEST(ALog, test_variant)
     LOGI << value;
 
     ASSERT_EQ(records.size(), 3);
-    ASSERT_STREQ(records[0].getMessage(), R"(std::variant(std::monostate()))");
-    ASSERT_STREQ(records[1].getMessage(), R"(std::variant(10))");
+    EXPECT_STREQ(records[0].getMessage(), R"(std::variant(std::monostate()))");
+    EXPECT_STREQ(records[1].getMessage(), R"(std::variant(10))");
 #ifdef ALOG_ENABLE_DEF_AUTO_QUOTES
-    ASSERT_STREQ(records[2].getMessage(), R"(std::variant("Hello"))");
+    EXPECT_STREQ(records[2].getMessage(), R"(std::variant("Hello"))");
 #else
-    ASSERT_STREQ(records[2].getMessage(), R"(std::variant(Hello))");
+    EXPECT_STREQ(records[2].getMessage(), R"(std::variant(Hello))");
 #endif // ALOG_ENABLE_DEF_AUTO_QUOTES
 }
 
@@ -1007,12 +1007,12 @@ TEST(ALog, test_chrono_duration)
     LOGI << 5ms + 62us;
 
     ASSERT_EQ(records.size(), 6);
-    ASSERT_STREQ(records[0].getMessage(), R"(std::chrono::duration(2d 15h))");
-    ASSERT_STREQ(records[1].getMessage(), R"(std::chrono::duration(8:13:20))");
-    ASSERT_STREQ(records[2].getMessage(), R"(std::chrono::duration(10:20))");
-    ASSERT_STREQ(records[3].getMessage(), R"(std::chrono::duration(20.113 sec))");
-    ASSERT_STREQ(records[4].getMessage(), R"(std::chrono::duration(25 ms))");
-    ASSERT_STREQ(records[5].getMessage(), R"(std::chrono::duration(5.062 ms))");
+    EXPECT_STREQ(records[0].getMessage(), R"(std::chrono::duration(2d 15h))");
+    EXPECT_STREQ(records[1].getMessage(), R"(std::chrono::duration(8:13:20))");
+    EXPECT_STREQ(records[2].getMessage(), R"(std::chrono::duration(10:20))");
+    EXPECT_STREQ(records[3].getMessage(), R"(std::chrono::duration(20.113 sec))");
+    EXPECT_STREQ(records[4].getMessage(), R"(std::chrono::duration(25 ms))");
+    EXPECT_STREQ(records[5].getMessage(), R"(std::chrono::duration(5.062 ms))");
 }
 
 

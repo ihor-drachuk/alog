@@ -15,10 +15,10 @@
 TEST(ALog_Tools, extractFileNameOnly)
 {
     constexpr auto result = ALog::I::extractFileNameOnly("H:\\folder\\sub-folder\\file.cpp");
-    ASSERT_STREQ(result, "file.cpp");
+    EXPECT_STREQ(result, "file.cpp");
 
     constexpr auto result2 = ALog::I::extractFileNameOnly("/folder/sub-folder/uncomfortable - file.cpp");
-    ASSERT_STREQ(result2, "uncomfortable - file.cpp");
+    EXPECT_STREQ(result2, "uncomfortable - file.cpp");
 }
 
 TEST(ALog_Tools, Finally)
@@ -43,9 +43,9 @@ TEST(ALog_Tools, CombineInt)
         D = 8
     };
 
-    ASSERT_EQ(ALog::I::combineInt(SE::A), 1);
-    ASSERT_EQ(ALog::I::combineInt(SE::A, SE::C), 5);
-    ASSERT_EQ(ALog::I::combineInt(SE::A, SE::B, SE::C, SE::D), 15);
+    EXPECT_EQ(ALog::I::combineInt(SE::A), 1);
+    EXPECT_EQ(ALog::I::combineInt(SE::A, SE::C), 5);
+    EXPECT_EQ(ALog::I::combineInt(SE::A, SE::B, SE::C, SE::D), 15);
 }
 
 TEST(ALog_Tools, AnalyzePath)
@@ -78,11 +78,11 @@ TEST(ALog_Tools, AnalyzePath)
         {}
     };
 
-    assert(inputs.size() == results.size());
+    ASSERT_EQ(inputs.size(), results.size());
 
     for (int i = 0; i < inputs.size(); i++) {
         const auto actualResult = ALog::Internal::analyzePath(inputs.at(i));
-        ASSERT_EQ(actualResult, results.at(i));
+        EXPECT_EQ(actualResult, results.at(i));
     }
 }
 
@@ -107,7 +107,7 @@ TEST(ALog_Tools, IntToStr)
     };
 
     auto verifier = [](const std::pair<std::string, std::string>& pair) {
-        ASSERT_EQ(pair.first, pair.second);
+        EXPECT_EQ(pair.first, pair.second);
     };
 
     const auto datasetSource = std::make_tuple(
