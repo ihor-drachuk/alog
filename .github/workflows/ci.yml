@@ -59,7 +59,7 @@ jobs:
        echo "GENERATOR=Visual Studio 17 2022" >> $GITHUB_ENV
        echo "CORES=$NUMBER_OF_PROCESSORS" >> $GITHUB_ENV
 
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
       with:
         path: src
 
@@ -75,7 +75,7 @@ jobs:
     runs-on: [ubuntu-20.04]
     steps:
       - name: "Check out repository"
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       # Prepare a build
       - name: "Prepare build"
@@ -92,7 +92,7 @@ jobs:
           config: ${{ github.workspace }}/.codechecker.yml
 
       # Upload the results to the CI.
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@v4
         with:
           name: "CodeChecker Bug Reports"
           path: ${{ steps.codechecker.outputs.result-html-dir }}
