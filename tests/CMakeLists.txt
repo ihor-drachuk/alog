@@ -1,3 +1,13 @@
+# Disable warning
+# "Compatibility with CMake < 3.5 will be removed from a future version of CMake."
+# It's produced by GTest and likely Google benchmark.
+set(CMAKE_WARN_DEPRECATED OFF CACHE BOOL "" FORCE)
+
+# Fix warning for FetchContent_Declare regarding DOWNLOAD_EXTRACT_TIMESTAMP
+if(CMAKE_VERSION VERSION_GREATER_EQUAL "3.24")
+    cmake_policy(SET CMP0135 NEW)
+endif()
+
 set(ALOG_NEED_GTEST OFF)
 set(ALOG_NEED_BENCHMARK OFF)
 
