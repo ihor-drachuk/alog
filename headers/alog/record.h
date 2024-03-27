@@ -548,6 +548,7 @@ inline ALog::Record&& operator<< (ALog::Record&& record, T value) {
     const auto metaEnum = QMetaEnum::fromType<T>();
 
     record.appendMessageAL(metaEnum.enumName());
+    [[maybe_unused]] auto _checkSS = record.updateSkipSeparators(5);
     record.appendMessage("(");
     record = std::move(record) << static_cast<std::underlying_type_t<T>>(value);
     record.appendMessage(", ");
