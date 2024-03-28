@@ -892,5 +892,5 @@ ALog::Record&& operator<< (ALog::Record&& record, const std::chrono::duration<Ts
 }
 
 
-template<typename T> inline ALog::Record& operator<< (ALog::Record& record, T&& value) { std::move(record) << std::forward<T&&>(value); return record; }
-template<typename T> inline ALog::Record& operator<< (ALog::Record& record, const T& value) { std::move(record) << value; return record; }
+template<typename T> inline ALog::Record& operator<< (ALog::Record& record, T&& value) { return (std::move(record) << std::forward<T&&>(value)); }
+template<typename T> inline ALog::Record& operator<< (ALog::Record& record, const T& value) { return (std::move(record) << value); }

@@ -26,6 +26,24 @@
     classname(classname&&) = delete; \
     classname& operator=(classname&&) = delete
 
+#ifdef ALOG_COMPILER_APPLE_CLANG
+#define CLANG_STRINGIFY_LITERAL(x) #x
+
+#define CLANG_WARNING_PRAGMA_STRING(directive, x) \
+    _Pragma(CLANG_STRINGIFY_LITERAL(directive x))
+
+#define CLANG_WARNING_DISABLE(x) \
+    _Pragma("clang diagnostic push") \
+    CLANG_WARNING_PRAGMA_STRING(clang diagnostic ignored, x)
+
+#define CLANG_WARNING_RESTORE() \
+    _Pragma("clang diagnostic pop")
+
+#else
+#define CLANG_WARNING_DISABLE(x)
+#define CLANG_WARNING_RESTORE()
+#endif // ALOG_COMPILER_APPLE_CLANG
+
 class QString;
 class QLatin1String;
 class QStringRef;
@@ -219,17 +237,21 @@ public:
 
     template<typename... Args>
     inline void appendFmtString(const char* format, Args&&... args) {
+        CLANG_WARNING_DISABLE("-Wformat-nonliteral")
+        // codechecker_intentional [clang-diagnostic-format-nonliteral]
         auto sz = snprintf(nullptr, 0, format, std::forward<Args>(args)...);
         if (sz < 0) {
             appendFmtString("-- ALOG: Failed to format \"%s\" (%s)", format, strerror(errno));
             return;
         }; 
         auto target = allocate_copy(sz);
+        // codechecker_intentional [clang-diagnostic-format-nonliteral]
         auto result = snprintf((char*)target, sz+1, format, std::forward<Args>(args)...);
         if (result != sz) {
             // Very unlikely
             throw std::runtime_error("snprintf did not format to the expected size");
         }
+        CLANG_WARNING_RESTORE()
     }
 
     inline void clear() {

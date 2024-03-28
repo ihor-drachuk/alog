@@ -99,7 +99,7 @@ using DefaultLogger = ALog::LoggerHolder<0>;
 } // namespace ALog
 
 template<typename T>
-inline ALog::MockRecord&& operator<< (ALog::MockRecord&& r, const T&) { return std::move(r); }
+inline ALog::MockRecord&& operator<< (ALog::MockRecord&& r, const T&) { return static_cast<ALog::MockRecord&&>(r); }
 
 #define DEFINE_MAIN_ALOGGER_N(N)       ALog::LoggerHolder<N> MainALogger_##N
 #define DEFINE_MAIN_ALOGGER            DEFINE_MAIN_ALOGGER_N(0)

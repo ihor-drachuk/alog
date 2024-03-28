@@ -342,25 +342,18 @@ static void IntToStr_sstream(benchmark::State& state)
 BENCHMARK(IntToStr_sstream);
 
 
-#ifdef ALOG_COMPILER_APPLE_CLANG
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wdeprecated-declarations"
-#endif
-
 static void IntToStr_sprintf(benchmark::State& state)
 {
     while (state.KeepRunning()) {
         char buffer[std::numeric_limits<uint16_t>::digits+2];
+        CLANG_WARNING_DISABLE("-Wdeprecated-declarations")
         sprintf(buffer, "%" PRIu16, std::numeric_limits<uint16_t>::max());
+        CLANG_WARNING_RESTORE()
         (void)buffer;
     }
 }
 
 BENCHMARK(IntToStr_sprintf);
-
-#ifdef ALOG_COMPILER_APPLE_CLANG
-#pragma clang diagnostic pop
-#endif
 
 
 static void IntToStr_snprintf(benchmark::State& state)
