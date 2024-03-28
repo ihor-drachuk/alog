@@ -26,6 +26,19 @@
     classname(classname&&) = delete; \
     classname& operator=(classname&&) = delete
 
+#ifdef ALOG_COMPILER_APPLE_CLANG
+#define CLANG_WARNING_DISABLE(x) \
+    #pragma clang diagnostic push \
+    #pragma clang diagnostic ignored ##x
+
+#define CLANG_WARNING_RESTORE() \
+    #pragma clang diagnostic pop
+
+#else
+#define CLANG_WARNING_DISABLE(x)
+#define CLANG_WARNING_RESTORE()
+#endif // ALOG_COMPILER_APPLE_CLANG
+
 class QString;
 class QLatin1String;
 class QStringRef;
@@ -219,12 +232,14 @@ public:
 
     template<typename... Args>
     inline void appendFmtString(const char* format, Args&&... args) {
+        // codechecker_intentional [clang-diagnostic-format-nonliteral]
         auto sz = snprintf(nullptr, 0, format, std::forward<Args>(args)...);
         if (sz < 0) {
             appendFmtString("-- ALOG: Failed to format \"%s\" (%s)", format, strerror(errno));
             return;
         }; 
         auto target = allocate_copy(sz);
+        // codechecker_intentional [clang-diagnostic-format-nonliteral]
         auto result = snprintf((char*)target, sz+1, format, std::forward<Args>(args)...);
         if (result != sz) {
             // Very unlikely
