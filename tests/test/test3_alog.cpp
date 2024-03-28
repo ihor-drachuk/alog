@@ -502,15 +502,15 @@ TEST(ALog, test_defaultFormatterLate)
 
 TEST(ALog, test_hex)
 {
-    uint8_t buffer[] = {1, 2, 3, 4, 5, 6};
+    const uint8_t buffer[] = {1, 2, 3, 4, 5, 6};
     char buffer2[1024];
 
     auto record = _ALOG_RECORD(ALog::Severity::Info) << BUFFER(buffer, sizeof(buffer));
-    sprintf(buffer2, "{Buffer; Size: 6, Ptr = 0x%p, Data = 0x010203040506}", buffer);
+    snprintf(buffer2, sizeof(buffer2), "{Buffer; Size: 6, Ptr = 0x%p, Data = 0x010203040506}", buffer);
     EXPECT_STREQ(record.getMessage(), buffer2);
 
     record = _ALOG_RECORD(ALog::Severity::Info) << BUFFER(buffer, 0);
-    sprintf(buffer2, "{Buffer; Size: 0, Ptr = 0x%p. No data}", buffer);
+    snprintf(buffer2, sizeof(buffer2), "{Buffer; Size: 0, Ptr = 0x%p. No data}", buffer);
     EXPECT_STREQ(record.getMessage(), buffer2);
 }
 

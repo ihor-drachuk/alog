@@ -493,7 +493,7 @@ inline ALog::Record&& operator<< (ALog::Record&& record, const T* value)
     char str[bufSz];
     size_t len;
 
-    len = sprintf(str, "0x%p", value);
+    len = snprintf(str, bufSz, "0x%p", value);
 
     record.appendMessage(str, len);
     return std::move(record);
@@ -505,7 +505,7 @@ inline ALog::Record&& operator<< (ALog::Record&& record, const void* value)
     char str[bufSz];
     size_t len;
 
-    len = sprintf(str, "0x%p", value);
+    len = snprintf(str, bufSz, "0x%p", value);
 
     [[maybe_unused]] auto _checkSS = record.updateSkipSeparators(1);
     record.appendMessage(str, len);

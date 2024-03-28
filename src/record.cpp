@@ -80,31 +80,32 @@ void Record::appendMessage(const wchar_t* msg, size_t len, size_t width, char pa
 
 ALog::Record&& operator<<(ALog::Record&& record, const ALog::Record::RawData& value)
 {
-    constexpr size_t bufSz = 64;
-    char str[bufSz+1];
+    constexpr size_t strSz = 64;
+    constexpr size_t bufSz = strSz + 1;
+    char str[bufSz];
     size_t len;
 
     auto _f = ALog::I::CreateFinally([sepBckp = record.separator, &record](){ record.separator = sepBckp; });
     record.separator.clear();
 
     if (!value.sz) {
-        len = sprintf(str, "{Buffer; Size: 0, Ptr = 0x%p. No data}", value.ptr);
+        len = snprintf(str, bufSz, "{Buffer; Size: 0, Ptr = 0x%p. No data}", value.ptr);
         record.appendMessage(str, len);
         return std::move(record);
     }
 
-    len = sprintf(str, "{Buffer; Size: %zu, Ptr = 0x%p, Data = 0x", value.sz, value.ptr);
+    len = snprintf(str, bufSz, "{Buffer; Size: %zu, Ptr = 0x%p, Data = 0x", value.sz, value.ptr);
     record.appendMessage(str, len);
 
     size_t len2 = value.sz;
     const uint8_t* ptr = (const uint8_t*)value.ptr;
 
     while (len2) {
-        constexpr size_t printLimit = bufSz / 2;
+        constexpr size_t printLimit = strSz / 2;
         size_t limit = len2 < printLimit ? len2 : printLimit;
 
         for (size_t i = 0; i < limit; i++)
-            sprintf(&str[i*2], "%02hhX", *(ptr + i));
+            snprintf(&str[i*2], 3, "%02hhX", *(ptr + i));
         record.appendMessage(str, limit * 2);
 
         len2 -= limit;
