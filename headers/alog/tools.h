@@ -27,12 +27,14 @@
     classname& operator=(classname&&) = delete
 
 #ifdef ALOG_COMPILER_APPLE_CLANG
+#define CLANG_WARNING_PRAGMA_STRING(x) _Pragma(#x)
+
 #define CLANG_WARNING_DISABLE(x) \
-    #pragma clang diagnostic push \
-    #pragma clang diagnostic ignored ##x
+    CLANG_WARNING_PRAGMA_STRING(clang diagnostic push) \
+    CLANG_WARNING_PRAGMA_STRING(clang diagnostic ignored x)
 
 #define CLANG_WARNING_RESTORE() \
-    #pragma clang diagnostic pop
+    CLANG_WARNING_PRAGMA_STRING(clang diagnostic pop)
 
 #else
 #define CLANG_WARNING_DISABLE(x)
