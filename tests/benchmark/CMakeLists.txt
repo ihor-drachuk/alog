@@ -1,4 +1,4 @@
-file(GLOB SOURCES RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} *.cpp)
+file(GLOB SOURCES RELATIVE CONFIGURE_DEPENDS ${CMAKE_CURRENT_SOURCE_DIR} *.cpp)
 
 foreach( testsourcefile ${SOURCES} )
     string( REPLACE ".cpp" "" testname ${testsourcefile} )

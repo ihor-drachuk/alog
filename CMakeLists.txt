@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.16)
-PROJECT(alog)
+PROJECT(alog LANGUAGES CXX)
 
 option(ALOG_ENABLE_TESTS             "ALog: Enable tests" OFF)
 option(ALOG_ENABLE_BENCHMARK         "ALog: Enable benchmark" OFF)
@@ -9,17 +9,15 @@ option(ALOG_ENABLE_DEBUG             "ALog: Enable additional debug checks" OFF)
 
 set(ALOG_QT_SEARCH_MODE "Auto" CACHE STRING "ALog: Set Qt search mode")
 set_property(CACHE ALOG_QT_SEARCH_MODE PROPERTY STRINGS "Auto" "Force" "Skip")
+
 set(ALOG_GTEST_SEARCH_MODE "Auto" CACHE STRING "ALog: Set GTest search mode")
 set_property(CACHE ALOG_GTEST_SEARCH_MODE PROPERTY STRINGS "Auto" "Force" "Skip")
 
-FILE(GLOB_RECURSE SOURCES src/*.cpp src/*.h headers/*.h)
+FILE(GLOB_RECURSE SOURCES CONFIGURE_DEPENDS src/*.cpp src/*.h headers/*.h)
 
 add_library(alog STATIC ${SOURCES})
 target_compile_features(alog PUBLIC cxx_std_17)
 target_include_directories(alog PUBLIC headers)
-
-find_package(QT NAMES Qt6 Qt5 OPTIONAL_COMPONENTS Core)
-find_package(Qt${QT_VERSION_MAJOR} QUIET OPTIONAL_COMPONENTS Core)
 
 if (NOT ${ALOG_QT_SEARCH_MODE} STREQUAL "Skip")
 
