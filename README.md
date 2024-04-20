@@ -100,7 +100,7 @@ _<sup>(Thanks to [ekalinin/github-markdown-toc](https://github.com/ekalinin/gith
 include(FetchContent)
 FetchContent_Declare(alog
   GIT_REPOSITORY https://github.com/ihor-drachuk/alog.git
-  GIT_TAG        dev
+  GIT_TAG        master
 )
 FetchContent_MakeAvailable(alog)
 
