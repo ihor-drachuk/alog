@@ -101,7 +101,7 @@ FileRotated::FileRotated(const std::string& fileName,
     for (const auto& item : std::filesystem::directory_iterator(impl().filePathDetails.path)) {
         if (fsIsDirectory(item)) continue;
 
-        const auto itemFn = item.path().filename().u8string();
+        const auto itemFn = item.path().filename().string();
         std::smatch itemFnMatch;
         if (!std::regex_search(itemFn, itemFnMatch, logFileRegex)) continue;
         assert(itemFnMatch.size() == 2);
@@ -111,7 +111,7 @@ FileRotated::FileRotated(const std::string& fileName,
         if (itemFnMatch[1].matched)
             context.currentRotNo = std::stoul(itemFnMatch[1].str().substr(1)); // throws
         context.currentSize = fsSize(item);
-        context.creationTime = Internal::getFileCreationTime(item.path().u8string().c_str()).value(); // throws
+        context.creationTime = Internal::getFileCreationTime(item.path().string().c_str()).value(); // throws
 
         impl().files.push_back(std::move(context));
     }
@@ -158,7 +158,7 @@ FileRotated::FileRotated(const std::string& fileName,
     checkMaxAge(); // throws
 
     // Create/Open current file
-    impl().logFile = std::make_unique<ALog::Sinks::File>(impl().files.front().path.u8string().c_str()); // throws
+    impl().logFile = std::make_unique<ALog::Sinks::File>(impl().files.front().path.string().c_str()); // throws
 }
 
 FileRotated::~FileRotated()
@@ -230,7 +230,7 @@ void FileRotated::rotate()
 
     // Open file (if was opened)
     if (wasOpened)
-        impl().logFile = std::make_unique<ALog::Sinks::File>(impl().files.front().path.u8string().c_str()); // throws
+        impl().logFile = std::make_unique<ALog::Sinks::File>(impl().files.front().path.string().c_str()); // throws
 }
 
 void FileRotated::checkMaxCount()
