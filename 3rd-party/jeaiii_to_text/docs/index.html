@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>itoa benchmark</title>
+<script type="text/javascript" src="https://code.highcharts.com/highcharts.js"></script>
+<script type="text/javascript" src="https://code.highcharts.com/modules/series-label.js"></script>
+<script type="text/javascript" src="https://code.highcharts.com/modules/exporting.js"></script>
+<script type="text/javascript" src="https://code.highcharts.com/modules/offline-exporting.js"></script>
+</head>
+<body>
+
+<center><select id="select_chart" onchange="do_chart(tests[this.value])"></select></center>
+<div id="chart" style="width: 1024px; height: 768px; margin: 0 auto"></div>
+
+<script type="text/javascript" src="release_win64_vc2019.js"></script>
+<script type="text/javascript">
+
+function do_chart(test) {
+
+    Highcharts.chart('chart',
+        {
+            series: test.data,
+            title: { text: test.name },
+            subtitle: { text: test.info },
+            xAxis: {
+                title: { text: 'digits' },
+                categories: test.categories,
+                showLastLabel: true
+            },
+            yAxis: { title: { text: 'cycle count - log' }, type: 'logarithmic', minorTickInterval: 0.1 },
+            legend: { layout: 'vertical', align: 'right', verticalAlign: 'middle' }
+        }
+    );
+}
+
+select = document.getElementById('select_chart');
+for (var i = 0; i<tests.length; ++i) {
+    var opt = document.createElement('option');
+    opt.value = i;
+    opt.text = tests[i].name;
+    select.appendChild(opt);
+}
+
+
+do_chart(tests[0]);
+</script>
+</body>
+</html>

@@ -5,12 +5,12 @@
 #include <gtest/gtest.h>
 #include <alog/tools.h>
 #include <alog/tools_internal.h>
-#include <alog/tools_jeaiii_to_text.h>
 #include <vector>
 #include <string>
-#include <cassert>
 #include <numeric>
 #include <sstream>
+
+#include <jeaiii_to_text.h>
 
 TEST(ALog_Tools, extractFileNameOnly)
 {

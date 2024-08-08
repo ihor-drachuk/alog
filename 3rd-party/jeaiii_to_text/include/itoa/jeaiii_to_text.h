@@ -1,7 +1,3 @@
-/* License:  MIT
- * Source:   https://github.com/ihor-drachuk/alog
- * Contact:  ihor-drachuk-libs@pm.me  */
-
 /*
 MIT License
 
@@ -25,8 +21,6 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
-
-// https://github.com/jeaiii/itoa
 
 #ifndef JEAIII_TO_TEXT_H_
 #define JEAIII_TO_TEXT_H_
