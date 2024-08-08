@@ -13,11 +13,16 @@ set_property(CACHE ALOG_QT_SEARCH_MODE PROPERTY STRINGS "Auto" "Force" "Skip")
 set(ALOG_GTEST_SEARCH_MODE "Auto" CACHE STRING "ALog: Set GTest search mode")
 set_property(CACHE ALOG_GTEST_SEARCH_MODE PROPERTY STRINGS "Auto" "Force" "Skip")
 
+add_subdirectory(3rd-party)
+
 FILE(GLOB_RECURSE SOURCES CONFIGURE_DEPENDS src/*.cpp src/*.h headers/*.h)
 
 add_library(alog STATIC ${SOURCES})
 target_compile_features(alog PUBLIC cxx_std_17)
 target_include_directories(alog PUBLIC headers)
+target_link_libraries(alog
+    PUBLIC jeaiii_to_text
+)
 
 if (NOT ${ALOG_QT_SEARCH_MODE} STREQUAL "Skip")
 

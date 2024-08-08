@@ -13,7 +13,8 @@
 #include <optional>
 #include <variant>
 #include <alog/tools.h>
-#include <alog/tools_jeaiii_to_text.h>
+
+#include <jeaiii_to_text.h>
 
 #ifdef ALOG_HAS_QT_LIBRARY
 #include <QMetaEnum>
