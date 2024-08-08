@@ -4,7 +4,6 @@
 
 #include <alog/logger_impl.h>
 
-#include <alog/exceptions.h>
 #include <alog/formatters/default.h>
 #include <alog/sinks/console.h>
 
@@ -13,6 +12,7 @@
 #include <mutex>
 #include <thread>
 #include <condition_variable>
+#include <stdexcept>
 
 #ifdef WIN32
 #include <Windows.h>
@@ -37,12 +37,12 @@ void alog_abort()
 
 void alog_exception(const char* msg)
 {
-    alog_exception(msg, strlen(msg));
+    throw std::runtime_error(msg);
 }
 
-void alog_exception(const char* msg, size_t)
+void alog_exception(const char* msg, size_t sz)
 {
-    throw ALog::runtime_error_wide(msg);
+    throw std::runtime_error(std::string(msg, sz));
 }
 
 

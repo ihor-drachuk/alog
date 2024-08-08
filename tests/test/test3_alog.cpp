@@ -473,7 +473,7 @@ TEST(ALog, test_defaultFormatter)
 TEST(ALog, test_defaultFormatterLate)
 {
     DEFINE_ALOGGER_MODULE(ALogerTest);
-    ASSERT_THROW(LOGD << "1" << THROW, ALog::runtime_error_wide);
+    ASSERT_THROW(LOGD << "1" << THROW, std::runtime_error);
     ALog::DefaultLogger logger;
     ALog::Record record[2];
     int recordIdx = 0;
