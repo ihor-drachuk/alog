@@ -148,7 +148,7 @@ jobs:
 
       - name: Install Qt
         if: ${{ matrix.qt != 'qt_no' }}
-        uses: jurplel/install-qt-action@v3
+        uses: jurplel/install-qt-action@v4
         with:
           version: ${{ matrix.qt }}
           host: windows
@@ -201,7 +201,7 @@ jobs:
 
       - name: Install Qt
         if: ${{ matrix.qt != 'qt_no' }}
-        uses: jurplel/install-qt-action@v3
+        uses: jurplel/install-qt-action@v4
         with:
           version: ${{ matrix.qt }}
           host: mac
