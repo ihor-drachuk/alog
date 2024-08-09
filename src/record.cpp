@@ -3,10 +3,7 @@
  * Contact:  ihor-drachuk-libs@pm.me  */
 
 #include <alog/record.h>
-
-#include <string>
-#include <locale>
-#include <codecvt>
+#include <cwchar>
 
 #ifdef ALOG_HAS_QT_LIBRARY
 #include <QJsonObject>
@@ -62,17 +59,34 @@ Record Record::create(Record::Flags flags)
     return record;
 }
 
-static std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>,wchar_t>& utf8_utf16_converter() {
-    static I::StaticCheck sc;
-    assert(sc.value && "utf8_utf16_converter: static data already deleted!");
-    static thread_local std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>,wchar_t> converter;
-    return converter;
-}
-
 void Record::appendMessage(const wchar_t* msg, size_t len, size_t width, char padding)
 {
-    std::string dest = utf8_utf16_converter().to_bytes(msg, msg+len);
-    appendMessage(dest.data(), dest.size(), width, padding);
+    std::mbstate_t state = std::mbstate_t();
+    const wchar_t* srcPtr = msg;
+    const size_t srcLen = len;
+
+    size_t dstLen {0}; // Length without \0
+#ifdef ALOG_COMPILER_MSVC
+    wcsrtombs_s(&dstLen, nullptr, 0, &srcPtr, srcLen, &state);
+    dstLen--;
+#elif ALOG_COMPILER_GCC || ALOG_COMPILER_CLANG
+    dstLen = wcsrtombs(nullptr, &srcPtr, srcLen, &state);
+#else
+    #error "Unsupported compiler"
+#endif
+
+    I::LongSSO tempStr;
+    tempStr.allocate_copy(dstLen); // Allocates +1 for \0
+
+#ifdef ALOG_COMPILER_MSVC
+    wcsrtombs_s(&dstLen, tempStr.getStringRw(), dstLen+1, &srcPtr, srcLen, &state);
+#elif ALOG_COMPILER_GCC || ALOG_COMPILER_CLANG
+    wcsrtombs(tempStr.getStringRw(), &srcPtr, srcLen, &state);
+#else
+    #error "Unsupported compiler"
+#endif
+
+    appendMessage(tempStr.getString(), tempStr.getStringLen(), width, padding);
 }
 
 
