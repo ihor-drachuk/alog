@@ -53,9 +53,6 @@ endif()
 if(MSVC)
     target_link_options(alog PRIVATE "/ignore:4221")
     set_target_properties(alog PROPERTIES STATIC_LIBRARY_OPTIONS "/ignore:4221")
-    target_compile_definitions(alog
-        PRIVATE _SILENCE_CXX17_CODECVT_HEADER_DEPRECATION_WARNING
-        PUBLIC _CRT_SECURE_NO_WARNINGS _CRT_NONSTDC_NO_WARNINGS)
 endif()
 
 target_compile_options(alog PRIVATE

@@ -7,9 +7,8 @@
 #ifdef ALOG_HAS_P7_LIBRARY
 #include <P7_Trace.h>
 
-#include <locale>
-#include <codecvt>
 #include <string>
+#include <cwchar>
 
 namespace ALog {
 namespace Sinks {
@@ -26,14 +25,37 @@ struct StringConv<wchar_t> {
     StringConv(const char* value) { convert(value); }
 
     const wchar_t* convert(const char* value) {
-        m_buffer = m_convert.from_bytes(value);
+        std::mbstate_t state = std::mbstate_t();
+        const char* srcPtr = value;
+        const size_t srcLen = strlen(srcPtr);
+
+        size_t dstLen {0}; // Length without \0
+
+#ifdef ALOG_COMPILER_MSVC
+        mbsrtowcs_s(&dstLen, nullptr, 0, &srcPtr, srcLen, &state);
+        dstLen--;
+#elif ALOG_COMPILER_GCC || ALOG_COMPILER_CLANG
+        dstLen = mbsrtowcs(nullptr, &srcPtr, srcLen, &state);
+#else
+        #error "Unsupported compiler"
+#endif
+
+        m_buffer.resize(dstLen);
+
+#ifdef ALOG_COMPILER_MSVC
+        mbsrtowcs_s(&dstLen, m_buffer.data(), dstLen+1, &srcPtr, srcLen, &state);
+#elif ALOG_COMPILER_GCC || ALOG_COMPILER_CLANG
+        mbsrtowcs(m_buffer.data(), &srcPtr, srcLen, &state);
+#else
+        #error "Unsupported compiler"
+#endif
+
         return m_buffer.data();
     }
 
     const wchar_t* getBuffer() const { return m_buffer.data(); }
 
 private:
-    std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>,wchar_t> m_convert;
     std::wstring m_buffer;
 };
 
