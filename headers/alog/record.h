@@ -123,6 +123,13 @@ struct Record
     inline size_t getMessageLen() const { return message.getStringLen(); }
 
     [[nodiscard]] inline auto backupFlags() { return I::CreateFinally([this, fl = flags](){ flags = fl; }); }
+    [[nodiscard]] inline auto backupSeparators() {
+        return I::CreateFinally([this, fl = flags, sep = separator](){
+            separator = sep;
+            flagsOff(Flags::Separators);
+            flagsOn(fl & (int)Flags::Separators);
+        });
+    }
     inline bool hasFlags(Flags value) const { return (flags & (int)value) == (int)value; }
     inline bool hasFlagsAny(Flags value) const { return (flags & (int)value); }
     inline void flagsOn(Flags value)  { flags |=  (int)value; combineFlags(); }
@@ -730,17 +737,22 @@ void logArray(Record& record, size_t sz, Iter begin, Iter end)
 
     record << ALog::Record::Flags::Internal_QuoteLiterals;
 
+    auto _separatorRestorer = record.backupSeparators();
+    if (!record.hasFlags(ALog::Record::Flags::Separators)) {
+        record = std::move(record) << Record::Separator::create(" ");
+    }
+
     auto it = begin;
 
     record.appendMessage("{Container; Size: ");
     record = std::move(record) << Record::SkipSeparator(2) << sz;
-    record.appendMessage("; Data = ");
+    record.appendMessage("; Data =");
 
-    record = std::move(record) << Record::SkipSeparator(1) << *it++;
+    record = std::move(record) << *it++;
 
     while (it != end) {
-        record = std::move(record) << Record::SkipSeparator(2);
-        record.appendMessage(", ");
+        record = std::move(record) << Record::SkipSeparator(1);
+        record.appendMessage(",");
         record = std::move(record) << *it++;
     }
 
