@@ -1,8 +1,3 @@
-# Disable warning
-# "Compatibility with CMake < 3.5 will be removed from a future version of CMake."
-# It's produced by GTest and likely Google benchmark.
-set(CMAKE_WARN_DEPRECATED OFF CACHE BOOL "" FORCE)
-
 # Fix warning for FetchContent_Declare regarding DOWNLOAD_EXTRACT_TIMESTAMP
 if(CMAKE_VERSION VERSION_GREATER_EQUAL "3.24")
     cmake_policy(SET CMP0135 NEW)
@@ -50,7 +45,7 @@ if (ALOG_NEED_GTEST AND NOT TARGET gtest)
 
         FetchContent_Declare(
             googletest
-            URL https://github.com/google/googletest/archive/refs/tags/release-1.11.0.tar.gz
+            URL https://github.com/google/googletest/releases/download/v1.15.2/googletest-1.15.2.tar.gz
         )
 
         FetchContent_MakeAvailable(googletest)

@@ -2,7 +2,6 @@
  * Source:   https://github.com/ihor-drachuk/alog
  * Contact:  ihor-drachuk-libs@pm.me  */
 
-#include <benchmark/benchmark.h>
 #include <string>
 #include <optional>
 #include <memory>
@@ -10,8 +9,10 @@
 #include <sstream>
 #include <numeric>
 #include <cinttypes>
+
+#include <benchmark/benchmark.h>
+#include <jeaiii_to_text.h>
 #include <alog/tools.h>
-#include <alog/tools_jeaiii_to_text.h>
 
 class ALogToolsFixture : public ::benchmark::Fixture {
 public:
