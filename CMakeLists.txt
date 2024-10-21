@@ -7,6 +7,9 @@ option(ALOG_ENABLE_DEF_SEPARATORS    "ALog: Enable space-separators by default" 
 option(ALOG_ENABLE_DEF_AUTO_QUOTES   "ALog: Enable auto quotes" ON)
 option(ALOG_ENABLE_DEBUG             "ALog: Enable additional debug checks" OFF)
 
+set(ALOG_CXX_STANDARD "17" CACHE STRING "ALog: Set C++ standard")
+set_property(CACHE ALOG_CXX_STANDARD PROPERTY STRINGS "17" "20" "23")
+
 set(ALOG_QT_SEARCH_MODE "Auto" CACHE STRING "ALog: Set Qt search mode")
 set_property(CACHE ALOG_QT_SEARCH_MODE PROPERTY STRINGS "Auto" "Force" "Skip")
 
@@ -18,11 +21,32 @@ add_subdirectory(3rd-party)
 FILE(GLOB_RECURSE SOURCES CONFIGURE_DEPENDS src/*.cpp src/*.h headers/*.h)
 
 add_library(alog STATIC ${SOURCES})
-target_compile_features(alog PUBLIC cxx_std_17)
 target_include_directories(alog PUBLIC headers)
 target_link_libraries(alog
     PUBLIC jeaiii_to_text
 )
+
+if (ALOG_CXX_STANDARD STREQUAL "17")
+    target_compile_features(alog PUBLIC cxx_std_17)
+    target_compile_definitions(alog PUBLIC ALOG_CXX17)
+    message(STATUS "ALog: Using C++17")
+
+elseif (ALOG_CXX_STANDARD STREQUAL "20")
+    target_compile_features(alog PUBLIC cxx_std_20)
+    target_compile_definitions(alog PUBLIC ALOG_CXX17)
+    target_compile_definitions(alog PUBLIC ALOG_CXX20)
+    message(STATUS "ALog: Using C++20")
+
+elseif (ALOG_CXX_STANDARD STREQUAL "23")
+    target_compile_features(alog PUBLIC cxx_std_23)
+    target_compile_definitions(alog PUBLIC ALOG_CXX17)
+    target_compile_definitions(alog PUBLIC ALOG_CXX20)
+    target_compile_definitions(alog PUBLIC ALOG_CXX23)
+    message(STATUS "ALog: Using C++23")
+
+else()
+    message(FATAL_ERROR "Unsupported C++ standard: ${ALOG_CXX_STANDARD}")
+endif()
 
 if (NOT ${ALOG_QT_SEARCH_MODE} STREQUAL "Skip")
 
