@@ -14,6 +14,10 @@
 #include <variant>
 #include <alog/tools.h>
 
+#ifdef ALOG_CXX23
+#include <expected>
+#endif // ALOG_CXX23
+
 #include <jeaiii_to_text.h>
 
 #ifdef ALOG_HAS_QT_LIBRARY
@@ -798,6 +802,28 @@ inline typename std::enable_if_t<std::is_array<T>::value, ALog::Record>&& operat
     ALog::Internal::logArray(record, sz, value, value + sz);
     return std::move(record);
 }
+
+#ifdef ALOG_CXX23
+template<typename T1, typename T2>
+ALog::Record&& operator<< (ALog::Record&& record, const std::expected<T1, T2>& value)
+{
+    record.appendMessage(value ? "std::expected(" : "std::unexpected(");
+    auto _flagsRestorer = record.backupFlags();
+    record << ALog::Record::Flags::NoSeparators;
+
+    if (value) {
+        record = std::move(record) << value.value();
+
+    } else {
+        record.severity = std::max(record.severity, ALog::Severity::Warning);
+        record = std::move(record) << value.error();
+    }
+
+    record.appendMessage(")");
+
+    return std::move(record);
+}
+#endif // ALOG_CXX23
 
 template<typename T>
 ALog::Record&& operator<< (ALog::Record&& record, const std::optional<T>& value)
