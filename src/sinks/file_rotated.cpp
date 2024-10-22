@@ -83,11 +83,13 @@ FileRotated::FileRotated(const std::string& fileName,
     if (impl().maxFilesCount.value_or(1) < 1)
         throw std::runtime_error("Invalid 'maxFilesCount' provided!");
 
-    if (!fsExists(std::filesystem::directory_entry(impl().filePathDetails.path)) ||
-        !fsIsDirectory(std::filesystem::directory_entry(impl().filePathDetails.path)))
+    auto path = impl().filePathDetails.path;
+    if (!path.empty() &&
+        (!fsExists(std::filesystem::directory_entry(path)) ||
+         !fsIsDirectory(std::filesystem::directory_entry(path))))
     {
         if (createPath) {
-            std::filesystem::create_directories(impl().filePathDetails.path); // throws
+            std::filesystem::create_directories(path); // throws
         } else {
             throw std::runtime_error("No such directory!");
         }
@@ -98,7 +100,10 @@ FileRotated::FileRotated(const std::string& fileName,
     const auto fileNameEscaped = std::regex_replace(logsFileNameBase, std::regex(R"([-[\]{}()*+?.,\^$|#\s])"), R"(\$&)");
     std::regex logFileRegex ("^" + fileNameEscaped + R"((\.\d+)?$)");
 
-    for (const auto& item : std::filesystem::directory_iterator(impl().filePathDetails.path)) {
+    if (path.empty())
+        path = std::filesystem::current_path().string();
+
+    for (const auto& item : std::filesystem::directory_iterator(path)) {
         if (fsIsDirectory(item)) continue;
 
         const auto itemFn = item.path().filename().string();
