@@ -107,6 +107,7 @@ if (WIN32)
 elseif(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
     set(ALOG_OS_MACOS TRUE)
     target_compile_definitions(alog PUBLIC ALOG_OS_MACOS=1)
+
 elseif(UNIX)
     set(ALOG_OS_LINUX TRUE)
     target_compile_definitions(alog PUBLIC ALOG_OS_LINUX=1)
@@ -133,3 +134,7 @@ elseif (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
 endif()
 
 add_subdirectory(tests)
+
+
+# Update cached variables
+set(ALOG_CXX_STANDARD "${ALOG_CXX_STANDARD}" CACHE STRING "ALog: Set C++ standard" FORCE)
