@@ -815,7 +815,7 @@ ALog::Record&& operator<< (ALog::Record&& record, const std::expected<T1, T2>& v
         record = std::move(record) << value.value();
 
     } else {
-        record.severity = std::max(record.severity, ALog::Severity::Warning);
+        record.severity = (std::max)(record.severity, ALog::Severity::Warning);
         record = std::move(record) << value.error();
     }
 
