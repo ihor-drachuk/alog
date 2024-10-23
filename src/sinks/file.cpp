@@ -16,8 +16,8 @@ File::File(const char* fileName, bool createPath)
 {
     assert(std::filesystem::path(fileName).has_filename());
 
-    if (createPath)
-        std::filesystem::create_directories(std::filesystem::path(fileName).remove_filename()); // throws
+    if (const auto path = std::filesystem::path(fileName).remove_filename(); createPath && !path.empty())
+        std::filesystem::create_directories(path); // throws
 
     m_size = Internal::getFileSize(fileName).value_or(0);
     m_handle = fopen(fileName, "ab+");
