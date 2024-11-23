@@ -1008,8 +1008,8 @@ TEST(ALog, test_chrono_duration)
 
     ASSERT_EQ(records.size(), 6);
     EXPECT_STREQ(records[0].getMessage(), R"(std::chrono::duration(2d 15h))");
-    EXPECT_STREQ(records[1].getMessage(), R"(std::chrono::duration(8:13:20))");
-    EXPECT_STREQ(records[2].getMessage(), R"(std::chrono::duration(10:20))");
+    EXPECT_STREQ(records[1].getMessage(), R"(std::chrono::duration(8h:13m:20s))");
+    EXPECT_STREQ(records[2].getMessage(), R"(std::chrono::duration(10m:20s))");
     EXPECT_STREQ(records[3].getMessage(), R"(std::chrono::duration(20.113 sec))");
     EXPECT_STREQ(records[4].getMessage(), R"(std::chrono::duration(25 ms))");
     EXPECT_STREQ(records[5].getMessage(), R"(std::chrono::duration(5.062 ms))");
