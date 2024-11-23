@@ -86,20 +86,24 @@ TEST(ALog_Tools, AnalyzePath)
     }
 }
 
+template<typename T>
+static auto nativeIntToStr(T value)
+{
+    std::stringstream ss;
+    ss << value;
+    return ss.str();
+}
+
+template<typename T>
+static auto fastIntToStr(T value)
+{
+    char buffer[std::numeric_limits<T>::digits10 + 2];
+    char* const end = jeaiii::to_text_from_integer(buffer, value);
+    return std::string(buffer, end);
+}
+
 TEST(ALog_Tools, IntToStr)
 {
-    auto nativeIntToStr = [](auto value){
-        std::stringstream ss;
-        ss << value;
-        return ss.str();
-    };
-
-    auto fastIntToStr = [](auto value) {
-        char buffer[std::numeric_limits<decltype(value)>::digits10 + 2];
-        char* const end = jeaiii::to_text_from_integer(buffer, value);
-        return std::string(buffer, end);
-    };
-
     auto makeDataPair = [&](auto value) {
         auto nativeResult = nativeIntToStr(value);
         auto fastResult = fastIntToStr(value);
