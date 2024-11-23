@@ -118,7 +118,7 @@ struct Record
     template<typename T>
     inline void appendInteger(T value, size_t width = 0, char padding = ' ')
     {
-        char str[std::numeric_limits<T>::digits + 2];
+        char str[std::numeric_limits<T>::digits10 + 2];
         char* const end = jeaiii::to_text_from_integer(str, value);
         appendMessage(str, end - str, width, padding);
     }
