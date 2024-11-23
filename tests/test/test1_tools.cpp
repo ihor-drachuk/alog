@@ -7,7 +7,7 @@
 #include <alog/tools_internal.h>
 #include <vector>
 #include <string>
-#include <numeric>
+#include <limits>
 #include <sstream>
 
 #include <jeaiii_to_text.h>
@@ -80,7 +80,7 @@ TEST(ALog_Tools, AnalyzePath)
 
     ASSERT_EQ(inputs.size(), results.size());
 
-    for (int i = 0; i < inputs.size(); i++) {
+    for (size_t i = 0; i < inputs.size(); i++) {
         const auto actualResult = ALog::Internal::analyzePath(inputs.at(i));
         EXPECT_EQ(actualResult, results.at(i));
     }
@@ -95,7 +95,7 @@ TEST(ALog_Tools, IntToStr)
     };
 
     auto fastIntToStr = [](auto value) {
-        char buffer[std::numeric_limits<decltype(value)>::digits + 2];
+        char buffer[std::numeric_limits<decltype(value)>::digits10 + 2];
         char* const end = jeaiii::to_text_from_integer(buffer, value);
         return std::string(buffer, end);
     };
