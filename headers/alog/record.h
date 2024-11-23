@@ -885,10 +885,11 @@ ALog::Record&& operator<< (ALog::Record&& record, const std::chrono::duration<Ts
         const auto valueSec = valueMin - std::chrono::minutes(minutes);
         const auto seconds = std::chrono::duration_cast<std::chrono::seconds>(valueSec).count();
         record.appendInteger(hours);
-        record.appendMessage(":");
+        record.appendMessage("h:");
         record.appendInteger(minutes, 2, '0');
-        record.appendMessage(":");
+        record.appendMessage("m:");
         record.appendInteger(seconds, 2, '0');
+        record.appendMessage("s");
 
     } else if (value >= std::chrono::minutes(1)) {
         // MM:SS
@@ -896,8 +897,9 @@ ALog::Record&& operator<< (ALog::Record&& record, const std::chrono::duration<Ts
         const auto valueSec = value - std::chrono::minutes(minutes);
         const auto seconds = std::chrono::duration_cast<std::chrono::seconds>(valueSec).count();
         record.appendInteger(minutes);
-        record.appendMessage(":");
+        record.appendMessage("m:");
         record.appendInteger(seconds, 2, '0');
+        record.appendMessage("s");
 
     } else if (value >= std::chrono::seconds(1)) {
         // SS.000
