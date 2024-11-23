@@ -188,8 +188,7 @@ jobs:
         qt: [qt_no, 5.15.2, 6.6.1]
         build_type: [Debug, Release]
 
-    # As "macOS 14" is paid and aqt can't install to "macOS 14 Arm64"
-    runs-on: macos-13
+    runs-on: macos-latest
 
     if: "!contains(github.event.head_commit.message, 'CI skip') && !contains(github.event.head_commit.message, 'Skip CI')"
     timeout-minutes: 30
@@ -210,7 +209,7 @@ jobs:
           arch: clang_64
           dir: ${{github.workspace}}/qt
           cache: true
-          setup-python: false
+          setup-python: true
 
       - name: "Add Qt to PATH"
         if: ${{ matrix.qt != 'qt_no' }}
@@ -229,7 +228,7 @@ jobs:
         run: |
           QT_SEARCH_MODE=$([[ "${{ matrix.qt }}" == "qt_no" ]] && echo "Skip" || echo "Force")
           
-          cmake -DALOG_CI_SKIP_SORT_TEST=1 -DALOG_ENABLE_TESTS=ON -DALOG_ENABLE_BENCHMARK=ON -DALOG_QT_SEARCH_MODE:STRING=$QT_SEARCH_MODE -DCMAKE_BUILD_TYPE="${{matrix.build_type}}" -G "Unix Makefiles" -S "./src" -B "./build"
+          cmake -DCMAKE_OSX_ARCHITECTURES=x86_64 -DALOG_CI_SKIP_SORT_TEST=1 -DALOG_ENABLE_TESTS=ON -DALOG_ENABLE_BENCHMARK=ON -DALOG_QT_SEARCH_MODE:STRING=$QT_SEARCH_MODE -DCMAKE_BUILD_TYPE="${{matrix.build_type}}" -G "Unix Makefiles" -S "./src" -B "./build"
           cmake --build "./build" --config "${{matrix.build_type}}" -j "${{env.CORES}}"
           cd ./build/tests
           ctest --no-tests=error --rerun-failed --output-on-failure --timeout 30 -C "${{matrix.build_type}}"
