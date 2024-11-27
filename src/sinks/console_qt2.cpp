@@ -32,7 +32,7 @@ void ConsoleQt2::write(const Buffer& buffer, const Record& record)
             case ALog::Severity::Error:   type = QtCriticalMsg; break;
             case ALog::Severity::Fatal:   type = QtFatalMsg;    break;
             default:
-                assert(!"Unexpected 'record.severity'!");
+                assert(false && "Unexpected 'record.severity'!");
         }
 
         //ctx.file = record.filenameOnly;

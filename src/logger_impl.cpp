@@ -50,13 +50,13 @@ struct Logger::impl_t
 {
     ALog::Sinks::Pipeline pipeline;
 
-    LoggerMode mode;
+    LoggerMode mode {};
     std::mutex writeMutex;
     std::mutex queueMutex;
     std::thread thread;
     std::condition_variable cv;
     std::vector<Record> queue;
-    volatile bool exitFlag;
+    volatile bool exitFlag {};
     bool threadRunning { false };
 
     bool flushRequested { false };
@@ -90,6 +90,9 @@ void Logger::setupDefaultConfig()
 void Logger::addRecord(Record&& record)
 {
     record.startTp = impl().startTp;
+
+    if (record.steadyTp < record.startTp)
+        record.steadyTp = record.startTp;
 
     if (impl().autoflush)
         record.flagsOn(Record::Flags::Flush);
@@ -167,7 +170,7 @@ void Logger::setAutoflush(bool value)
 void Logger::setMode(Logger::LoggerMode mode)
 {
     if (mode == AsynchronousStrictSort) {
-        assert(!"AsynchronousStrictSort not supported yet");
+        assert(false && "AsynchronousStrictSort not supported yet");
         mode = AsynchronousSort;
     }
 
@@ -219,7 +222,7 @@ void Logger::stopThread()
 void Logger::threadFunc()
 {
     std::vector<Record> queue;
-    bool exitFlag;
+    bool exitFlag {};
 
     while (true) {
         {
