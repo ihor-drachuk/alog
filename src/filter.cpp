@@ -34,7 +34,7 @@ Internal::optional_bool IFilter::canPass(const Record& record) const
         case UndefinedIsReject: break;
     }
 
-    assert(!"Should not get here!");
+    assert(false && "Should not get here!");
     return {};
 }
 

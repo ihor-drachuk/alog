@@ -11,9 +11,9 @@
 namespace ALog {
 
 void alog_breakpoint();
-void alog_abort();
-void alog_exception(const char* msg);
-void alog_exception(const char* msg, size_t sz);
+[[noreturn]] void alog_abort();
+[[noreturn]] void alog_exception(const char* msg);
+[[noreturn]] void alog_exception(const char* msg, size_t sz);
 
 class Logger
 {

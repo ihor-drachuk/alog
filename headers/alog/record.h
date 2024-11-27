@@ -175,7 +175,6 @@ struct Record
 
     std::chrono::time_point<std::chrono::steady_clock> startTp;
     std::chrono::time_point<std::chrono::steady_clock> steadyTp;
-    std::chrono::time_point<std::chrono::system_clock> systemTp;
 
     I::LongSSO<> message;
     I::LongSSO<separator_sso_len> separator {" "};
