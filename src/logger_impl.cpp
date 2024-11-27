@@ -223,6 +223,7 @@ void Logger::threadFunc()
 {
     std::vector<Record> queue;
     bool exitFlag {};
+    bool flushRequested {};
 
     while (true) {
         {
@@ -231,6 +232,7 @@ void Logger::threadFunc()
 
             exitFlag = impl().exitFlag;
             std::swap(queue, impl().queue);
+            flushRequested = impl().flushRequested;
         }
 
         if (impl().mode == AsynchronousSort) {
@@ -243,18 +245,17 @@ void Logger::threadFunc()
             const auto pass = !x.hasFlags(Record::Flags::Drop);
             if (pass) impl().pipeline.write({}, x);
 
-            if (x.hasFlags(Record::Flags::Flush)) {
+            if (x.hasFlags(Record::Flags::Flush))
                 impl().pipeline.flush();
-
-                {
-                    std::unique_lock<std::mutex> lck(impl().queueMutex);
-                    impl().flushRequested = false;
-                    impl().flushCv.notify_one();
-                }
-            }
         }
 
         queue.clear();
+
+        if (flushRequested) {
+            std::unique_lock<std::mutex> lck(impl().queueMutex);
+            impl().flushRequested = false;
+            impl().flushCv.notify_one();
+        }
 
         if (exitFlag) break;
     }
