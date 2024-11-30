@@ -22,6 +22,13 @@
 #include <unordered_map>
 #include <utility>
 
+#ifdef ALOG_HAS_QT_LIBRARY
+#include <QMetaType>
+#else
+#define Q_NAMESPACE
+#define Q_ENUM_NS(x)
+#endif // ALOG_HAS_QT_LIBRARY
+
 #include <alog/tools_filesystem.h>
 #include <alog/all.h>
 
@@ -682,13 +689,6 @@ TEST(ALog, test_separators_advanced)
 }
 
 // -- TEST(ALog, test_enums) context --
-
-#ifdef ALOG_HAS_QT_LIBRARY
-#include <QMetaType>
-#else
-#define Q_NAMESPACE
-#define Q_ENUM_NS(x)
-#endif // ALOG_HAS_QT_LIBRARY
 
 namespace TestNamespace {
 Q_NAMESPACE
