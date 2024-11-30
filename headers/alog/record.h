@@ -662,6 +662,50 @@ inline typename std::enable_if_t<std::is_same<T, QByteArray>::value, ALog::Recor
 }
 
 template<typename T>
+inline ALog::Record&& operator<< (ALog::Record&& record, QFuture<T> value)
+{
+    auto _flagsRestorer = record.backupFlags();
+    VERIFY_SKIP_SEPARATORS(record, -1);
+
+    if (value.isFinished()) {
+        try {
+            value.waitForFinished();
+
+        } catch (const std::exception& e) {
+            record.appendMessage("QFuture(exception: \"");
+            record.updateSkipSeparatorsCF(1);
+            record.appendMessageAL(e.what());
+            record.updateSkipSeparatorsCF(1);
+            record.appendMessage("\")");
+            return std::move(record);
+
+        } catch (...) {
+            record.appendMessage("QFuture(unknown exception)");
+            return std::move(record);
+        }
+
+        if (value.isCanceled()) {
+            record.appendMessage("QFuture(canceled)");
+
+        } else {
+            record.appendMessage("QFuture(finished: ");
+            record.updateSkipSeparatorsCF(1);
+            record = std::move(record) << value.result();
+            record.updateSkipSeparatorsCF(1);
+            record.appendMessage(")");
+        }
+
+    } else if (value.isStarted()) {
+        record.appendMessage("QFuture(running)");
+
+    } else {
+        record.appendMessage("QFuture(not started)");
+    }
+
+    return std::move(record);
+}
+
+template<typename T>
 inline typename std::enable_if_t<std::is_same<T, QPoint>::value, ALog::Record>&& operator<< (ALog::Record&& record, const T& value)
 {
     auto _flagsRestorer = record.backupFlags();

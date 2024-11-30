@@ -12,6 +12,7 @@
 #include <chrono>
 #include <numeric>
 #include <regex>
+#include <stdexcept>
 
 #include <string>
 #include <vector>
@@ -24,6 +25,7 @@
 
 #ifdef ALOG_HAS_QT_LIBRARY
 #include <QMetaType>
+#include <QFuture>
 #else
 #define Q_NAMESPACE
 #define Q_ENUM_NS(x)
@@ -66,6 +68,72 @@ std::string stringReplace(const std::string& str, const std::string& from, const
         return str;
     }
 }
+
+#ifdef ALOG_HAS_QT_LIBRARY
+class QExceptionPtr : public QException
+{
+public:
+    QExceptionPtr(const std::exception_ptr& eptr) : m_eptr(eptr) {} // NOLINT(bugprone-throw-keyword-missing)
+    QExceptionPtr(std::exception_ptr&& eptr) : m_eptr(std::move(eptr)) {} // NOLINT(bugprone-throw-keyword-missing)
+    QExceptionPtr(const QExceptionPtr&) = delete;
+    QExceptionPtr(QExceptionPtr&&) noexcept = default;
+
+    void raise() const override { if (m_eptr) std::rethrow_exception(m_eptr); }
+    QException* clone() const override { return new QExceptionPtr(m_eptr); }
+
+private:
+    std::exception_ptr m_eptr;
+};
+
+template<typename T>
+QFuture<T> createNotStartedFuture()
+{
+    return QFutureInterface<T>().future();
+}
+
+template<typename T>
+QFuture<T> createRunningFuture()
+{
+    QFutureInterface<T> interface;
+    interface.reportStarted();
+    return interface.future();
+}
+
+template<typename T>
+QFuture<T> createCanceledFuture()
+{
+    QFutureInterface<T> interface;
+    interface.reportStarted();
+    interface.reportCanceled();
+    interface.reportFinished();
+    return interface.future();
+}
+
+template<typename T>
+QFuture<T> createFinishedFuture(const T& value)
+{
+    QFutureInterface<T> interface;
+    interface.reportStarted();
+    interface.reportResult(value);
+    interface.reportFinished();
+    return interface.future();
+}
+
+template<typename T>
+QFuture<T> createExceptionFuture()
+{
+    QFutureInterface<T> interface;
+    interface.reportStarted();
+    try {
+        throw std::runtime_error("Test");
+    } catch (...) {
+        interface.reportException(QExceptionPtr(std::current_exception()));
+    }
+    interface.reportFinished();
+
+    return interface.future();
+}
+#endif // ALOG_HAS_QT_LIBRARY
 
 } // namespace
 
@@ -1042,6 +1110,37 @@ TEST(ALog, test_smart_pointers)
     EXPECT_STREQ(records[3].getMessage(), R"(std::unique_ptr(std::chrono::duration(25 ms)))");
 }
 
+#ifdef ALOG_HAS_QT_LIBRARY
+// Test futures print: not started, running, canceled, finished, exception
+TEST(ALog, test_QFuture)
+{
+    using namespace std::literals::chrono_literals;
+    using Type = std::chrono::milliseconds;
+
+    std::vector<ALog::Record> records;
+    auto sink = std::make_shared<ALog::Sinks::Functor2>([&records](const ALog::Buffer&, const ALog::Record& rec){ records.push_back(rec); });
+
+    DEFINE_MAIN_ALOGGER;
+    ALOGGER_DIRECT->setMode(ALog::Logger::Synchronous);
+    ALOGGER_DIRECT->pipeline().sinks().set(sink);
+    ALOGGER_DIRECT->pipeline().formatter() = std::make_shared<ALog::Formatters::Minimal>();
+    ALOGGER_DIRECT.markReady();
+    DEFINE_ALOGGER_MODULE(ALogTest);
+
+    LOGI << createNotStartedFuture<Type>();
+    LOGI << createRunningFuture<Type>();
+    LOGI << createCanceledFuture<Type>();
+    LOGI << createFinishedFuture<Type>(25ms);
+    LOGI << createExceptionFuture<Type>();
+
+    ASSERT_EQ(records.size(), 5);
+    EXPECT_STREQ(records[0].getMessage(), R"(QFuture(not started))");
+    EXPECT_STREQ(records[1].getMessage(), R"(QFuture(running))");
+    EXPECT_STREQ(records[2].getMessage(), R"(QFuture(canceled))");
+    EXPECT_STREQ(records[3].getMessage(), R"(QFuture(finished: std::chrono::duration(25 ms)))");
+    EXPECT_STREQ(records[4].getMessage(), R"(QFuture(exception: "Test"))");
+}
+#endif // ALOG_HAS_QT_LIBRARY
 
 #ifdef ALOG_HAS_QT_LIBRARY
 #include "test3_alog.moc"
