@@ -3,6 +3,7 @@
  * Contact:  ihor-drachuk-libs@pm.me  */
 
 #pragma once
+#include <memory>
 #include <string>
 #include <chrono>
 #include <limits>
@@ -29,6 +30,8 @@ struct Record;
 namespace Internal {
 template<typename Iter>
 void logArray(Record& record, size_t sz, Iter begin, Iter end);
+template<typename SmartPtrType>
+void logSmartPtr(Record& record, const SmartPtrType& value, const char* smartPtrName);
 } // namespace Internal
 } // namespace ALog
 
@@ -258,6 +261,8 @@ namespace ALog {
 namespace Internal {
 template<typename Iter>
 void logArray(Record& record, size_t sz, Iter begin, Iter end);
+template<typename SmartPtrType>
+void logSmartPtr(Record& record, const SmartPtrType& value, const char* smartPtrName);
 } // namespace Internal
 } // namespace ALog
 
@@ -275,6 +280,15 @@ inline typename std::enable_if_t<std::is_array<T>::value, ALog::Record>&& operat
 
 template<typename T1, typename T2>
 inline ALog::Record&& operator<< (ALog::Record&& record, const std::pair<T1, T2>& value);
+
+template<typename T>
+inline ALog::Record&& operator<< (ALog::Record&& record, const std::shared_ptr<T>& value);
+
+template<typename T>
+inline ALog::Record&& operator<< (ALog::Record&& record, const std::unique_ptr<T>& value);
+
+template<typename T>
+inline ALog::Record&& operator<< (ALog::Record&& record, const std::weak_ptr<T>& value);
 
 template<typename T>
 ALog::Record&& operator<< (ALog::Record&& record, const std::optional<T>& value);
@@ -703,6 +717,27 @@ ALog::Record&& operator<< (ALog::Record&& record, const QJsonValue& value);
 ALog::Record&& operator<< (ALog::Record&& record, const QJsonDocument& value);
 #endif // ALOG_HAS_QT_LIBRARY
 
+template<typename T>
+inline ALog::Record&& operator<< (ALog::Record&& record, const std::shared_ptr<T>& value)
+{
+    ALog::Internal::logSmartPtr(record, value, "std::shared_ptr");
+    return std::move(record);
+}
+
+template<typename T>
+inline ALog::Record&& operator<< (ALog::Record&& record, const std::unique_ptr<T>& value)
+{
+    ALog::Internal::logSmartPtr(record, value, "std::unique_ptr");
+    return std::move(record);
+}
+
+template<typename T>
+inline ALog::Record&& operator<< (ALog::Record&& record, const std::weak_ptr<T>& value)
+{
+    ALog::Internal::logSmartPtr(record, value.lock(), "std::weak_ptr");
+    return std::move(record);
+}
+
 template<typename T1, typename T2>
 inline ALog::Record&& operator<< (ALog::Record&& record, const std::pair<T1, T2>& value)
 {
@@ -726,6 +761,30 @@ inline ALog::Record&& operator<< (ALog::Record&& record, const std::pair<T1, T2>
 
 namespace ALog {
 namespace Internal {
+
+template<typename SmartPtrType>
+void logSmartPtr(Record& record, const SmartPtrType& value, const char* smartPtrName)
+{
+    auto _flagsRestorer = record.backupFlags();
+    VERIFY_SKIP_SEPARATORS(record, -1);
+
+    record.appendMessageAL(smartPtrName);
+    //record.appendMessage("<");
+    //record.appendMessageAL(typeid(SmartPtrType::element_type).name());
+    //record.appendMessage(">(");
+
+    record.updateSkipSeparatorsCF(2);
+    record.appendMessage("(");
+
+    if (value) {
+        record = std::move(record) << *value;
+    } else {
+        record.appendMessage("nullptr");
+    }
+
+    record.updateSkipSeparatorsCF(1);
+    record.appendMessage(")");
+}
 
 template<typename Iter>
 void logArray(Record& record, size_t sz, Iter begin, Iter end)

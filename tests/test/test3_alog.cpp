@@ -1016,6 +1016,33 @@ TEST(ALog, test_chrono_duration)
 }
 
 
+TEST(ALog, test_smart_pointers)
+{
+    using namespace std::literals::chrono_literals;
+
+    std::vector<ALog::Record> records;
+    auto sink = std::make_shared<ALog::Sinks::Functor2>([&records](const ALog::Buffer&, const ALog::Record& rec){ records.push_back(rec); });
+
+    DEFINE_MAIN_ALOGGER;
+    ALOGGER_DIRECT->setMode(ALog::Logger::Synchronous);
+    ALOGGER_DIRECT->pipeline().sinks().set(sink);
+    ALOGGER_DIRECT->pipeline().formatter() = std::make_shared<ALog::Formatters::Minimal>();
+    ALOGGER_DIRECT.markReady();
+    DEFINE_ALOGGER_MODULE(ALogTest);
+
+    LOGI << std::shared_ptr<int>();
+    LOGI << std::make_shared<int>(10);
+    LOGI << std::unique_ptr<std::chrono::milliseconds>();
+    LOGI << std::make_unique<std::chrono::milliseconds>(25ms);
+
+    ASSERT_EQ(records.size(), 4);
+    EXPECT_STREQ(records[0].getMessage(), R"(std::shared_ptr(nullptr))");
+    EXPECT_STREQ(records[1].getMessage(), R"(std::shared_ptr(10))");
+    EXPECT_STREQ(records[2].getMessage(), R"(std::unique_ptr(nullptr))");
+    EXPECT_STREQ(records[3].getMessage(), R"(std::unique_ptr(std::chrono::duration(25 ms)))");
+}
+
+
 #ifdef ALOG_HAS_QT_LIBRARY
 #include "test3_alog.moc"
 #endif
