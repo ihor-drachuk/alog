@@ -134,13 +134,13 @@ ALog::Record&& operator<<(ALog::Record&& record, const ALog::Record::RawData& va
 #ifdef ALOG_HAS_QT_LIBRARY
 ALog::Record&& operator<< (ALog::Record&& record, const QJsonObject& value)
 {
-    ALog::Internal::logJsonData(record, "Object", QString::fromUtf8(QJsonDocument(value).toJson()));
+    ALog::Internal::logJsonData(record, "Object", QString::fromUtf8(QJsonDocument(value).toJson(QJsonDocument::Indented)));
     return std::move(record);
 }
 
 ALog::Record&& operator<< (ALog::Record&& record, const QJsonArray& value)
 {
-    ALog::Internal::logJsonData(record, "Array", QString::fromUtf8(QJsonDocument(value).toJson()));
+    ALog::Internal::logJsonData(record, "Array", QString::fromUtf8(QJsonDocument(value).toJson(QJsonDocument::Indented)));
     return std::move(record);
 }
 
@@ -164,7 +164,7 @@ ALog::Record&& operator<< (ALog::Record&& record, const QJsonValue& value)
 
 ALog::Record&& operator<< (ALog::Record&& record, const QJsonDocument& value)
 {
-    ALog::Internal::logJsonData(record, "JsonDocument", QString::fromUtf8(value.toJson()));
+    ALog::Internal::logJsonData(record, "JsonDocument", QString::fromUtf8(value.toJson(QJsonDocument::Indented)));
     return std::move(record);
 }
 #endif // ALOG_HAS_QT_LIBRARY
