@@ -865,7 +865,8 @@ inline typename std::enable_if_t<std::is_array<T>::value, ALog::Record>&& operat
 template<typename T1, typename T2>
 ALog::Record&& operator<< (ALog::Record&& record, const std::expected<T1, T2>& value)
 {
-    record.appendMessage(value ? "std::expected(" : "std::unexpected(");
+    value ? record.appendMessage("std::expected(") :
+            record.appendMessage("std::unexpected(");
     auto _flagsRestorer = record.backupFlags();
     record << ALog::Record::Flags::NoSeparators;
 
