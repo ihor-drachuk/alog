@@ -56,6 +56,9 @@ class QJsonDocument;
 class QDir;
 class QHostAddress;
 
+template<typename T>
+class QFuture;
+
 #ifdef ALOG_HAS_QT_LIBRARY
 #include <QtContainerFwd>
 #endif
