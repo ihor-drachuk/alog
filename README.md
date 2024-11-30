@@ -32,7 +32,7 @@ _<sup>(Thanks to [ekalinin/github-markdown-toc](https://github.com/ekalinin/gith
 
 ### Features
 
-- Ultra fast - 160 ns (0.00016 ms) per record. It's 6250 records per ms!
+- Ultra fast - 85 ns (0.000085 ms) per record. It's 11700 records per **ms**!
   - \+ optional asynchronous mode
 - Informative - each record contains
   - Several time marks, severity, message
