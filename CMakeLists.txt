@@ -7,7 +7,11 @@ option(ALOG_ENABLE_DEF_SEPARATORS    "ALog: Enable space-separators by default" 
 option(ALOG_ENABLE_DEF_AUTO_QUOTES   "ALog: Enable auto quotes" ON)
 option(ALOG_ENABLE_DEBUG             "ALog: Enable additional debug checks" OFF)
 
-set(ALOG_CXX_STANDARD "17" CACHE STRING "ALog: Set C++ standard")
+if (NOT DEFINED ALOG_CXX_STANDARD)
+    set(ALOG_CXX_STANDARD "17" CACHE STRING "ALog: Set C++ standard")
+else()
+    set(ALOG_CXX_STANDARD "${ALOG_CXX_STANDARD}" CACHE STRING "ALog: Set C++ standard")
+endif()
 set_property(CACHE ALOG_CXX_STANDARD PROPERTY STRINGS "17" "20" "23")
 
 set(ALOG_QT_SEARCH_MODE "Auto" CACHE STRING "ALog: Set Qt search mode")
@@ -134,7 +138,3 @@ elseif (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
 endif()
 
 add_subdirectory(tests)
-
-
-# Update cached variables
-set(ALOG_CXX_STANDARD "${ALOG_CXX_STANDARD}" CACHE STRING "ALog: Set C++ standard" FORCE)
