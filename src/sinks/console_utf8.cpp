@@ -15,7 +15,7 @@ namespace Sinks {
 
 class MBuf: public std::stringbuf {
 public:
-    MBuf(FILE* stream): m_stream(stream) { };
+    MBuf(FILE* stream): m_stream(stream) { }
 
     int sync() override {
         fputs(str().c_str(), m_stream);

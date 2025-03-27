@@ -4,6 +4,8 @@
 
 #include <alog/sinks/console.h>
 
+#include <cassert>
+
 namespace ALog {
 namespace Sinks {
 
@@ -18,6 +20,8 @@ Console::Console(Console::Stream stream)
             m_handle = stderr;
             break;
     }
+
+    assert(m_handle);
 }
 
 void Console::write(const Buffer& buffer, const Record&)
