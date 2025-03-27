@@ -3,10 +3,12 @@
  * Contact:  ihor-drachuk-libs@pm.me  */
 
 #pragma once
+#include <cstdio>
 #include <optional>
 #include <chrono>
 #include <string>
 #include <tuple>
+#include <alog/severity.h>
 
 namespace ALog {
 namespace Internal {
@@ -24,6 +26,10 @@ struct FilePathDetails
 std::optional<std::chrono::system_clock::time_point> getFileCreationTime(const char* fileName);
 std::optional<size_t> getFileSize(const char* fileName);
 FilePathDetails analyzePath(const std::string& path);
+
+bool enableColoredTerminal(FILE* stream = stdout);
+const std::string& getSeverityColorCode(Severity severity);
+const std::string& getResetColorCode();
 
 } // namespace Internal
 } // namespace ALog

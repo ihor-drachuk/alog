@@ -13,6 +13,7 @@
 #include <utility>
 #include <optional>
 #include <variant>
+#include <alog/severity.h>
 #include <alog/tools.h>
 
 #ifdef ALOG_CXX23
@@ -36,17 +37,6 @@ void logSmartPtr(Record& record, const SmartPtrType& value, const char* smartPtr
 } // namespace ALog
 
 namespace ALog {
-
-enum Severity {
-    Minimal,
-    Verbose = Minimal,
-    Debug,
-    Info,
-    Warning,
-    Error,
-    Fatal,
-    Maximal = Fatal
-};
 
 /* codechecker_false_positive [core.uninitialized.Assign] See https://github.com/llvm/llvm-project/issues/61687 */
 struct Record

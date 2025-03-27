@@ -15,10 +15,20 @@ namespace Sinks {
 class ConsoleQt2 : public ISink
 {
 public:
-    ConsoleQt2() = default;
-    ~ConsoleQt2() override = default;
+    // Define env. variable `QT_CREATOR=1` to make it work in `Auto` mode under Qt Creator
+    enum class ColorMode {
+        Disable,
+        Auto,
+        Force
+    };
+
+    ConsoleQt2(ColorMode colorMode = ColorMode::Auto);
+    ~ConsoleQt2() override;
 
     void write(const Buffer& buffer, const Record& record) override;
+
+private:
+    ALOG_DECLARE_PIMPL
 };
 #endif // ALOG_HAS_QT_LIBRARY
 

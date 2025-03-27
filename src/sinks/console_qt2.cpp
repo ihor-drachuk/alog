@@ -9,55 +9,77 @@
 
 #include <QDebug>
 #include <alog/adapters/qt_qml_adapter.h>
+#include <alog/tools_internal.h>
+#include <array>
 
 namespace ALog {
 namespace Sinks {
 
+namespace {
+
+using LogFuncPtrType = QDebug (QMessageLogger::*)() const;
+
+struct SeverityData
+{
+    QtMsgType qtSeverity;
+    LogFuncPtrType qtLogFuncPtr;
+    QString color;
+};
+
+} // namespace
+
+struct ConsoleQt2::impl_t
+{
+    bool colored {};
+
+    const std::array<SeverityData, ALog::Severity::COUNT> severityMap {
+        SeverityData {QtDebugMsg,    &QMessageLogger::debug,    Internal::getSeverityColorCode(Severity::Verbose).c_str()},
+        SeverityData {QtDebugMsg,    &QMessageLogger::debug,    Internal::getSeverityColorCode(Severity::Debug).c_str()  },
+        SeverityData {QtInfoMsg,     &QMessageLogger::info,     Internal::getSeverityColorCode(Severity::Info).c_str()   },
+        SeverityData {QtWarningMsg,  &QMessageLogger::warning,  Internal::getSeverityColorCode(Severity::Warning).c_str()},
+        SeverityData {QtCriticalMsg, &QMessageLogger::critical, Internal::getSeverityColorCode(Severity::Error).c_str()  },
+        SeverityData {QtFatalMsg,    &QMessageLogger::critical, Internal::getSeverityColorCode(Severity::Fatal).c_str()  }
+    };
+
+    const QString resetColorCode {Internal::getResetColorCode().c_str()};
+};
+
+ConsoleQt2::ConsoleQt2(ColorMode colorMode)
+{
+    createImpl();
+    impl().colored = (colorMode == ColorMode::Auto && Internal::enableColoredTerminal()) ||
+                      colorMode == ColorMode::Force;
+}
+
+ConsoleQt2::~ConsoleQt2() = default;
+
 void ConsoleQt2::write(const Buffer& buffer, const Record& record)
 {
-    if (buffer.size() == 0)
+    if (buffer.empty())
         return;
 
-    auto backHandler = QtQmlAdapter::exists() ? QtQmlAdapter::instance()->getBackHandler() : nullptr;
+    const QString& msgInitial = QString::fromUtf8(reinterpret_cast<const char*>(buffer.data()), static_cast<int>(buffer.size()));
+    QString msg;
+    const auto backHandler = QtQmlAdapter::exists() ? QtQmlAdapter::instance()->getBackHandler() : nullptr;
+    const auto& severityData = impl().severityMap[record.severity];
 
-    if (backHandler) {
-        QtMsgType type;
-        QMessageLogContext ctx;
-
-        switch (record.severity) {
-            case ALog::Severity::Verbose: type = QtDebugMsg;    break;
-            case ALog::Severity::Debug:   type = QtDebugMsg;    break;
-            case ALog::Severity::Info:    type = QtInfoMsg;     break;
-            case ALog::Severity::Warning: type = QtWarningMsg;  break;
-            case ALog::Severity::Error:   type = QtCriticalMsg; break;
-            case ALog::Severity::Fatal:   type = QtFatalMsg;    break;
-            default:
-                assert(false && "Unexpected 'record.severity'!");
-        }
-
-        //ctx.file = record.filenameOnly;
-        //ctx.line = record.line;
-        //ctx.category = record.module;
-        //ctx.function = record.func;
-
-        backHandler(type, ctx, QString::fromUtf8((const char*)buffer.data(), static_cast<int>(buffer.size())));
+    if (impl().colored) {
+        msg.reserve(buffer.size() + 16);
+        msg += severityData.color;
+        msg += msgInitial;
+        msg += impl().resetColorCode;
 
     } else {
-        QDebug (QMessageLogger::*logFunc)() const = nullptr;
+        msg = msgInitial;
+    }
 
-        switch (record.severity) {
-            case ALog::Severity::Verbose: logFunc = &QMessageLogger::debug;    break;
-            case ALog::Severity::Debug:   logFunc = &QMessageLogger::debug;    break;
-            case ALog::Severity::Info:    logFunc = &QMessageLogger::info;     break;
-            case ALog::Severity::Warning: logFunc = &QMessageLogger::warning;  break;
-            case ALog::Severity::Error:   logFunc = &QMessageLogger::critical; break;
-            case ALog::Severity::Fatal:   logFunc = &QMessageLogger::critical; break;
-        }
+    if (backHandler) {
+        backHandler(severityData.qtSeverity, {}, msg);
 
-        assert(logFunc);
-
-        QMessageLogger qtLogger(record.filenameFull, record.line, record.func, nullptr);
-        (qtLogger.*logFunc)().noquote() << QString::fromUtf8((const char*)buffer.data(), static_cast<int>(buffer.size()));
+    } else {
+        const LogFuncPtrType logFunc = severityData.qtLogFuncPtr;
+        const QMessageLogger qtLogger(record.filenameFull, record.line, record.func, nullptr);
+        (qtLogger.*logFunc)().noquote() << msg;
     }
 }
 
