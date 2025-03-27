@@ -13,7 +13,7 @@ static const char* const severitiesMap[] = {
     "Info",
     "Warn",
     "Error",
-    "Critical"
+    "Crit!"
 };
 
 struct Default::impl_t {
@@ -38,12 +38,12 @@ Buffer Default::format(const Record& record) const
     uint16_t msecs = static_cast<uint16_t>(duration_cast<milliseconds>(currentTime).count() - secs * 1000);
 
     ALog::I::LongSSO<> result(impl().cache);
-    result.appendFmtString("[%5llu.%03hu] T#%-2d ", secs, msecs, record.threadNum);
+    result.appendFmtString("[%3llu.%03hu] T#%-2d ", secs, msecs, record.threadNum);
 
     if (record.threadTitle)
         result.appendFmtString("(%s) ", record.threadTitle);
 
-    result.appendFmtString("[%-8s] ", severitiesMap[record.severity]);
+    result.appendFmtString("[%-5s] ", severitiesMap[record.severity]);
 
     if (record.module)
         result.appendFmtString("[%-21s] ", record.module);

@@ -489,7 +489,7 @@ TEST(ALog, test_defaultFormatter)
     memcpy(recordedLog.data(), str1.data(), str1.size());
 
     const auto reference1 = stringReplace(
-                                escapeRegex("[    0.014] T#0  [Info    ] [::TestBody:NNNN]  Test"),
+                                escapeRegex("[  0.014] T#0  [Info ] [::TestBody:NNNN]  Test"),
                                 "NNNN", R"(\d+)");
     EXPECT_TRUE(regexMatch(recordedLog, reference1));
 
@@ -503,7 +503,7 @@ TEST(ALog, test_defaultFormatter)
     memcpy(recordedLog.data(), str1.data(), str1.size());
 
     const auto reference2 = stringReplace(
-                                escapeRegex("[    0.014] T#0  (Worker) [Info    ] [::TestBody:NNNN]  Test"),
+                                escapeRegex("[  0.014] T#0  (Worker) [Info ] [::TestBody:NNNN]  Test"),
                                 "NNNN", R"(\d+)");
     EXPECT_TRUE(regexMatch(recordedLog, reference2));
 
@@ -517,7 +517,7 @@ TEST(ALog, test_defaultFormatter)
     memcpy(recordedLog.data(), str1.data(), str1.size());
 
     const auto reference3 = stringReplace(
-                                escapeRegex("[    0.014] T#0  [Info    ] [Module               ] [::TestBody:NNNN]  Test"),
+                                escapeRegex("[  0.014] T#0  [Info ] [Module               ] [::TestBody:NNNN]  Test"),
                                 "NNNN", R"(\d+)");
     EXPECT_TRUE(regexMatch(recordedLog, reference3));
 
@@ -532,7 +532,7 @@ TEST(ALog, test_defaultFormatter)
     memcpy(recordedLog.data(), str1.data(), str1.size());
 
     const auto reference4 = stringReplace(
-                                escapeRegex("[   13.014] T#0  (Worker) [Info    ] [Module               ] [::TestBody:NNNN]  Test"),
+                                escapeRegex("[ 13.014] T#0  (Worker) [Info ] [Module               ] [::TestBody:NNNN]  Test"),
                                 "NNNN", R"(\d+)");
     EXPECT_TRUE(regexMatch(recordedLog, reference4));
 
