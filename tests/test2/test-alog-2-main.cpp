@@ -9,6 +9,10 @@ int main()
 {
     SIMPLE_SETUP_ALOG;
     LOGMD << "Test";
+    LOGMI << "Info";
+    LOGMW << "Warning";
+    LOGME << "Error";
+    LOGMF << "Fatal";
     LOGM_ASSERT(true);
     LOGM_ASSERT(true) << "1";
     LOGM_ASSERT_D(true);

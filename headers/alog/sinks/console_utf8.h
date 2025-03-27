@@ -16,7 +16,14 @@ class ConsoleUTF8 : public ISink
 public:
     enum class Stream {StdOut, StdErr};
 
-    ConsoleUTF8(Stream stream);
+    // Define env. variable `QT_CREATOR=1` to make it work in `Auto` mode under Qt Creator
+    enum class ColorMode {
+        Disable,
+        Auto,
+        Force
+    };
+
+    ConsoleUTF8(Stream stream, ColorMode colorMode = ColorMode::Auto);
     ~ConsoleUTF8() override;
 
     void write(const Buffer& buffer, const Record& record) override;
