@@ -25,9 +25,7 @@ Default::Default()
     createImpl();
 }
 
-Default::~Default()
-{
-}
+Default::~Default() = default;
 
 Buffer Default::format(const Record& record) const
 {

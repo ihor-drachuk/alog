@@ -118,25 +118,25 @@ Finally<Functor> CreateFinally(Functor f) { return Finally<Functor>(f); }
 template<size_t sso_limit = 79>
 class LongSSO {
 public:
-    inline LongSSO() {
+    LongSSO() {
         m_buf[0] = 0;
     }
 
     template<size_t N>
-    inline LongSSO (const char(&value)[N]) {
+    LongSSO (const char(&value)[N]) {
         appendString(value, N-1);
     }
 
-    inline LongSSO(Buffer& cache) {
+    LongSSO(Buffer& cache) {
         m_buf[0] = 0;
         m_longBuf = &cache;
     }
 
-    inline LongSSO(LongSSO&& rhs) noexcept {
+    LongSSO(LongSSO&& rhs) noexcept {
         *this = std::move(rhs);
     }
 
-    inline LongSSO& operator=(LongSSO&& rhs) noexcept {
+    LongSSO& operator=(LongSSO&& rhs) noexcept {
         if (this == &rhs) return *this;
 
         if (m_deleteLongBuf)
@@ -155,27 +155,27 @@ public:
         return *this;
     }
 
-    inline LongSSO(const LongSSO& rhs): LongSSO() {
+    LongSSO(const LongSSO& rhs): LongSSO() {
         *this = rhs;
     }
 
-    inline LongSSO& operator=(const LongSSO& rhs) { // TODO: Remove operator= ?
+    LongSSO& operator=(const LongSSO& rhs) { // TODO: Remove operator= ?
         if (this == &rhs) return *this;
         clear();
         appendString(rhs.getString(), rhs.getStringLen());
         return *this;
     }
 
-    inline ~LongSSO() {
+    ~LongSSO() {
         if (m_deleteLongBuf){
             delete m_longBuf;
             m_deleteLongBuf = false; //False positive, but should do no harm
         }
     }
 
-    inline explicit operator bool() const { return getStringLen() != 0; }
+    explicit operator bool() const { return getStringLen() != 0; }
 
-    inline uint8_t* allocate_copy(size_t sz, const char* str = nullptr) {
+    uint8_t* allocate_copy(size_t sz, const char* str = nullptr) {
         if (m_isShortBuf) {
             // Short buffer
             size_t newSz = m_sz + sz;
@@ -202,7 +202,7 @@ public:
         }
     }
 
-    inline void appendString(const char* str, size_t sz, size_t width = 0, char padding = ' ') {
+    void appendString(const char* str, size_t sz, size_t width = 0, char padding = ' ') {
         if (sz >= width) {
             allocate_copy(sz, str);
         } else {
@@ -216,37 +216,37 @@ public:
         }
     }
 
-    inline void appendStringAL(const char* str) {
+    void appendStringAL(const char* str) {
         appendString(str, strlen(str));
     }
 
     template<size_t N>
-    inline void appendString(const char(&str)[N]) {
+    void appendString(const char(&str)[N]) {
         appendString(str, N-1);
     }
 
     template<size_t N>
-    inline void appendString(const LongSSO<N>& str) {
+    void appendString(const LongSSO<N>& str) {
         appendString(str.getString(), str.getStringLen());
     }
 
     static_assert (sizeof(uint8_t) == sizeof(char), "Cast validity verification - failed");
-    inline const char* getString() const { return reinterpret_cast<const char*>(m_isShortBuf ? m_buf : m_longBuf->data()); }
-    inline char* getStringRw() { return const_cast<char*>(const_cast<const LongSSO<sso_limit>*>(this)->getString()); }
-    inline size_t getStringLen() const { return m_isShortBuf ? m_sz : (m_longBuf->size() - 1); }
+    const char* getString() const { return reinterpret_cast<const char*>(m_isShortBuf ? m_buf : m_longBuf->data()); }
+    char* getStringRw() { return const_cast<char*>(const_cast<const LongSSO<sso_limit>*>(this)->getString()); }
+    size_t getStringLen() const { return m_isShortBuf ? m_sz : (m_longBuf->size() - 1); }
 
-    inline size_t getSsoLimit() const { return sso_limit; }
-    inline bool isShortString() const { return m_isShortBuf; }
+    size_t getSsoLimit() const { return sso_limit; }
+    bool isShortString() const { return m_isShortBuf; }
 
     template<typename... Args>
-    inline void appendFmtString(const char* format, Args&&... args) {
+    void appendFmtString(const char* format, Args&&... args) {
         CLANG_WARNING_DISABLE("-Wformat-nonliteral")
         // codechecker_intentional [clang-diagnostic-format-nonliteral]
         auto sz = snprintf(nullptr, 0, format, std::forward<Args>(args)...);
         if (sz < 0) {
             appendFmtString("-- ALOG: Failed to format \"%s\" (%s)", format, strerror(errno));
             return;
-        }; 
+        }
         auto target = allocate_copy(sz);
         // codechecker_intentional [clang-diagnostic-format-nonliteral]
         auto result = snprintf((char*)target, sz+1, format, std::forward<Args>(args)...);
@@ -257,14 +257,14 @@ public:
         CLANG_WARNING_RESTORE()
     }
 
-    inline void clear() {
+    void clear() {
         m_sz = 0;
         m_buf[0] = 0;
         m_isShortBuf = true;
     }
 
 private:
-    inline uint8_t* makeLong(size_t addSz) {
+    uint8_t* makeLong(size_t addSz) {
         size_t newSz = m_sz + addSz;
 
         if (m_longBuf) {
@@ -417,7 +417,7 @@ const char* currentThreadName();
 class optional_bool
 {
 public:
-    optional_bool() noexcept {}
+    optional_bool() noexcept = default;
     optional_bool(bool value) noexcept: m_hasValue(true), m_value(value) {}
 
     optional_bool(const optional_bool& rhs) noexcept {
@@ -442,9 +442,9 @@ public:
         return *this;
     }
 
-    inline bool has_value() const { return m_hasValue; }
+    bool has_value() const { return m_hasValue; }
 
-    inline bool value() const {
+    bool value() const {
         assert(m_hasValue);
         return m_value;
     }
@@ -482,20 +482,20 @@ public:
     [[nodiscard]] static ClassPtr create(Args&&... args) { return std::make_shared<Class>(std::forward<Args>(args)...); }
     [[nodiscard]] static ClassPtr create(const std::initializer_list<ItemPtr>& items) { return std::make_shared<Class>(items); }
 
-    void set(const ItemPtr& item) { clear(); add(item); };
-    void set(const std::initializer_list<ItemPtr>& items) { clear(); add(items); };
+    void set(const ItemPtr& item) { clear(); add(item); }
+    void set(const std::initializer_list<ItemPtr>& items) { clear(); add(items); }
     template<typename T, typename... Args>
-    void set(const Args&... args) { set(std::make_shared<T>(args...)); };
+    void set(Args&&... args) { set(std::make_shared<T>(std::forward<Args>(args)...)); }
 
-    IChain<Interface, Class>& add(const ItemPtr& item) { m_items.push_back(item); return *this; };
+    IChain<Interface, Class>& add(const ItemPtr& item) { m_items.push_back(item); return *this; }
     template<typename T, typename... Args>
-    IChain<Interface, Class>& add(const Args&... args) { return add(std::make_shared<T>(args...)); };
+    IChain<Interface, Class>& add(Args&&... args) { return add(std::make_shared<T>(std::forward<Args>(args)...)); }
     IChain<Interface, Class>& add(const std::initializer_list<ItemPtr>& items) {
         for (const auto& x : items) m_items.push_back(x);
         return *this;
     }
     virtual void clear() { m_items.clear(); }
-    bool empty() const { return m_items.empty(); };
+    bool empty() const { return m_items.empty(); }
 
 protected:
     using Items = std::vector<ItemPtr>;
@@ -559,26 +559,26 @@ class qt_iterator_wrapper
 public:
     using value_type = std::pair<Key, Value>;
 
-    inline qt_iterator_wrapper(Iter iter): m_iter(iter) {
+    qt_iterator_wrapper(Iter iter): m_iter(iter) {
     }
 
-    inline qt_iterator_wrapper& operator++() {
+    qt_iterator_wrapper& operator++() {
         return ++m_iter;
     }
 
-    inline qt_iterator_wrapper operator++(int) {
+    qt_iterator_wrapper operator++(int) {
         return m_iter++;
     }
 
-    inline bool operator == (const qt_iterator_wrapper& rhs) const {
+    bool operator == (const qt_iterator_wrapper& rhs) const {
         return (m_iter == rhs.m_iter);
     }
 
-    inline bool operator != (const qt_iterator_wrapper& rhs) const {
+    bool operator != (const qt_iterator_wrapper& rhs) const {
         return !(*this == rhs);
     }
 
-    inline value_type operator*() const {
+    value_type operator*() const {
         return value_type(m_iter.key(), m_iter.value());
     }
 
@@ -587,10 +587,10 @@ private:
 };
 
 template<typename T>
-constexpr int combineInt(T value) { return (int)value; }
+constexpr int combineInt(T value) { return static_cast<int>(value); }
 
 template<typename T, typename... Ts>
-constexpr int combineInt(T value0, Ts... values) { return (int)value0 | combineInt(values...); }
+constexpr int combineInt(T value0, Ts... values) { return static_cast<int>(value0) | combineInt(values...); }
 
 template<typename T>
 inline T (max)(T a, T b) { return a > b ? a : b; }
