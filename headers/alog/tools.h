@@ -592,6 +592,56 @@ constexpr int combineInt(T value) { return static_cast<int>(value); }
 template<typename T, typename... Ts>
 constexpr int combineInt(T value0, Ts... values) { return static_cast<int>(value0) | combineInt(values...); }
 
+template<typename Enum>
+class Flags {
+    static_assert(std::is_enum<Enum>::value, "Flags is only usable with enumeration types.");
+    using UnderlyingType = typename std::underlying_type<Enum>::type;
+
+public:
+    using Int = typename std::conditional<std::is_unsigned<UnderlyingType>::value, unsigned int, signed int>::type;
+
+    constexpr Flags() noexcept : m_value(0) {}
+    constexpr Flags(Enum flag) noexcept : m_value(static_cast<Int>(flag)) {}
+    constexpr Flags(std::initializer_list<Enum> flags) noexcept : m_value(initHelper(flags.begin(), flags.end())) {}
+
+    Flags& operator&=(int mask) noexcept { m_value &= mask; return *this; }
+    Flags& operator&=(unsigned int mask) noexcept { m_value &= mask; return *this; }
+    Flags& operator&=(Enum mask) noexcept { m_value &= static_cast<Int>(mask); return *this; }
+    Flags& operator|=(Flags other) noexcept { m_value |= other.m_value; return *this; }
+    Flags& operator|=(Enum flag) noexcept { m_value |= static_cast<Int>(flag); return *this; }
+    Flags& operator^=(Flags other) noexcept { m_value ^= other.m_value; return *this; }
+    Flags& operator^=(Enum flag) noexcept { m_value ^= static_cast<Int>(flag); return *this; }
+
+    constexpr operator Int() const noexcept { return m_value; }
+
+    constexpr Flags operator|(Flags other) const noexcept { return Flags(m_value | other.m_value); }
+    constexpr Flags operator|(Enum flag) const noexcept { return Flags(m_value | static_cast<Int>(flag)); }
+    constexpr Flags operator^(Flags other) const noexcept { return Flags(m_value ^ other.m_value); }
+    constexpr Flags operator^(Enum flag) const noexcept { return Flags(m_value ^ static_cast<Int>(flag)); }
+    constexpr Flags operator&(int mask) const noexcept { return Flags(m_value & mask); }
+    constexpr Flags operator&(unsigned int mask) const noexcept { return Flags(m_value & mask); }
+    constexpr Flags operator&(Enum flag) const noexcept { return Flags(m_value & static_cast<Int>(flag)); }
+    constexpr Flags operator~() const noexcept { return Flags(~m_value); }
+
+    constexpr bool operator!() const noexcept { return m_value == 0; }
+    constexpr bool testFlag(Enum flag) const noexcept {
+        Int val = static_cast<Int>(flag);
+        return ((m_value & val) == val) && (val != 0 || m_value == val);
+    }
+
+    Flags& setFlag(Enum flag, bool on = true) noexcept {
+        return on ? (*this |= flag) : (*this &= ~static_cast<Int>(flag));
+    }
+
+private:
+    constexpr Flags(Int value) noexcept : m_value(value) {}
+    static constexpr Int initHelper(const Enum* it, const Enum* end) noexcept {
+        return (it == end) ? 0 : (static_cast<Int>(*it) | initHelper(it + 1, end));
+    }
+
+    Int m_value;
+};
+
 template<typename T>
 inline T (max)(T a, T b) { return a > b ? a : b; }
 
