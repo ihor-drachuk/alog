@@ -11,7 +11,12 @@ class Default : public IFormatter
 {
     ALOG_NO_COPY_MOVE(Default);
 public:
-    Default();
+    enum class Flag {
+        DateTime = 1,
+        LocalTimestamp = 2
+    };
+
+    Default(Internal::Flags<Flag> flags = {Flag::DateTime, Flag::LocalTimestamp});
     ~Default() override;
     Buffer format(const Record& record) const override;
 

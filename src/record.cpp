@@ -45,6 +45,7 @@ Record Record::create(Severity severity, int line, const char* file, const char*
     record.threadTitle = I::ThreadTools::currentThreadName();
     record.module = nullptr;
     record.steadyTp = std::chrono::steady_clock::now();
+    record.systemTp = std::chrono::system_clock::now();
     record.flags = defaultFlags;
     record.skipSeparators = 0;
 

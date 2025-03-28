@@ -477,7 +477,7 @@ TEST(ALog, test_operatorPutStream)
 
 TEST(ALog, test_defaultFormatter)
 {
-    ALog::Formatters::Default formatter;
+    ALog::Formatters::Default formatter (ALog::Formatters::Default::Flag::LocalTimestamp);
 
     // #1
     auto record = _ALOG_RECORD(ALog::Severity::Info) << "Test";
