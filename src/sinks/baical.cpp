@@ -114,7 +114,7 @@ void Baical::write(const Buffer& /*buffer*/, const Record& record)
     if (!impl().client || !impl().trace) return;
 
     auto format = impl().formatString.getBuffer();
-    auto msg = impl().messageString.convert(record.getMessage());
+    auto msg = impl().messageString.convert(record.getMessageLen() ? record.getMessage() : " ");
 
     impl().trace->Trace(0,
                         (eP7Trace_Level)record.severity,
