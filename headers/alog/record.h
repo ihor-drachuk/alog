@@ -958,23 +958,28 @@ ALog::Record&& operator<< (ALog::Record&& record, const std::chrono::duration<Ts
     auto _flagsRestorer = record.backupFlags();
     record << ALog::Record::Flags::NoSeparators;
 
-    if (value >= std::chrono::hours(24)) {
+    if (value < std::chrono::duration<Ts...>{0})
+        record.appendMessage("-");
+
+    const auto valueAbs = std::chrono::abs(value);
+
+    if (valueAbs >= std::chrono::hours(24)) {
         // Days, hours (if != 0)
-        const auto days = std::chrono::duration_cast<std::chrono::hours>(value).count() / 24;
+        const auto days = std::chrono::duration_cast<std::chrono::hours>(valueAbs).count() / 24;
         record.appendInteger(days);
         record.appendMessage("d");
 
-        const auto hours = std::chrono::duration_cast<std::chrono::hours>(value).count() - days * 24;
+        const auto hours = std::chrono::duration_cast<std::chrono::hours>(valueAbs).count() - days * 24;
         if (hours > 0) {
             record.appendMessage(" ");
             record.appendInteger(hours);
             record.appendMessage("h");
         }
 
-    } else if (value >= std::chrono::hours(1)) {
+    } else if (valueAbs >= std::chrono::hours(1)) {
         // HH:MM:SS
-        const auto hours = std::chrono::duration_cast<std::chrono::hours>(value).count();
-        const auto valueMin = value - std::chrono::hours(hours);
+        const auto hours = std::chrono::duration_cast<std::chrono::hours>(valueAbs).count();
+        const auto valueMin = valueAbs - std::chrono::hours(hours);
         const auto minutes = std::chrono::duration_cast<std::chrono::minutes>(valueMin).count();
         const auto valueSec = valueMin - std::chrono::minutes(minutes);
         const auto seconds = std::chrono::duration_cast<std::chrono::seconds>(valueSec).count();
@@ -985,36 +990,36 @@ ALog::Record&& operator<< (ALog::Record&& record, const std::chrono::duration<Ts
         record.appendInteger(seconds, 2, '0');
         record.appendMessage("s");
 
-    } else if (value >= std::chrono::minutes(1)) {
+    } else if (valueAbs >= std::chrono::minutes(1)) {
         // MM:SS
-        const auto minutes = std::chrono::duration_cast<std::chrono::minutes>(value).count();
-        const auto valueSec = value - std::chrono::minutes(minutes);
+        const auto minutes = std::chrono::duration_cast<std::chrono::minutes>(valueAbs).count();
+        const auto valueSec = valueAbs - std::chrono::minutes(minutes);
         const auto seconds = std::chrono::duration_cast<std::chrono::seconds>(valueSec).count();
         record.appendInteger(minutes);
         record.appendMessage("m:");
         record.appendInteger(seconds, 2, '0');
         record.appendMessage("s");
 
-    } else if (value >= std::chrono::seconds(1)) {
+    } else if (valueAbs >= std::chrono::seconds(1)) {
         // SS.000
-        const auto seconds = std::chrono::duration_cast<std::chrono::seconds>(value).count();
-        const auto valueMs = value - std::chrono::seconds(seconds);
+        const auto seconds = std::chrono::duration_cast<std::chrono::seconds>(valueAbs).count();
+        const auto valueMs = valueAbs - std::chrono::seconds(seconds);
         const auto ms = std::chrono::duration_cast<std::chrono::milliseconds>(valueMs).count();
         record.appendInteger(seconds);
         record.appendMessage(".");
         record.appendInteger(ms, 3, '0');
         record.appendMessage(" sec");
 
-    } else if (value >= std::chrono::milliseconds(10)) {
+    } else if (valueAbs >= std::chrono::milliseconds(10)) {
         // N ms
-        const auto ms = std::chrono::duration_cast<std::chrono::milliseconds>(value).count();
+        const auto ms = std::chrono::duration_cast<std::chrono::milliseconds>(valueAbs).count();
         record.appendInteger(ms);
         record.appendMessage(" ms");
 
     } else {
         // N.000 ms
-        const auto ms = std::chrono::duration_cast<std::chrono::milliseconds>(value).count();
-        const auto valueUs = value - std::chrono::milliseconds(ms);
+        const auto ms = std::chrono::duration_cast<std::chrono::milliseconds>(valueAbs).count();
+        const auto valueUs = valueAbs - std::chrono::milliseconds(ms);
         const auto us = std::chrono::duration_cast<std::chrono::microseconds>(valueUs).count();
         record.appendInteger(ms);
         record.appendMessage(".");
