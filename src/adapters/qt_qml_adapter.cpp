@@ -60,7 +60,7 @@ void QtQmlAdapter::messageOutput(QtMsgType type, const QMessageLogContext& conte
                                  context.file ? context.file : emptyString,
                                  context.file ? ALog::Internal::extractFileNameOnly(context.file) : emptyString,
                                  context.function ? context.function : emptyString);
-    record.module = context.category;
+    record.module = context.category ? context.category : emptyString;
 
     record.flagsOn(Record::Flags::Flush);
 
