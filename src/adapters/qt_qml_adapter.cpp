@@ -65,8 +65,12 @@ void QtQmlAdapter::messageOutput(QtMsgType type, const QMessageLogContext& conte
     record.flagsOn(Record::Flags::Flush);
 
     auto msgUtf8 = msg.toUtf8();
-    assert(*msgUtf8.rbegin() != 0);
-    record.message.appendString(msgUtf8.constData(), msgUtf8.size());
+    if (msgUtf8.size() > 0) {
+        assert(*msgUtf8.rbegin() != 0);
+        record.message.appendString(msgUtf8.constData(), msgUtf8.size());
+    } else {
+        record.message.appendString("<Empty input passed to ALog>");
+    }
 
     auto logger = ALog::LoggerHolder<0>::instance()->get();
     static bool hasDebt = false;
