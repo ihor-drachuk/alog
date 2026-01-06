@@ -698,6 +698,112 @@ TEST(ALog, test_filters)
     }
 }
 
+TEST(ALog, test_filters_substring_case_sensitive)
+{
+    std::vector<ALog::Record> records;
+
+    auto filters = ALog::Filters::Chain::create({
+        // Reject messages containing "error" (case-sensitive)
+        std::make_shared<ALog::Filters::Substring>("error", false, true, ALog::IFilter::RejectOrUndefined),
+        // Pass everything else
+        std::make_shared<ALog::Filters::Always>(true)
+    });
+
+    DEFINE_MAIN_ALOGGER;
+    auto sink = std::make_shared<ALog::Sinks::Functor2>([&records](const ALog::Buffer&, const ALog::Record& rec){ records.push_back(rec); });
+    ALOGGER_DIRECT->pipeline().sinks().set(sink);
+    ALOGGER_DIRECT->pipeline().filters().set(filters);
+    ALOGGER_DIRECT->setMode(ALog::Logger::LoggerMode::Synchronous);
+    MARK_ALOGGER_READY;
+
+    DEFINE_ALOGGER_MODULE(SubstringTest);
+
+    LOGD << "This is an error message";
+    LOGD << "This is an Error message";
+    LOGD << "This is a warning message";
+    LOGD << "Another error here";
+
+    std::set<std::string> items;
+    for (const auto& x : records)
+        items.insert(x.getMessage());
+
+    // "error" (lowercase) should be rejected, "Error" (uppercase) should pass (case-sensitive)
+    EXPECT_EQ(items.count("This is an error message"), 0);
+    EXPECT_EQ(items.count("Another error here"), 0);
+    EXPECT_EQ(items.count("This is an Error message"), 1);
+    EXPECT_EQ(items.count("This is a warning message"), 1);
+}
+
+TEST(ALog, test_filters_substring_case_insensitive)
+{
+    std::vector<ALog::Record> records;
+
+    auto filters = ALog::Filters::Chain::create({
+        // Reject messages containing "error" (case-insensitive)
+        std::make_shared<ALog::Filters::Substring>("error", false, false, ALog::IFilter::RejectOrUndefined),
+        // Pass everything else
+        std::make_shared<ALog::Filters::Always>(true)
+    });
+
+    DEFINE_MAIN_ALOGGER;
+    auto sink = std::make_shared<ALog::Sinks::Functor2>([&records](const ALog::Buffer&, const ALog::Record& rec){ records.push_back(rec); });
+    ALOGGER_DIRECT->pipeline().sinks().set(sink);
+    ALOGGER_DIRECT->pipeline().filters().set(filters);
+    ALOGGER_DIRECT->setMode(ALog::Logger::LoggerMode::Synchronous);
+    MARK_ALOGGER_READY;
+
+    DEFINE_ALOGGER_MODULE(SubstringTest);
+
+    LOGD << "This is an error message";
+    LOGD << "This is an Error message";
+    LOGD << "This is an ERROR message";
+    LOGD << "This is a warning message";
+
+    std::set<std::string> items;
+    for (const auto& x : records)
+        items.insert(x.getMessage());
+
+    // All variations of "error" should be rejected (case-insensitive)
+    EXPECT_EQ(items.count("This is an error message"), 0);
+    EXPECT_EQ(items.count("This is an Error message"), 0);
+    EXPECT_EQ(items.count("This is an ERROR message"), 0);
+    EXPECT_EQ(items.count("This is a warning message"), 1);
+}
+
+TEST(ALog, test_filters_substring_pass_mode)
+{
+    std::vector<ALog::Record> records;
+
+    auto filters = ALog::Filters::Chain::create({
+        // Pass messages containing "important" (case-sensitive)
+        std::make_shared<ALog::Filters::Substring>("important", true, true, ALog::IFilter::PassOrUndefined),
+        // Reject everything else
+        std::make_shared<ALog::Filters::Always>(false)
+    });
+
+    DEFINE_MAIN_ALOGGER;
+    auto sink = std::make_shared<ALog::Sinks::Functor2>([&records](const ALog::Buffer&, const ALog::Record& rec){ records.push_back(rec); });
+    ALOGGER_DIRECT->pipeline().sinks().set(sink);
+    ALOGGER_DIRECT->pipeline().filters().set(filters);
+    ALOGGER_DIRECT->setMode(ALog::Logger::LoggerMode::Synchronous);
+    MARK_ALOGGER_READY;
+
+    DEFINE_ALOGGER_MODULE(SubstringTest);
+
+    LOGD << "This is important info";
+    LOGD << "This is regular info";
+    LOGD << "Another important message";
+
+    std::set<std::string> items;
+    for (const auto& x : records)
+        items.insert(x.getMessage());
+
+    // Only messages with "important" should pass
+    EXPECT_EQ(items.count("This is important info"), 1);
+    EXPECT_EQ(items.count("Another important message"), 1);
+    EXPECT_EQ(items.count("This is regular info"), 0);
+}
+
 TEST(ALog, test_separators_advanced)
 {
 #if 0

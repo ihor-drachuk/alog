@@ -8,3 +8,4 @@
 #include <alog/filters/severity_module.h>
 #include <alog/filters/module.h>
 #include <alog/filters/file.h>
+#include <alog/filters/substring.h>
