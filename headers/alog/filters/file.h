@@ -12,7 +12,7 @@ class File : public IFilter
     ALOG_NO_COPY_MOVE(File);
 public:
     File(const char* file, bool pass = true, Mode mode = PassOrReject);
-    ~File();
+    ~File() override;
 
 protected:
     I::optional_bool canPassImpl(const Record& record) const override;
