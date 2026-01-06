@@ -12,7 +12,7 @@ class Module : public IFilter
     ALOG_NO_COPY_MOVE(Module);
 public:
     Module(const char* module, bool pass = true, Mode mode = PassOrReject);
-    ~Module();
+    ~Module() override;
 
 protected:
     I::optional_bool canPassImpl(const Record& record) const override;

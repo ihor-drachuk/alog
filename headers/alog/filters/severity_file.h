@@ -15,7 +15,7 @@ public:
                  const std::string& fileName,
                  Mode mode = PassOrReject,
                  ALog::Comparison1 comparison = ALog::GreaterEqual);
-    ~SeverityFile();
+    ~SeverityFile() override;
 
 protected:
     I::optional_bool canPassImpl(const Record& record) const override;

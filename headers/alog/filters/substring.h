@@ -13,7 +13,7 @@ class Substring : public IFilter
 public:
     Substring(const char* substring, bool pass = true,
               bool caseSensitive = true, Mode mode = PassOrReject);
-    ~Substring();
+    ~Substring() override;
 
 protected:
     I::optional_bool canPassImpl(const Record& record) const override;
