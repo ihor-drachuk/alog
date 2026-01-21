@@ -18,6 +18,29 @@
 
 ---
 
+## Table of Contents
+
+- [Performance](#performance)
+- [Key Features](#key-features)
+- [Quick Start](#quick-start)
+  - [Installation (CMake)](#installation-cmake)
+  - [Basic Usage](#basic-usage)
+  - [With Module Names](#with-module-names)
+- [Architecture](#architecture)
+- [Advanced Usage](#advanced-usage)
+  - [Multiple Sinks (Console + File)](#multiple-sinks-console--file)
+  - [Filter by Severity](#filter-by-severity)
+  - [Advanced Filter Chain](#advanced-filter-chain)
+  - [Route Logs to Different Outputs](#route-logs-to-different-outputs)
+- [Logging Macros](#logging-macros)
+- [Supported Types](#supported-types)
+- [Configuration Options](#configuration-options)
+- [Extending ALog](#extending-alog)
+- [Requirements](#requirements)
+- [License](#license)
+
+---
+
 ## Performance
 
 | Metric | Value |
@@ -128,22 +151,23 @@ void connect() {
 ## Architecture
 
 ```
-┌─────────────────────────────────────────────────────────────────┐
-│                         ALog Pipeline                           │
-├─────────────────────────────────────────────────────────────────┤
-│                                                                 │
-│   LOG Macro  ──►  Record  ──►  Formatter  ──►  Converter(s)     │
-│                                                     │           │
-│                                                     ▼           │
-│                              Filter(s)  ◄────────────           │
-│                                  │                              │
-│                                  ▼                              │
-│                    ┌─────────────┴─────────────┐                │
-│                    │           Sinks           │                │
-│                    ├───────────────────────────┤                │
-│                    │  Console  │  File  │ ...  │                │
-│                    └───────────────────────────┘                │
-└─────────────────────────────────────────────────────────────────┘
+                                            ALog Pipeline
+┌────────────────────────────────────────────────────────────────────────────────────────────────┐
+│                                                                                                │
+│  ┌───────────┐   ┌────────┐   ┌───────────┐   ┌─────────────┐   ┌───────────┐   ┌───────────┐  │
+│  │ LOG Macro │──►│ Record │──►│ Formatter │──►│ Converter(s)│──►│ Filter(s) │──►│   Sinks   │  │
+│  └───────────┘   └────────┘   └─────┬─────┘   └──────┬──────┘   └─────┬─────┘   └─────┬─────┘  │
+│                                     │                │                │               │        │
+│                                     ▼                ▼                ▼               ▼        │
+│                               ┌───────────┐    ┌───────────┐    ┌───────────┐   ┌───────────┐  │
+│                               │  Default  │    │ Attention │    │ Severity  │   │  Console  │  │
+│                               │  Minimal  │    └───────────┘    │  Module   │   │    File   │  │
+│                               └───────────┘                     │   File    │   │FileRotated│  │
+│                                                                 │    ...    │   │  Pipeline │  │
+│                                                                 └───────────┘   │    ...    │  │
+│                                                                                 └───────────┘  │
+│                                                                                                │
+└────────────────────────────────────────────────────────────────────────────────────────────────┘
 ```
 
 ### Components
@@ -377,14 +401,12 @@ protected:
 
 MIT License — see [License.txt](License.txt) for details.
 
+Copyright (c) 2018-2026 Ihor Drachuk
+
 ---
 
 ## Author
 
-**Ihor Drachuk** — [GitHub](https://github.com/ihor-drachuk)
+**Ihor Drachuk** — [ihor-drachuk-libs@pm.me](mailto:ihor-drachuk-libs@pm.me)
 
----
-
-<p align="center">
-  <sub>If you find ALog useful, consider giving it a star!</sub>
-</p>
+[GitHub](https://github.com/ihor-drachuk/alog)
