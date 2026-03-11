@@ -480,7 +480,7 @@ TEST(ALog, test_defaultFormatter)
     ALog::Formatters::Default formatter (ALog::Formatters::Default::Flag::LocalTimestamp);
 
     // #1
-    auto record = _ALOG_RECORD(ALog::Severity::Info) << "Test";
+    auto record = ALOG_RECORD_IMPL(ALog::Severity::Info) << "Test";
     record.startTp = record.steadyTp - std::chrono::milliseconds(14);
     auto str1 = formatter.format(record);
 
@@ -494,7 +494,7 @@ TEST(ALog, test_defaultFormatter)
     EXPECT_TRUE(regexMatch(recordedLog, reference1));
 
     // #2
-    record = _ALOG_RECORD(ALog::Severity::Info) << "Test";
+    record = ALOG_RECORD_IMPL(ALog::Severity::Info) << "Test";
     record.startTp = record.steadyTp - std::chrono::milliseconds(14);
     record.threadTitle = "Worker";
     str1 = formatter.format(record);
@@ -508,7 +508,7 @@ TEST(ALog, test_defaultFormatter)
     EXPECT_TRUE(regexMatch(recordedLog, reference2));
 
     // #3
-    record = _ALOG_RECORD(ALog::Severity::Info) << "Test";
+    record = ALOG_RECORD_IMPL(ALog::Severity::Info) << "Test";
     record.startTp = record.steadyTp - std::chrono::milliseconds(14);
     record.module = "Module";
     str1 = formatter.format(record);
@@ -522,7 +522,7 @@ TEST(ALog, test_defaultFormatter)
     EXPECT_TRUE(regexMatch(recordedLog, reference3));
 
     // #4
-    record = _ALOG_RECORD(ALog::Severity::Info) << "Test";
+    record = ALOG_RECORD_IMPL(ALog::Severity::Info) << "Test";
     record.startTp = record.steadyTp - std::chrono::milliseconds(13 * 1000 + 14);
     record.threadTitle = "Worker";
     record.module = "Module";
@@ -580,18 +580,18 @@ TEST(ALog, test_hex)
     const uint8_t buffer[] = {1, 2, 3, 4, 5, 6};
     char buffer2[1024];
 
-    auto record = _ALOG_RECORD(ALog::Severity::Info) << BUFFER(buffer, sizeof(buffer));
+    auto record = ALOG_RECORD_IMPL(ALog::Severity::Info) << BUFFER(buffer, sizeof(buffer));
     snprintf(buffer2, sizeof(buffer2), "{Buffer; Size: 6, Ptr = 0x%p, Data = 0x010203040506}", buffer);
     EXPECT_STREQ(record.getMessage(), buffer2);
 
-    record = _ALOG_RECORD(ALog::Severity::Info) << BUFFER(buffer, 0);
+    record = ALOG_RECORD_IMPL(ALog::Severity::Info) << BUFFER(buffer, 0);
     snprintf(buffer2, sizeof(buffer2), "{Buffer; Size: 0, Ptr = 0x%p. No data}", buffer);
     EXPECT_STREQ(record.getMessage(), buffer2);
 }
 
 TEST(ALog, test_flags)
 {
-    auto record = _ALOG_RECORD(ALog::Severity::Info);
+    auto record = ALOG_RECORD_IMPL(ALog::Severity::Info);
     record << ABORT;
     ASSERT_TRUE(record.hasFlags(ALog::Record::Flags::AbortSync));
     record -= ABORT;

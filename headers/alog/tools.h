@@ -242,14 +242,14 @@ public:
     void appendFmtString(const char* format, Args&&... args) {
         CLANG_WARNING_DISABLE("-Wformat-nonliteral")
         // codechecker_intentional [clang-diagnostic-format-nonliteral]
-        auto sz = snprintf(nullptr, 0, format, std::forward<Args>(args)...);
+        auto sz = snprintf(nullptr, 0, format, args...);
         if (sz < 0) {
             appendFmtString("-- ALOG: Failed to format \"%s\" (%s)", format, strerror(errno));
             return;
         }
         auto target = allocate_copy(sz);
         // codechecker_intentional [clang-diagnostic-format-nonliteral]
-        auto result = snprintf((char*)target, sz+1, format, std::forward<Args>(args)...);
+        auto result = snprintf((char*)target, sz+1, format, args...);
         if (result != sz) {
             // Very unlikely
             throw std::runtime_error("snprintf did not format to the expected size");

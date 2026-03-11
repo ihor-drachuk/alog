@@ -81,7 +81,7 @@ void Record::appendMessage(const wchar_t* msg, size_t len, size_t width, char pa
 #ifdef ALOG_COMPILER_MSVC
     wcsrtombs_s(&dstLen, tempStr.getStringRw(), dstLen+1, &srcPtr, srcLen, &state);
 #elif ALOG_COMPILER_GCC || ALOG_COMPILER_CLANG
-    wcsrtombs(tempStr.getStringRw(), &srcPtr, srcLen, &state);
+    (void)wcsrtombs(tempStr.getStringRw(), &srcPtr, srcLen, &state);
 #else
     #error "Unsupported compiler"
 #endif
@@ -119,7 +119,7 @@ ALog::Record&& operator<<(ALog::Record&& record, const ALog::Record::RawData& va
         size_t limit = len2 < printLimit ? len2 : printLimit;
 
         for (size_t i = 0; i < limit; i++)
-            snprintf(&str[i*2], 3, "%02hhX", *(ptr + i));
+            (void)snprintf(&str[i*2], 3, "%02hhX", *(ptr + i));
         record.appendMessage(str, limit * 2);
 
         len2 -= limit;

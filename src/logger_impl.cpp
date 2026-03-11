@@ -26,7 +26,7 @@ namespace ALog {
 
 void alog_breakpoint()
 {
-    ALOG_STOP_DEBUGGER;
+    (void)ALOG_STOP_DEBUGGER;
 }
 
 void alog_abort()

@@ -61,8 +61,8 @@ void Console::write(const Buffer& buffer, const Record& record)
         m_buffer[sz] = '\n';
     }
 
-    fwrite(m_buffer.data(), 1, m_buffer.size(), m_handle);
-    fflush(m_handle);
+    (void)fwrite(m_buffer.data(), 1, m_buffer.size(), m_handle);
+    (void)fflush(m_handle);
 }
 
 } // namespace Sinks

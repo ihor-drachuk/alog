@@ -50,7 +50,7 @@ Buffer Default::format(const Record& record) const
 #ifdef _WIN32
         localtime_s(&tmTime, &timeT);
 #else
-        localtime_r(&timeT, &tmTime);
+        (void)localtime_r(&timeT, &tmTime);
 #endif // _WIN32
         result.appendFmtString("[%02d%02d%02d_%02d%02d%02d] ",
                                tmTime.tm_year % 100, tmTime.tm_mon + 1, tmTime.tm_mday,

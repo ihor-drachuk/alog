@@ -130,19 +130,19 @@ inline ALog::MockRecord&& operator<< (ALog::MockRecord&& r, const T&) { return s
 #define ACCESS_ALOGGER_MODULE          ACCESS_ALOGGER_MODULE_N(0)
 
 
-#define _ALOG_RECORD(Severity)          ALog::Record::create(Severity, __LINE__, __FILE__, ALog::I::extractFileNameOnly(__FILE__), __func__)
-#define _ALOG(Logger, Severity)         Logger += _ALOG_RECORD(Severity)
+#define ALOG_RECORD_IMPL(Severity)          ALog::Record::create(Severity, __LINE__, __FILE__, ALog::I::extractFileNameOnly(__FILE__), __func__)
+#define ALOG_IMPL(Logger, Severity)         Logger += ALOG_RECORD_IMPL(Severity)
 
 
-#define ALOG_MODULE(Severity)            _ALOG(ACCESS_ALOGGER_MODULE, Severity)
-#define ALOG_MODULE_N(N, Severity)       _ALOG(ACCESS_ALOGGER_MODULE_N(N), Severity)
-#define ALOG_MAIN(Severity)              _ALOG(ALOGGER, Severity)
-#define ALOG_MAIN_N(N, Severity)         _ALOG(ALOGGER_N(N), Severity)
+#define ALOG_MODULE(Severity)            ALOG_IMPL(ACCESS_ALOGGER_MODULE, Severity)
+#define ALOG_MODULE_N(N, Severity)       ALOG_IMPL(ACCESS_ALOGGER_MODULE_N(N), Severity)
+#define ALOG_MAIN(Severity)              ALOG_IMPL(ALOGGER, Severity)
+#define ALOG_MAIN_N(N, Severity)         ALOG_IMPL(ALOGGER_N(N), Severity)
 
-#define ALOG_MODULE_IF(Cond, Severity)        if (!(Cond)) {;} else _ALOG(ACCESS_ALOGGER_MODULE, Severity)
-#define ALOG_MODULE_IF_N(N, Cond, Severity)   if (!(Cond)) {;} else _ALOG(ACCESS_ALOGGER_MODULE_N(N), Severity)
-#define ALOG_MAIN_IF(Cond, Severity)          if (!(Cond)) {;} else _ALOG(ALOGGER, Severity)
-#define ALOG_MAIN_IF_N(N, Cond, Severity)     if (!(Cond)) {;} else _ALOG(ALOGGER_N(N), Severity)
+#define ALOG_MODULE_IF(Cond, Severity)        if (!(Cond)) {;} else ALOG_IMPL(ACCESS_ALOGGER_MODULE, Severity)
+#define ALOG_MODULE_IF_N(N, Cond, Severity)   if (!(Cond)) {;} else ALOG_IMPL(ACCESS_ALOGGER_MODULE_N(N), Severity)
+#define ALOG_MAIN_IF(Cond, Severity)          if (!(Cond)) {;} else ALOG_IMPL(ALOGGER, Severity)
+#define ALOG_MAIN_IF_N(N, Cond, Severity)     if (!(Cond)) {;} else ALOG_IMPL(ALOGGER_N(N), Severity)
 
 // Special
 #define ALOG_FL_FLUSH                 ALog::Record::Flags::Flush

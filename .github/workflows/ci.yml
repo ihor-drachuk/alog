@@ -15,7 +15,7 @@ jobs:
         os: [linux]
         compiler: [gcc, clang]
         test_libs: [tl_preinstalled, tl_missing]
-        qt: [qt_no, qt_5.15.2, qt_6.6.1]
+        qt: [qt_no, qt_5.15.2, qt_6.8.3]
         build_type: [Debug, Release]
 
     runs-on: ubuntu-latest
@@ -45,7 +45,7 @@ jobs:
         run: |
           QT_SEARCH_MODE=$([[ "${{ matrix.qt }}" == "qt_no" ]] && echo "Skip" || echo "Force")
           GTEST_SEARCH_MODE=$([[ "${{ matrix.test_libs }}" == "tl_missing" ]] && echo "Skip" || echo "Force")
-          
+
           cmake -DALOG_CI_SKIP_SORT_TEST=1 \
                 -DALOG_ENABLE_TESTS=ON \
                 -DALOG_ENABLE_BENCHMARK=ON \
@@ -70,7 +70,7 @@ jobs:
         os: [linux]
         compiler: [gcc]
         test_libs: [tl_preinstalled]
-        qt: [qt_no, qt_5.15.2, qt_6.6.1]
+        qt: [qt_no, qt_5.15.2, qt_6.8.3]
         build_type: [Debug]
         alog_enable_def_separators: [ON, OFF]
         alog_enable_def_auto_quotes: [ON, OFF]
@@ -126,12 +126,10 @@ jobs:
       fail-fast: false
       matrix:
         compiler_arch: [x64]
-        qt_arch: [win64_msvc2019_64]
-        qt: [qt_no, 5.15.2, 6.6.1]
+        qt: [qt_no, 5.15.2, 6.8.3]
         build_type: [Debug, Release]
         include:
           - compiler_arch: Win32
-            qt_arch: win32_msvc2019
             qt: 5.15.2
             build_type: Debug
 
@@ -153,7 +151,7 @@ jobs:
           version: ${{ matrix.qt }}
           host: windows
           target: desktop
-          arch: ${{ matrix.qt_arch }}
+          arch: ${{ matrix.compiler_arch == 'Win32' && 'win32_msvc2019' || (matrix.qt == '6.8.3' && 'win64_msvc2022_64' || 'win64_msvc2019_64') }}
           dir: ${{github.workspace}}/qt
           cache: true
           setup-python: false
@@ -185,7 +183,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        qt: [qt_no, 5.15.2, 6.6.1]
+        qt: [qt_no, 5.15.2, 6.8.3]
         build_type: [Debug, Release]
 
     runs-on: macos-latest
@@ -238,7 +236,7 @@ jobs:
     runs-on: [ubuntu-22.04]
 
     container:
-      image: ihordrachuk/id-build-env:linux-clang-tl_missing-qt_5.15.2-codechecker
+      image: ihordrachuk/id-build-env:linux-clang-tl_missing-qt_6.8.3-codechecker
       options: --workdir ${{ github.workspace }}
 
     steps:

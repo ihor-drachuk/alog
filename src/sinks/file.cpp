@@ -28,12 +28,12 @@ File::File(const char* fileName, bool createPath)
 
 File::~File()
 {
-    fclose(m_handle);
+    (void)fclose(m_handle);
 }
 
 void File::flush()
 {
-    fflush(m_handle);
+    (void)fflush(m_handle);
 }
 
 size_t File::expectedNewSize(const Buffer& buffer) const
