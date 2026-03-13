@@ -1,4 +1,5 @@
 name: Build & test
+run-name: ${{ inputs.reason || '' }}
 
 on:
   push:
@@ -6,6 +7,13 @@ on:
       - '**'
   pull_request:
     types: [opened, edited, synchronize]
+  workflow_dispatch:
+    inputs:
+      reason:
+        description: Run reason (shown in run name)
+        type: string
+  repository_dispatch:
+    types: [docker-image-updated]
 
 jobs:
   Build-Linux:
