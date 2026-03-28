@@ -30,6 +30,7 @@
 - [Advanced Usage](#advanced-usage)
   - [Multiple Sinks (Console + File)](#multiple-sinks-console--file)
   - [Filter by Severity](#filter-by-severity)
+  - [Filter by Substring](#filter-by-substring)
   - [Advanced Filter Chain](#advanced-filter-chain)
   - [Route Logs to Different Outputs](#route-logs-to-different-outputs)
 - [Logging Macros](#logging-macros)
@@ -74,9 +75,9 @@ LOGW << "Error!" << THROW;  // Log and throw exception
 ```
 
 ### Flexibility
-- **Sinks**: Console, File, FileRotated, Baical, Pipeline, Custom
-- **Filters**: By severity, module, file, or custom logic
-- **Formatters**: Default (full) or Minimal (text-only)
+- **Sinks**: Console (with color output), File, FileRotated, Baical, Pipeline, Custom
+- **Filters**: By severity, module, file, substring, or custom logic
+- **Formatters**: Default (full, with optional date & time) or Minimal (text-only)
 - **Converters**: Encoding, compression, encryption
 
 ---
@@ -122,10 +123,10 @@ int main() {
 
 **Output:**
 ```
-[    0.000] T#0  [Debug   ] [::main:5]  Debug message
-[    0.000] T#0  [Info    ] [::main:6]  Info message
-[    0.000] T#0  [Warn    ] [::main:7]  Warning message
-[    0.000] T#0  [Error   ] [::main:8]  Error message
+[260328_120000] [  0.000] T#0  [Debug] [::main:5]  Debug message
+[260328_120000] [  0.000] T#0  [Info ] [::main:6]  Info message
+[260328_120000] [  0.000] T#0  [Warn ] [::main:7]  Warning message
+[260328_120000] [  0.000] T#0  [Error] [::main:8]  Error message
 ```
 
 ### With Module Names
@@ -142,8 +143,8 @@ void connect() {
 
 **Output:**
 ```
-[    0.001] T#0  [Debug   ] [NetworkManager       ] [::connect:5]  Connecting to server...
-[    0.002] T#0  [Info    ] [NetworkManager       ] [::connect:6]  Connection established
+[260328_120000] [  0.001] T#0  [Debug] [NetworkManager       ] [::connect:5]  Connecting to server...
+[260328_120000] [  0.002] T#0  [Info ] [NetworkManager       ] [::connect:6]  Connection established
 ```
 
 ---
@@ -174,9 +175,9 @@ void connect() {
 
 | Component | Purpose | Examples |
 |-----------|---------|----------|
-| **Sinks** | Output destinations | Console, File, FileRotated, Baical, Pipeline |
-| **Filters** | Control which logs pass | Severity, Module, File, Chain, Custom |
-| **Formatters** | Format log output | Default (full info), Minimal (text only) |
+| **Sinks** | Output destinations | Console (colored), File, FileRotated, Baical, Pipeline |
+| **Filters** | Control which logs pass | Severity, Module, File, Substring, Chain, Custom |
+| **Formatters** | Format log output | Default (full info, date & time), Minimal (text only) |
 | **Converters** | Post-process output | Encoding, line endings, compression |
 
 ---
@@ -208,6 +209,15 @@ int main() {
 // Only log Warning and above
 logger->pipeline().filters().set(
     std::make_shared<ALog::Filters::Severity>(ALog::Severity::Warning)
+);
+```
+
+### Filter by Substring
+
+```cpp
+// Only pass logs containing "network" (case-insensitive)
+logger->pipeline().filters().set(
+    std::make_shared<ALog::Filters::Substring>("network", true, false)
 );
 ```
 
@@ -313,9 +323,10 @@ LOG_ASSERT_THROW(condition) << "Throws on failure";
 ALog automatically formats common types:
 
 - **STL Containers**: `vector`, `map`, `set`, `list`, `deque`, etc. (requires `<alog/containers/all.h>`)
-- **Smart Pointers**: `unique_ptr`, `shared_ptr`
+- **Smart Pointers**: `unique_ptr`, `shared_ptr`, `weak_ptr`
+- **Chrono**: `std::chrono::duration`, `std::chrono::time_point`
 - **Optionals**: `std::optional`, `std::expected`
-- **Qt Types** (when Qt available): `QString`, `QPoint`, `QJsonObject`, etc.
+- **Qt Types** (when Qt available): `QString`, `QPoint`, `QJsonObject`, `QFuture`, etc.
 - **Raw Buffers**: Via `BUFFER(ptr, size)` flag
 - **Custom Types**: Implement `operator<<`
 
@@ -344,6 +355,33 @@ LOGI << std::map<std::string, int>{{"a", 1}, {"b", 2}};
 ```cpp
 logger->setMode(ALog::Logger::LoggerMode::AsynchronousSort);
 logger->setAutoflush(false);  // Batch writes for performance
+```
+
+### Formatter Flags
+
+The `Default` formatter supports configurable flags:
+
+| Flag | Default | Description |
+|------|---------|-------------|
+| `DateTime` | ON | Include absolute date & time (`[260328_120000]`) |
+| `LocalTimestamp` | ON | Include elapsed time from start (`[  0.014]`) |
+
+```cpp
+// Elapsed time only, no date & time
+logger->pipeline().formatter().set(
+    std::make_shared<ALog::Formatters::Default>(ALog::Formatters::Default::Flag::LocalTimestamp)
+);
+```
+
+### Console Color Output
+
+Console sinks support colored output based on severity level:
+
+```cpp
+auto sink = std::make_shared<ALog::Sinks::Console>(
+    ALog::Sinks::Console::Stream::StdOut,
+    ALog::Sinks::Console::ColorMode::Auto  // Auto (default), Force, Disable
+);
 ```
 
 ### CMake Options
