@@ -12,6 +12,7 @@
 #include <typeinfo>
 #include <utility>
 #include <optional>
+#include <type_traits>
 #include <variant>
 #include <alog/severity.h>
 #include <alog/tools.h>
@@ -678,6 +679,9 @@ inline ALog::Record&& operator<< (ALog::Record&& record, QFuture<T> value)
         if (value.isCanceled()) {
             record.appendMessage("QFuture(canceled)");
 
+        } else if constexpr (std::is_void_v<T>) {
+            record.appendMessage("QFuture(finished)");
+
         } else {
             record.appendMessage("QFuture(finished: ");
             record.updateSkipSeparatorsCF(1);
@@ -985,7 +989,11 @@ ALog::Record&& operator<< (ALog::Record&& record, const std::expected<T1, T2>& v
     record << ALog::Record::Flags::NoSeparators;
 
     if (value) {
-        record = std::move(record) << value.value();
+        if constexpr (std::is_void_v<T1>) {
+            record.appendMessage("void");
+        } else {
+            record = std::move(record) << value.value();
+        }
 
     } else {
         record.severity = (std::max)(record.severity, ALog::Severity::Warning);

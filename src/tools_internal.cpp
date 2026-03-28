@@ -80,7 +80,8 @@ bool enableColoredTerminal(FILE* stream)
 
 #ifdef ALOG_OS_WINDOWS
     if (!qtCreator) {
-        HANDLE hOut = GetStdHandle(STD_OUTPUT_HANDLE);
+        const DWORD handleId = (stream == stderr) ? STD_ERROR_HANDLE : STD_OUTPUT_HANDLE;
+        HANDLE hOut = GetStdHandle(handleId);
         if (hOut == INVALID_HANDLE_VALUE)
             return false;
 

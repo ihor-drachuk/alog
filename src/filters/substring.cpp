@@ -4,6 +4,7 @@
 
 #include <alog/filters/substring.h>
 #include <algorithm>
+#include <cassert>
 #include <cctype>
 #include <cstring>
 
@@ -58,8 +59,7 @@ Substring::~Substring() = default;
 I::optional_bool Substring::canPassImpl(const Record& record) const
 {
     const char* msg = record.getMessage();
-    if (!msg)
-        return impl().pass;
+    assert(msg);
 
     bool contains = containsSubstring(msg, impl().substring, impl().caseSensitive);
 
