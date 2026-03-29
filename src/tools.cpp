@@ -6,6 +6,7 @@
 
 #include <alog/record.h>
 
+#include <array>
 #include <atomic>
 #include <cassert>
 
@@ -47,30 +48,31 @@ const char* currentThreadName()
 
 } // namespace ThreadTools
 
+static constexpr auto buildSeparatorTable()
+{
+    std::array<bool, 256> table {};
+
+    for (size_t i = 32; i <= 47; i++)
+        table[i] = true;
+
+    for (size_t i = 58; i <= 64; i++)
+        table[i] = true;
+
+    for (size_t i = 91; i <= 96; i++)
+        table[i] = true;
+
+    for (size_t i = 123; i <= 126; i++)
+        table[i] = true;
+
+    table[static_cast<unsigned char>(':')] = false;
+
+    return table;
+}
+
 bool isSeparatorSymbol(char c)
 {
-    static bool isSeparator[256] {false};
-    static bool isReady {false};
-
-    if (!isReady) {
-        for (int i = 32; i <= 47; i++)
-            isSeparator[i] = true;
-
-        for (int i = 58; i <= 64; i++)
-            isSeparator[i] = true;
-
-        for (int i = 91; i <= 96; i++)
-            isSeparator[i] = true;
-
-        for (int i = 123; i <= 126; i++)
-            isSeparator[i] = true;
-
-        isSeparator[(unsigned char)':'] = false;
-
-        isReady = true;
-    }
-
-    return isSeparator[(unsigned char)c];
+    static constexpr auto isSeparator = buildSeparatorTable();
+    return isSeparator[static_cast<unsigned char>(c)];
 }
 
 #ifdef ALOG_HAS_QT_LIBRARY

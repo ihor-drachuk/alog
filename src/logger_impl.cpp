@@ -56,7 +56,7 @@ struct Logger::impl_t
     std::thread thread;
     std::condition_variable cv;
     std::vector<Record> queue;
-    volatile bool exitFlag {};
+    bool exitFlag {};
     bool threadRunning { false };
 
     bool flushRequested { false };
