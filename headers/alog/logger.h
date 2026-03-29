@@ -3,6 +3,7 @@
  * Contact:  ihor-drachuk-libs@pm.me  */
 
 #pragma once
+#include <atomic>
 #include <mutex>
 #include <vector>
 #include <alog/logger_impl.h>
@@ -30,7 +31,7 @@ public:
 
     LoggerEntry(const char* module = nullptr) {
         m_module = module;
-        m_masterAvailable = this->available();
+        m_masterAvailable.store(this->available(), std::memory_order_relaxed); // relaxed: not yet shared
     }
 
     void flush() {
@@ -41,7 +42,7 @@ public:
         record.module = m_module;
 
         // Lock-free optimization
-        if (m_masterAvailable) {
+        if (m_masterAvailable.load(std::memory_order_acquire)) {
             // Send directly to master
             this->fastGet()->addRecord(std::move(record));
             return;
@@ -49,7 +50,7 @@ public:
 
         std::lock_guard<std::mutex> _lck(m_mutex);
 
-        if (m_masterAvailable) {
+        if (m_masterAvailable.load(std::memory_order_relaxed)) { // relaxed: mutex provides ordering
             // Send directly to master
             this->fastGet()->addRecord(std::move(record));
 
@@ -76,7 +77,7 @@ public:
                 for (auto& x : m_queue)
                     this->fastGet()->addRecord(std::move(x));
                 m_queue.clear();
-                m_masterAvailable = true;
+                m_masterAvailable.store(true, std::memory_order_release);
             }
 
             if (abort)
@@ -90,7 +91,7 @@ public:
 private:
     std::mutex m_mutex;
     const char* m_module { nullptr };
-    bool m_masterAvailable { false };
+    std::atomic<bool> m_masterAvailable { false };
     std::vector<Record> m_queue;
 };
 

@@ -3,6 +3,7 @@
  * Contact:  ihor-drachuk-libs@pm.me  */
 
 #pragma once
+#include <atomic>
 #include <cassert>
 #include <vector>
 #include <cstdint>
@@ -299,28 +300,29 @@ class Singleton
     ALOG_NO_COPY_MOVE(Singleton);
 public:
     Singleton() {
-        assert(!m_instance);
-        m_instance = static_cast<T*>(this);
+        assert(!m_instance.load(std::memory_order_relaxed));
+        m_instance.store(static_cast<T*>(this), std::memory_order_release);
     }
 
     ~Singleton() {
-        assert(m_instance);
-        m_instance = nullptr;
+        assert(m_instance.load(std::memory_order_relaxed));
+        m_instance.store(nullptr, std::memory_order_release);
     }
 
     static T* instance() {
-        assert(m_instance);
-        return m_instance;
+        auto* ptr = m_instance.load(std::memory_order_acquire);
+        assert(ptr);
+        return ptr;
     }
 
-    static bool exists() { return m_instance; }
+    static bool exists() { return m_instance.load(std::memory_order_acquire); }
 
 private:
-    static T* m_instance;
+    static std::atomic<T*> m_instance;
 };
 
 template<class T>
-T* Singleton<T>::m_instance = nullptr;
+std::atomic<T*> Singleton<T>::m_instance { nullptr };
 
 template<typename T>
 class SIOS : public Singleton<SIOS<T>>
@@ -332,7 +334,8 @@ public:
     }
 
     std::shared_ptr<T> get() {
-        if (!m_ready) return {};
+        if (!m_ready.load(std::memory_order_acquire))
+            return {};
         return m_object;
     }
 
@@ -341,11 +344,11 @@ public:
     T& operator*() { return *m_object.get(); }
     const T& operator*() const { return *m_object.get(); }
 
-    bool isReady() const { return m_ready; }
-    void markReady() { m_ready = true; }
+    bool isReady() const { return m_ready.load(std::memory_order_acquire); }
+    void markReady() { m_ready.store(true, std::memory_order_release); }
 
 private:
-    bool m_ready { false };
+    std::atomic<bool> m_ready { false };
     std::shared_ptr<T> m_object;
 };
 
