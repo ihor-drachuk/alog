@@ -55,7 +55,7 @@ struct Logger::impl_t
     std::mutex queueMutex;
     std::thread thread;
     std::condition_variable cv;
-    std::vector<Record> queue;
+    std::vector<Record> queue = [] { std::vector<Record> v; v.reserve(256); return v; }();
     bool exitFlag {};
     bool threadRunning { false };
 
@@ -126,21 +126,25 @@ void Logger::addRecord(Record&& record)
             throwText = std::make_unique<std::string>(record.getMessage(), record.getMessageLen());
         }
 
-        std::unique_lock<std::mutex> lck(impl().queueMutex);
-        if (record.hasFlags(Record::Flags::Flush)) {
-            if (!record.steadyTp.time_since_epoch().count())
-                record.steadyTp = decltype(record.steadyTp)::max();
+        bool needsFlushWait {};
 
-            impl().flushRequested = true;
+        {
+            std::lock_guard<std::mutex> lck(impl().queueMutex);
+            if (record.hasFlags(Record::Flags::Flush)) {
+                if (!record.steadyTp.time_since_epoch().count())
+                    record.steadyTp = decltype(record.steadyTp)::max();
+
+                impl().flushRequested = true;
+                needsFlushWait = true;
+            }
             impl().queue.emplace_back(std::move(record));
-            impl().cv.notify_one();
-            impl().flushCv.wait(lck, [this](){ return !impl().flushRequested; });
-        } else {
-            impl().queue.emplace_back(std::move(record));
-            impl().cv.notify_one();
         }
+        impl().cv.notify_one();
 
-        lck.unlock(); // Mutex unlocked here!
+        if (needsFlushWait) {
+            std::unique_lock<std::mutex> lck(impl().queueMutex);
+            impl().flushCv.wait(lck, [this](){ return !impl().flushRequested; });
+        }
 
         if (abort)
             alog_abort();
@@ -222,6 +226,7 @@ void Logger::stopThread()
 void Logger::threadFunc()
 {
     std::vector<Record> queue;
+    queue.reserve(256);
     bool exitFlag {};
     bool flushRequested {};
 
@@ -252,8 +257,10 @@ void Logger::threadFunc()
         queue.clear();
 
         if (flushRequested) {
-            std::unique_lock<std::mutex> lck(impl().queueMutex);
-            impl().flushRequested = false;
+            {
+                std::lock_guard<std::mutex> lck(impl().queueMutex);
+                impl().flushRequested = false;
+            }
             impl().flushCv.notify_one();
         }
 
