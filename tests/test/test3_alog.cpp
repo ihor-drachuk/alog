@@ -1107,6 +1107,64 @@ TEST(ALog, test_sink_file_rotated)
     }
 }
 
+TEST(ALog, test_sink_file_rotated_try_create)
+{
+    const std::string sandboxFolder = "alog-test-try-create-" + std::to_string(std::chrono::system_clock::now().time_since_epoch().count());
+    ASSERT_FALSE(std::filesystem::exists(sandboxFolder));
+    std::filesystem::create_directory(sandboxFolder); // throws
+    const auto _undo_create_directory = ALog::Internal::CreateFinally([sandboxFolder](){ std::filesystem::remove_all(sandboxFolder); });
+
+    // Invalid limit: no sink, the constructor's reason
+    {
+        std::string error;
+        const auto sink = ALog::Sinks::FileRotated::tryCreate(sandboxFolder + "/application.log", false, 0, {}, {}, &error);
+        EXPECT_EQ(sink, nullptr);
+        EXPECT_EQ(error, "Invalid 'maxFileSize' provided!");
+    }
+
+    // Missing directory without createPath: no sink, the reason; the directory is not created
+    {
+        std::string error;
+        const auto sink = ALog::Sinks::FileRotated::tryCreate(sandboxFolder + "/missing/application.log", false, {}, {}, {}, &error);
+        EXPECT_EQ(sink, nullptr);
+        EXPECT_EQ(error, "No such directory!");
+        EXPECT_FALSE(std::filesystem::exists(sandboxFolder + "/missing"));
+    }
+
+    // Failure without an error slot: still no throw
+    {
+        const auto sink = ALog::Sinks::FileRotated::tryCreate(sandboxFolder + "/application.log", false, {}, {}, 0);
+        EXPECT_EQ(sink, nullptr);
+    }
+
+    // Success, createPath honoured, error left untouched
+    {
+        std::string error = "untouched";
+        const auto sink = ALog::Sinks::FileRotated::tryCreate(sandboxFolder + "/logs/application.log", true, 1024, {}, 3, &error);
+        EXPECT_NE(sink, nullptr);
+        EXPECT_EQ(error, "untouched");
+        EXPECT_TRUE(std::filesystem::exists(sandboxFolder + "/logs"));
+    }
+}
+
+#if defined(__cpp_lib_expected) && __cpp_lib_expected >= 202202L
+TEST(ALog, test_sink_file_rotated_create_expected)
+{
+    const std::string sandboxFolder = "alog-test-create-expected-" + std::to_string(std::chrono::system_clock::now().time_since_epoch().count());
+    ASSERT_FALSE(std::filesystem::exists(sandboxFolder));
+    std::filesystem::create_directory(sandboxFolder); // throws
+    const auto _undo_create_directory = ALog::Internal::CreateFinally([sandboxFolder](){ std::filesystem::remove_all(sandboxFolder); });
+
+    const auto failed = ALog::Sinks::FileRotated::create(sandboxFolder + "/missing/application.log");
+    ASSERT_FALSE(failed.has_value());
+    EXPECT_EQ(failed.error(), "No such directory!");
+
+    const auto created = ALog::Sinks::FileRotated::create(sandboxFolder + "/application.log", false, 1024, {}, 3);
+    ASSERT_TRUE(created.has_value());
+    EXPECT_NE(*created, nullptr);
+}
+#endif // __cpp_lib_expected
+
 TEST(ALog, test_optional)
 {
     std::vector<ALog::Record> records;

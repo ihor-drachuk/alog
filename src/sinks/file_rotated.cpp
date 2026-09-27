@@ -170,6 +170,35 @@ FileRotated::~FileRotated()
 {
 }
 
+std::shared_ptr<FileRotated> FileRotated::tryCreate(const std::string& fileName,
+                                                    bool createPath,
+                                                    std::optional<size_t> maxFileSize,
+                                                    std::optional<size_t> maxFileAge,
+                                                    std::optional<size_t> maxFilesCount,
+                                                    std::string* error) noexcept
+{
+    const auto setError = [error](const char* reason) noexcept {
+        if (!error)
+            return;
+
+        try {
+            *error = reason;
+        } catch (...) {
+            // Out of memory while reporting: the nullptr result still tells the caller that creation failed
+        }
+    };
+
+    try {
+        return std::make_shared<FileRotated>(fileName, createPath, maxFileSize, maxFileAge, maxFilesCount);
+    } catch (const std::exception& e) {
+        setError(e.what());
+    } catch (...) {
+        setError("Unknown error");
+    }
+
+    return {};
+}
+
 void FileRotated::write(const Buffer& buffer, const Record& record)
 {
     try {
