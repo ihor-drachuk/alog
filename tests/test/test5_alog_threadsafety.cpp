@@ -5,7 +5,9 @@
 #include <gtest/gtest.h>
 
 #include <atomic>
+#include <chrono>
 #include <condition_variable>
+#include <future>
 #include <mutex>
 #include <set>
 #include <string>
@@ -442,5 +444,177 @@ TEST(ALog_ThreadSafety, MixedSyncAsyncModeSwitch)
         }
 
         ASSERT_EQ(recordCount.load(), kSwitchCycles * 2 * kThreadsPerBatch * kRecordsPerThread) << "Iteration " << iter;
+    }
+}
+
+
+namespace {
+
+class EventSink : public ALog::ISink
+{
+public:
+    void write(const ALog::Buffer&, const ALog::Record& record) override {
+        if (m_blockFirst.exchange(false))
+            m_gate.get_future().wait();
+
+        std::lock_guard<std::mutex> lk(m_mtx);
+        m_events.emplace_back(record.getMessage(), record.getMessageLen());
+    }
+
+    void flush() override {
+        std::lock_guard<std::mutex> lk(m_mtx);
+        m_events.emplace_back("<flush>");
+    }
+
+    void blockFirstWrite() { m_blockFirst = true; }
+    void openGate() { m_gate.set_value(); }
+
+    std::vector<std::string> events() {
+        std::lock_guard<std::mutex> lk(m_mtx);
+        return m_events;
+    }
+
+private:
+    std::mutex m_mtx;
+    std::vector<std::string> m_events;
+    std::atomic<bool> m_blockFirst { false };
+    std::promise<void> m_gate;
+};
+
+} // namespace
+
+
+// ---------------------------------------------------------------------------
+// 9. Many threads waiting for flush at the same time (FLUSH, THROW, ABORT, flush()).
+//    Each waiter must be released, and only after its own record is written.
+// ---------------------------------------------------------------------------
+TEST(ALog_ThreadSafety, ConcurrentFlushWaiters)
+{
+    constexpr int kThreads = 8;
+    constexpr int kRecordsPerThread = 500;
+
+    for (int iter = 0; iter < kIterations; iter++) {
+        std::vector<std::atomic<bool>> written(kThreads * kRecordsPerThread);
+        std::atomic<int> notWrittenOnReturn {};
+
+        {
+            DEFINE_MAIN_ALOGGER;
+            auto sink = std::make_shared<ALog::Sinks::Functor2>(
+                [&](const ALog::Buffer&, const ALog::Record& rec) {
+                    written[std::stoi(std::string(rec.getMessage(), rec.getMessageLen()))].store(true);
+                });
+            ALOGGER_DIRECT->pipeline().sinks().set(sink);
+            MARK_ALOGGER_READY;
+
+            DEFINE_ALOGGER_MODULE(ConcurrentFlushWaiters);
+
+            Barrier barrier(kThreads);
+            std::vector<std::thread> threads;
+
+            for (int i = 0; i < kThreads; i++) {
+                threads.emplace_back([&, i]() {
+                    barrier.arrive_and_wait();
+                    for (int j = 0; j < kRecordsPerThread; j++) {
+                        const int id = i * kRecordsPerThread + j;
+                        LOGD << id << FLUSH;
+
+                        if (!written[id].load())
+                            notWrittenOnReturn++;
+
+                        if (j % 50 == 0)
+                            ACCESS_ALOGGER_MODULE.flush();
+                    }
+                });
+            }
+
+            for (auto& t : threads)
+                t.join();
+        }
+
+        ASSERT_EQ(notWrittenOnReturn.load(), 0) << "Iteration " << iter;
+    }
+}
+
+
+// ---------------------------------------------------------------------------
+// 10. Autoflush with concurrent writers (every record waits for flush).
+// ---------------------------------------------------------------------------
+TEST(ALog_ThreadSafety, Autoflush_ConcurrentWriters)
+{
+    constexpr int kThreads = 8;
+    constexpr int kRecordsPerThread = 300;
+
+    for (int iter = 0; iter < kIterations; iter++) {
+        std::atomic<int> recordCount {};
+
+        {
+            DEFINE_MAIN_ALOGGER;
+            auto sink = std::make_shared<ALog::Sinks::Functor2>(
+                [&](const ALog::Buffer&, const ALog::Record&) {
+                    recordCount.fetch_add(1, std::memory_order_relaxed);
+                });
+            ALOGGER_DIRECT->pipeline().sinks().set(sink);
+            ALOGGER_DIRECT->setAutoflush(true);
+            MARK_ALOGGER_READY;
+
+            DEFINE_ALOGGER_MODULE(AutoflushConcurrent);
+
+            Barrier barrier(kThreads);
+            std::vector<std::thread> threads;
+
+            for (int i = 0; i < kThreads; i++) {
+                threads.emplace_back([&]() {
+                    barrier.arrive_and_wait();
+                    for (int j = 0; j < kRecordsPerThread; j++)
+                        LOGD;
+                });
+            }
+
+            for (auto& t : threads)
+                t.join();
+        }
+
+        ASSERT_EQ(recordCount.load(), kThreads * kRecordsPerThread) << "Iteration " << iter;
+    }
+}
+
+
+// ---------------------------------------------------------------------------
+// 11. flush() must flush sinks after the records queued before it,
+//     even when they are processed in the same batch.
+// ---------------------------------------------------------------------------
+TEST(ALog_ThreadSafety, FlushAfterQueuedRecords)
+{
+    for (int useModuleFlush = 0; useModuleFlush < 2; useModuleFlush++) {
+        DEFINE_MAIN_ALOGGER;
+        auto sink = std::make_shared<EventSink>();
+        ALOGGER_DIRECT->pipeline().sinks().set(sink);
+        MARK_ALOGGER_READY;
+
+        DEFINE_ALOGGER_MODULE(FlushOrder);
+
+        // Hold the worker inside the sink, so the next records and the flush land in one batch
+        sink->blockFirstWrite();
+        LOGD << "blocker";
+        std::this_thread::sleep_for(std::chrono::milliseconds(20));
+
+        LOGD << "a";
+        LOGD << "b";
+
+        std::thread opener([&]() {
+            std::this_thread::sleep_for(std::chrono::milliseconds(50));
+            sink->openGate();
+        });
+
+        if (useModuleFlush)
+            ACCESS_ALOGGER_MODULE.flush();
+        else
+            ALOGGER_DIRECT->flush();
+
+        const auto events = sink->events();
+        opener.join();
+
+        const std::vector<std::string> expected { "blocker", "a", "b", "<flush>" };
+        ASSERT_EQ(events, expected) << "useModuleFlush = " << useModuleFlush;
     }
 }

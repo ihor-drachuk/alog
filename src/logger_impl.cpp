@@ -8,6 +8,8 @@
 #include <alog/sinks/console.h>
 
 #include <algorithm>
+#include <atomic>
+#include <cstdint>
 #include <memory>
 #include <mutex>
 #include <thread>
@@ -59,10 +61,13 @@ struct Logger::impl_t
     bool exitFlag {};
     bool threadRunning { false };
 
-    bool flushRequested { false };
+    // Flush tickets (guarded by queueMutex). Each flush request gets ticket = ++flushRequested.
+    // The worker sets flushCompleted = N once every record queued with ticket <= N is written.
+    uint64_t flushRequested {};
+    uint64_t flushCompleted {};
     std::condition_variable flushCv;
 
-    bool autoflush { false };
+    std::atomic<bool> autoflush { false };
 
     std::chrono::time_point<std::chrono::steady_clock> startTp = std::chrono::steady_clock::now();
 };
@@ -94,7 +99,7 @@ void Logger::addRecord(Record&& record)
     if (record.steadyTp < record.startTp)
         record.steadyTp = record.startTp;
 
-    if (impl().autoflush)
+    if (impl().autoflush.load(std::memory_order_relaxed))
         record.flagsOn(Record::Flags::Flush);
 
     if (impl().mode == Synchronous) {
@@ -126,24 +131,21 @@ void Logger::addRecord(Record&& record)
             throwText = std::make_unique<std::string>(record.getMessage(), record.getMessageLen());
         }
 
-        bool needsFlushWait {};
+        const bool needsFlush = record.hasFlags(Record::Flags::Flush);
+        uint64_t flushTicket {};
 
         {
             std::lock_guard<std::mutex> lck(impl().queueMutex);
-            if (record.hasFlags(Record::Flags::Flush)) {
-                if (!record.steadyTp.time_since_epoch().count())
-                    record.steadyTp = decltype(record.steadyTp)::max();
-
-                impl().flushRequested = true;
-                needsFlushWait = true;
-            }
             impl().queue.emplace_back(std::move(record));
+
+            if (needsFlush)
+                flushTicket = ++impl().flushRequested;
         }
         impl().cv.notify_one();
 
-        if (needsFlushWait) {
+        if (needsFlush) {
             std::unique_lock<std::mutex> lck(impl().queueMutex);
-            impl().flushCv.wait(lck, [this](){ return !impl().flushRequested; });
+            impl().flushCv.wait(lck, [this, flushTicket](){ return impl().flushCompleted >= flushTicket; });
         }
 
         if (abort)
@@ -168,7 +170,7 @@ void Logger::flush()
 
 void Logger::setAutoflush(bool value)
 {
-    impl().autoflush = value;
+    impl().autoflush.store(value, std::memory_order_relaxed);
 }
 
 void Logger::setMode(Logger::LoggerMode mode)
@@ -228,7 +230,17 @@ void Logger::threadFunc()
     std::vector<Record> queue;
     queue.reserve(256);
     bool exitFlag {};
-    bool flushRequested {};
+    uint64_t flushTarget {};
+    bool flushPending {};
+
+    // Dropped records are never written, they only carry Flush (e.g. flush() markers without timestamp).
+    // Sort them last, so the flush covers every record of the batch, which includes all records queued before them.
+    const auto sortKey = [](const Record& x) {
+        return x.hasFlags(Record::Flags::Drop) ? (decltype(x.steadyTp)::max)() : x.steadyTp;
+    };
+    const auto sortCmp = [&sortKey](const Record& lhs, const Record& rhs) {
+        return sortKey(lhs) < sortKey(rhs);
+    };
 
     while (true) {
         {
@@ -237,14 +249,14 @@ void Logger::threadFunc()
 
             exitFlag = impl().exitFlag;
             std::swap(queue, impl().queue);
-            flushRequested = impl().flushRequested;
+
+            // All records with ticket <= flushTarget are in this batch or in already processed ones
+            flushTarget = impl().flushRequested;
+            flushPending = flushTarget != impl().flushCompleted;
         }
 
-        if (impl().mode == AsynchronousSort) {
-            std::stable_sort(queue.begin(), queue.end(), [](const Record& lhs, const Record& rhs) {
-                return lhs.steadyTp < rhs.steadyTp;
-            });
-        }
+        if (impl().mode == AsynchronousSort && !std::is_sorted(queue.begin(), queue.end(), sortCmp))
+            std::stable_sort(queue.begin(), queue.end(), sortCmp);
 
         for (const auto& x : queue) {
             const auto pass = !x.hasFlags(Record::Flags::Drop);
@@ -256,12 +268,12 @@ void Logger::threadFunc()
 
         queue.clear();
 
-        if (flushRequested) {
+        if (flushPending) {
             {
                 std::lock_guard<std::mutex> lck(impl().queueMutex);
-                impl().flushRequested = false;
+                impl().flushCompleted = flushTarget;
             }
-            impl().flushCv.notify_one();
+            impl().flushCv.notify_all(); // Several threads may wait for different tickets
         }
 
         if (exitFlag) break;
