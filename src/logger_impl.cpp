@@ -8,6 +8,8 @@
 #include <alog/sinks/console.h>
 
 #include <algorithm>
+#include <atomic>
+#include <cstdint>
 #include <memory>
 #include <mutex>
 #include <thread>
@@ -59,13 +61,23 @@ struct Logger::impl_t
     bool exitFlag {};
     bool threadRunning { false };
 
-    bool flushRequested { false };
+    // Guarded by `queueMutex`.
+    // Each queued `Flush` record gets the next ticket, and `addRecord` waits until `flushTicketsDone` reaches it,
+    // so we raise `flushTicketsDone` in `threadFunc()` only after the sinks are flushed.
+    uint64_t flushTicketsIssued {};
+    uint64_t flushTicketsDone {};
     std::condition_variable flushCv;
 
-    bool autoflush { false };
+    std::atomic<bool> autoflush { false };
 
     std::chrono::time_point<std::chrono::steady_clock> startTp = std::chrono::steady_clock::now();
 };
+
+// `flushTicketsIssued` and `flushTicketsDone` may overflow back to 0, so we compare their difference instead of `>=`.
+static bool isFlushTicketDone(uint64_t ticketsDone, uint64_t ticket)
+{
+    return ticketsDone - ticket < (uint64_t {1} << 63);
+}
 
 Logger::Logger()
 {
@@ -94,7 +106,7 @@ void Logger::addRecord(Record&& record)
     if (record.steadyTp < record.startTp)
         record.steadyTp = record.startTp;
 
-    if (impl().autoflush)
+    if (impl().autoflush.load(std::memory_order_relaxed))
         record.flagsOn(Record::Flags::Flush);
 
     if (impl().mode == Synchronous) {
@@ -126,24 +138,23 @@ void Logger::addRecord(Record&& record)
             throwText = std::make_unique<std::string>(record.getMessage(), record.getMessageLen());
         }
 
-        bool needsFlushWait {};
+        const bool needsFlush = record.hasFlags(Record::Flags::Flush);
+        uint64_t flushTicket {};
 
         {
             std::lock_guard<std::mutex> lck(impl().queueMutex);
-            if (record.hasFlags(Record::Flags::Flush)) {
-                if (!record.steadyTp.time_since_epoch().count())
-                    record.steadyTp = decltype(record.steadyTp)::max();
-
-                impl().flushRequested = true;
-                needsFlushWait = true;
-            }
             impl().queue.emplace_back(std::move(record));
+
+            if (needsFlush)
+                flushTicket = ++impl().flushTicketsIssued;
         }
         impl().cv.notify_one();
 
-        if (needsFlushWait) {
+        if (needsFlush) {
             std::unique_lock<std::mutex> lck(impl().queueMutex);
-            impl().flushCv.wait(lck, [this](){ return !impl().flushRequested; });
+            impl().flushCv.wait(lck, [this, flushTicket]() {
+                return isFlushTicketDone(impl().flushTicketsDone, flushTicket);
+            });
         }
 
         if (abort)
@@ -168,7 +179,7 @@ void Logger::flush()
 
 void Logger::setAutoflush(bool value)
 {
-    impl().autoflush = value;
+    impl().autoflush.store(value, std::memory_order_relaxed);
 }
 
 void Logger::setMode(Logger::LoggerMode mode)
@@ -228,7 +239,8 @@ void Logger::threadFunc()
     std::vector<Record> queue;
     queue.reserve(256);
     bool exitFlag {};
-    bool flushRequested {};
+    uint64_t flushTarget {};
+    bool flushPending {};
 
     while (true) {
         {
@@ -237,7 +249,11 @@ void Logger::threadFunc()
 
             exitFlag = impl().exitFlag;
             std::swap(queue, impl().queue);
-            flushRequested = impl().flushRequested;
+
+            // `addRecord` gets the ticket and queues its record under one `queueMutex` lock,
+            // so after this batch is flushed, every ticket issued before this swap is done.
+            flushTarget = impl().flushTicketsIssued;
+            flushPending = flushTarget != impl().flushTicketsDone;
         }
 
         if (impl().mode == AsynchronousSort) {
@@ -249,19 +265,19 @@ void Logger::threadFunc()
         for (const auto& x : queue) {
             const auto pass = !x.hasFlags(Record::Flags::Drop);
             if (pass) impl().pipeline.write({}, x);
-
-            if (x.hasFlags(Record::Flags::Flush))
-                impl().pipeline.flush();
         }
 
         queue.clear();
 
-        if (flushRequested) {
+        if (flushPending) {
+            // We flush once after the whole batch, because a `flush()` record has the earliest timestamp
+            // and sorting can move it before the records queued earlier.
+            impl().pipeline.flush();
             {
                 std::lock_guard<std::mutex> lck(impl().queueMutex);
-                impl().flushRequested = false;
+                impl().flushTicketsDone = flushTarget;
             }
-            impl().flushCv.notify_one();
+            impl().flushCv.notify_all();
         }
 
         if (exitFlag) break;

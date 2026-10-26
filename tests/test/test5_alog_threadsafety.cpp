@@ -5,7 +5,11 @@
 #include <gtest/gtest.h>
 
 #include <atomic>
+#include <chrono>
 #include <condition_variable>
+#include <future>
+#include <initializer_list>
+#include <memory>
 #include <mutex>
 #include <set>
 #include <string>
@@ -442,5 +446,213 @@ TEST(ALog_ThreadSafety, MixedSyncAsyncModeSwitch)
         }
 
         ASSERT_EQ(recordCount.load(), kSwitchCycles * 2 * kThreadsPerBatch * kRecordsPerThread) << "Iteration " << iter;
+    }
+}
+
+
+namespace {
+
+class EventSink : public ALog::ISink
+{
+public:
+    void write(const ALog::Buffer&, const ALog::Record& record) override {
+        if (m_blockNext.exchange(false)) {
+            m_blockedPromise.set_value();
+            m_gatePromise.get_future().wait();
+        }
+
+        std::lock_guard<std::mutex> lk(m_eventsMutex);
+        m_events.emplace_back(record.getMessage(), record.getMessageLen());
+    }
+
+    void flush() override {
+        // We sleep here, so the test fails when `Logger::flush()` returns before the sinks are flushed.
+        std::this_thread::sleep_for(std::chrono::milliseconds(50));
+
+        std::lock_guard<std::mutex> lk(m_eventsMutex);
+        m_events.emplace_back("<flush>");
+    }
+
+    // Must not be called while `threadFunc()` is inside `write()`.
+    void blockNextWrite() {
+        m_blockedPromise = std::promise<void>();
+        m_gatePromise = std::promise<void>();
+        m_blockNext = true;
+    }
+
+    void waitBlocked() { m_blockedPromise.get_future().wait(); }
+    void openGate() { m_gatePromise.set_value(); }
+
+    std::vector<std::string> events() {
+        std::lock_guard<std::mutex> lk(m_eventsMutex);
+        return m_events;
+    }
+
+private:
+    std::mutex m_eventsMutex;
+    std::vector<std::string> m_events;
+    std::atomic<bool> m_blockNext { false };
+    std::promise<void> m_blockedPromise;
+    std::promise<void> m_gatePromise;
+};
+
+} // namespace
+
+
+// ---------------------------------------------------------------------------
+// 9. Many threads wait for flush via `FLUSH` and `flush()`. `LOGD << FLUSH` returns after its record is written.
+// ---------------------------------------------------------------------------
+TEST(ALog_ThreadSafety, ConcurrentFlushWaiters)
+{
+    constexpr int kThreads {8};
+    constexpr int kRecordsPerThread {500};
+
+    for (const auto mode : {ALog::Logger::Asynchronous, ALog::Logger::AsynchronousSort}) {
+        for (int iter {}; iter < kIterations; iter++) {
+            std::vector<std::atomic<bool>> written(kThreads * kRecordsPerThread);
+            std::atomic<int> notWrittenOnReturn {};
+
+            {
+                DEFINE_MAIN_ALOGGER;
+                auto functor2 = std::make_shared<ALog::Sinks::Functor2>(
+                    [&](const ALog::Buffer&, const ALog::Record& rec) {
+                        written[std::stoi(std::string(rec.getMessage(), rec.getMessageLen()))].store(true);
+                    });
+                ALOGGER_DIRECT->pipeline().sinks().set(functor2);
+                ALOGGER_DIRECT->setMode(mode);
+                MARK_ALOGGER_READY;
+
+                DEFINE_ALOGGER_MODULE(ConcurrentFlushWaiters);
+
+                Barrier barrier(kThreads);
+                std::vector<std::thread> threads;
+
+                for (int i {}; i < kThreads; i++) {
+                    threads.emplace_back([&, i]() {
+                        barrier.arrive_and_wait();
+                        for (int j {}; j < kRecordsPerThread; j++) {
+                            const int id {i * kRecordsPerThread + j};
+                            LOGD << id << FLUSH;
+
+                            if (!written[id].load())
+                                notWrittenOnReturn++;
+
+                            if (j % 50 == 0)
+                                ACCESS_ALOGGER_MODULE.flush();
+                        }
+                    });
+                }
+
+                for (auto& t : threads)
+                    t.join();
+            }
+
+            ASSERT_EQ(notWrittenOnReturn.load(), 0) << "Mode " << mode << ", iteration " << iter;
+        }
+    }
+}
+
+
+// ---------------------------------------------------------------------------
+// 10. Autoflush with concurrent writers. `LOGD` returns after its record is written.
+// ---------------------------------------------------------------------------
+TEST(ALog_ThreadSafety, Autoflush_ConcurrentWriters)
+{
+    constexpr int kThreads {8};
+    constexpr int kRecordsPerThread {300};
+
+    for (int iter {}; iter < kIterations; iter++) {
+        std::vector<std::atomic<bool>> written(kThreads * kRecordsPerThread);
+        std::atomic<int> notWrittenOnReturn {};
+
+        {
+            DEFINE_MAIN_ALOGGER;
+            auto functor2 = std::make_shared<ALog::Sinks::Functor2>([&](const ALog::Buffer&, const ALog::Record& rec) {
+                written[std::stoi(std::string(rec.getMessage(), rec.getMessageLen()))].store(true);
+            });
+            ALOGGER_DIRECT->pipeline().sinks().set(functor2);
+            ALOGGER_DIRECT->setAutoflush(true);
+            MARK_ALOGGER_READY;
+
+            DEFINE_ALOGGER_MODULE(AutoflushConcurrent);
+
+            Barrier barrier(kThreads);
+            std::vector<std::thread> threads;
+
+            for (int i {}; i < kThreads; i++) {
+                threads.emplace_back([&, i]() {
+                    barrier.arrive_and_wait();
+                    for (int j {}; j < kRecordsPerThread; j++) {
+                        const int id {i * kRecordsPerThread + j};
+                        LOGD << id;
+
+                        if (!written[id].load())
+                            notWrittenOnReturn++;
+                    }
+                });
+            }
+
+            for (auto& t : threads)
+                t.join();
+        }
+
+        ASSERT_EQ(notWrittenOnReturn.load(), 0) << "Iteration " << iter;
+    }
+}
+
+
+// ---------------------------------------------------------------------------
+// 11. `flush()` flushes sinks after earlier records and before it returns. A batch without `Flush` does not flush.
+// ---------------------------------------------------------------------------
+TEST(ALog_ThreadSafety, FlushAfterQueuedRecords)
+{
+    for (const auto mode : {ALog::Logger::Asynchronous, ALog::Logger::AsynchronousSort}) {
+        for (int useModuleFlush {}; useModuleFlush < 2; useModuleFlush++) {
+            DEFINE_MAIN_ALOGGER;
+            auto eventSink = std::make_shared<EventSink>();
+            ALOGGER_DIRECT->pipeline().sinks().set(eventSink);
+            ALOGGER_DIRECT->setMode(mode);
+            MARK_ALOGGER_READY;
+
+            DEFINE_ALOGGER_MODULE(FlushOrder);
+
+            // `flush()` does not return until `openGate()` is called, so we call `openGate()` from `openerThread`.
+            // Nothing signals that `flush()` has queued its record, so we wait 50 ms before `openGate()`.
+            const auto flushAndReadEvents = [&]() {
+                std::thread openerThread([&]() {
+                    std::this_thread::sleep_for(std::chrono::milliseconds(50));
+                    eventSink->openGate();
+                });
+
+                if (useModuleFlush) {
+                    ACCESS_ALOGGER_MODULE.flush();
+                } else {
+                    ALOGGER_DIRECT->flush();
+                }
+
+                auto events = eventSink->events();
+                openerThread.join();
+                return events;
+            };
+
+            // We block `threadFunc()` while it writes "blocker", so "a", "b" and the `flush()` record form one batch.
+            eventSink->blockNextWrite();
+            LOGD << "blocker";
+            eventSink->waitBlocked();
+            LOGD << "a";
+            LOGD << "b";
+            const auto firstEvents = flushAndReadEvents();
+
+            eventSink->blockNextWrite();
+            LOGD << "blocker2";
+            eventSink->waitBlocked();
+            LOGD << "c";
+            const auto secondEvents = flushAndReadEvents();
+
+            const std::vector<std::string> firstExpected {"blocker", "a", "b", "<flush>"};
+            const std::vector<std::string> secondExpected {"blocker", "a", "b", "<flush>", "blocker2", "c", "<flush>"};
+            ASSERT_EQ(firstEvents, firstExpected) << "Mode " << mode << ", useModuleFlush = " << useModuleFlush;
+            ASSERT_EQ(secondEvents, secondExpected) << "Mode " << mode << ", useModuleFlush = " << useModuleFlush;
+        }
     }
 }
