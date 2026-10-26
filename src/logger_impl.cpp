@@ -9,12 +9,19 @@
 
 #include <algorithm>
 #include <atomic>
+#include <cassert>
+#include <chrono>
+#include <condition_variable>
+#include <cstddef>
 #include <cstdint>
+#include <cstdlib>
 #include <memory>
 #include <mutex>
-#include <thread>
-#include <condition_variable>
 #include <stdexcept>
+#include <string>
+#include <thread>
+#include <utility>
+#include <vector>
 
 #ifdef WIN32
 #include <Windows.h>
@@ -22,7 +29,7 @@
 #else
 #include <csignal>
 #define ALOG_STOP_DEBUGGER raise(SIGTRAP)
-#endif
+#endif // WIN32
 
 namespace ALog {
 
@@ -55,11 +62,11 @@ struct Logger::impl_t
     LoggerMode mode {};
     std::mutex writeMutex;
     std::mutex queueMutex;
-    std::thread thread;
-    std::condition_variable cv;
+    std::thread workerThread;
+    std::condition_variable queueCv;
     std::vector<Record> queue = [] { std::vector<Record> v; v.reserve(256); return v; }();
     bool exitFlag {};
-    bool threadRunning { false };
+    bool threadRunning {};
 
     // Guarded by `queueMutex`.
     // Each queued `Flush` record gets the next ticket, and `addRecord` waits until `flushTicketsDone` reaches it,
@@ -68,7 +75,7 @@ struct Logger::impl_t
     uint64_t flushTicketsDone {};
     std::condition_variable flushCv;
 
-    std::atomic<bool> autoflush { false };
+    std::atomic<bool> autoflush {};
 
     std::chrono::time_point<std::chrono::steady_clock> startTp = std::chrono::steady_clock::now();
 };
@@ -111,16 +118,16 @@ void Logger::addRecord(Record&& record)
 
     if (impl().mode == Synchronous) {
         // Sync write
-        std::unique_lock<std::mutex> mx(impl().writeMutex);
+        std::unique_lock<std::mutex> writeLock(impl().writeMutex);
 
-        bool pass = !record.hasFlags(Record::Flags::Drop);
+        bool pass {!record.hasFlags(Record::Flags::Drop)};
         if (pass)
             impl().pipeline.write({}, record);
 
         if (record.hasFlags(Record::Flags::Flush))
             impl().pipeline.flush();
 
-        mx.unlock(); // Mutex unlocked here!
+        writeLock.unlock();
 
         if (record.hasFlags(Record::Flags::Abort) && !record.hasFlags(Record::Flags::Internal_Queued))
             alog_abort();
@@ -132,13 +139,12 @@ void Logger::addRecord(Record&& record)
         // Add to queue
 
         std::unique_ptr<std::string> throwText;
-        bool abort = record.hasFlags(Record::Flags::Abort) && !record.hasFlags(Record::Flags::Internal_Queued);
+        bool abort {record.hasFlags(Record::Flags::Abort) && !record.hasFlags(Record::Flags::Internal_Queued)};
 
-        if (record.hasFlags(Record::Flags::Throw) && !record.hasFlags(Record::Flags::Internal_Queued)) {
+        if (record.hasFlags(Record::Flags::Throw) && !record.hasFlags(Record::Flags::Internal_Queued))
             throwText = std::make_unique<std::string>(record.getMessage(), record.getMessageLen());
-        }
 
-        const bool needsFlush = record.hasFlags(Record::Flags::Flush);
+        const bool needsFlush {record.hasFlags(Record::Flags::Flush)};
         uint64_t flushTicket {};
 
         {
@@ -148,11 +154,11 @@ void Logger::addRecord(Record&& record)
             if (needsFlush)
                 flushTicket = ++impl().flushTicketsIssued;
         }
-        impl().cv.notify_one();
+        impl().queueCv.notify_one();
 
         if (needsFlush) {
-            std::unique_lock<std::mutex> lck(impl().queueMutex);
-            impl().flushCv.wait(lck, [this, flushTicket]() {
+            std::unique_lock<std::mutex> queueLock(impl().queueMutex);
+            impl().flushCv.wait(queueLock, [this, flushTicket]() {
                 return isFlushTicketDone(impl().flushTicketsDone, flushTicket);
             });
         }
@@ -214,7 +220,7 @@ void Logger::startThread()
 
     impl().exitFlag = false;
 
-    impl().thread = std::thread([this](){ threadFunc(); });
+    impl().workerThread = std::thread([this](){ threadFunc(); });
 }
 
 void Logger::stopThread()
@@ -223,13 +229,13 @@ void Logger::stopThread()
     impl().threadRunning = false;
 
     {
-        std::lock_guard<std::mutex> mx(impl().queueMutex);
+        std::lock_guard<std::mutex> lck(impl().queueMutex);
         impl().exitFlag = true;
-        impl().cv.notify_one();
+        impl().queueCv.notify_one();
     }
 
-    if (impl().thread.joinable())
-        impl().thread.join();
+    if (impl().workerThread.joinable())
+        impl().workerThread.join();
 
     impl().queue.clear();
 }
@@ -244,8 +250,8 @@ void Logger::threadFunc()
 
     while (true) {
         {
-            std::unique_lock<std::mutex> lck(impl().queueMutex);
-            impl().cv.wait(lck, [this]() -> bool { return impl().exitFlag || !impl().queue.empty(); });
+            std::unique_lock<std::mutex> queueLock(impl().queueMutex);
+            impl().queueCv.wait(queueLock, [this]() -> bool { return impl().exitFlag || !impl().queue.empty(); });
 
             exitFlag = impl().exitFlag;
             std::swap(queue, impl().queue);
@@ -262,9 +268,9 @@ void Logger::threadFunc()
             });
         }
 
-        for (const auto& x : queue) {
-            const auto pass = !x.hasFlags(Record::Flags::Drop);
-            if (pass) impl().pipeline.write({}, x);
+        for (const auto& record : queue) {
+            const bool pass {!record.hasFlags(Record::Flags::Drop)};
+            if (pass) impl().pipeline.write({}, record);
         }
 
         queue.clear();

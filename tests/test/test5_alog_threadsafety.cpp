@@ -20,19 +20,21 @@
 
 namespace {
 
-constexpr int kIterations = 3;
+constexpr int kIterations {3};
 
 class Barrier {
 public:
-    explicit Barrier(int count) : m_count(count) {}
+    Barrier(int count)
+        : m_count(count)
+    {}
 
     void arrive_and_wait() {
-        std::unique_lock<std::mutex> lk(m_mtx);
+        std::unique_lock<std::mutex> waitLock(m_waitMutex);
         if (++m_waiting == m_count) {
             m_released = true;
-            m_cv.notify_all();
+            m_waitCv.notify_all();
         } else {
-            m_cv.wait(lk, [this]{ return m_released; });
+            m_waitCv.wait(waitLock, [this]{ return m_released; });
         }
     }
 
@@ -42,8 +44,8 @@ public:
     }
 
 private:
-    std::mutex m_mtx;
-    std::condition_variable m_cv;
+    std::mutex m_waitMutex;
+    std::condition_variable m_waitCv;
     int m_count;
     int m_waiting {};
     bool m_released {};
@@ -53,28 +55,28 @@ private:
 
 
 // ---------------------------------------------------------------------------
-// 1. Integrity: 100 threads x 1 record, async mode. Compare received == expected as sets.
+// 1. Integrity: 100 threads x 1 record, async mode. Compare `receivedMessages` and `expectedMessages` as sets.
 // ---------------------------------------------------------------------------
 TEST(ALog_ThreadSafety, ConcurrentLog_Integrity_Async)
 {
-    constexpr int kThreads = 100;
+    constexpr int kThreads {100};
 
-    for (int iter = 0; iter < kIterations; iter++) {
-        std::set<std::string> expected;
-        std::set<std::string> received;
-        std::mutex receivedMtx;
+    for (int iter {}; iter < kIterations; iter++) {
+        std::set<std::string> expectedMessages;
+        std::set<std::string> receivedMessages;
+        std::mutex receivedMutex;
 
-        for (int i = 0; i < kThreads; i++)
-            expected.insert("T" + std::to_string(i));
+        for (int i {}; i < kThreads; i++)
+            expectedMessages.insert("T" + std::to_string(i));
 
         {
             DEFINE_MAIN_ALOGGER;
-            auto sink = std::make_shared<ALog::Sinks::Functor2>(
-                [&](const ALog::Buffer&, const ALog::Record& rec) {
-                    std::lock_guard<std::mutex> lk(receivedMtx);
-                    received.insert(std::string(rec.getMessage(), rec.getMessageLen()));
+            auto functor2 = std::make_shared<ALog::Sinks::Functor2>(
+                [&](const ALog::Buffer&, const ALog::Record& record) {
+                    std::lock_guard<std::mutex> lk(receivedMutex);
+                    receivedMessages.insert(std::string(record.getMessage(), record.getMessageLen()));
                 });
-            ALOGGER_DIRECT->pipeline().sinks().set(sink);
+            ALOGGER_DIRECT->pipeline().sinks().set(functor2);
             MARK_ALOGGER_READY;
 
             DEFINE_ALOGGER_MODULE(IntegrityAsync);
@@ -82,46 +84,47 @@ TEST(ALog_ThreadSafety, ConcurrentLog_Integrity_Async)
             Barrier barrier(kThreads);
             std::vector<std::thread> threads;
 
-            for (int i = 0; i < kThreads; i++) {
+            for (int i {}; i < kThreads; i++) {
                 threads.emplace_back([&, i]() {
                     barrier.arrive_and_wait();
                     auto msg = "T" + std::to_string(i);
-                    ACCESS_ALOGGER_MODULE += ALog::Record::create(ALog::Severity::Debug, __LINE__, __FILE__, "", __func__) << msg.c_str();
+                    ACCESS_ALOGGER_MODULE +=
+                        ALog::Record::create(ALog::Severity::Debug, __LINE__, __FILE__, "", __func__) << msg.c_str();
                 });
             }
 
-            for (auto& t : threads)
-                t.join();
+            for (auto& workerThread : threads)
+                workerThread.join();
         } // Logger destroyed here -- flushes async queue
 
-        ASSERT_EQ(received, expected) << "Iteration " << iter;
+        ASSERT_EQ(receivedMessages, expectedMessages) << "Iteration " << iter;
     }
 }
 
 
 // ---------------------------------------------------------------------------
-// 2. Integrity: 100 threads x 1 record, sync mode. Compare received == expected as sets.
+// 2. Integrity: 100 threads x 1 record, sync mode. Compare `receivedMessages` and `expectedMessages` as sets.
 // ---------------------------------------------------------------------------
 TEST(ALog_ThreadSafety, ConcurrentLog_Integrity_Sync)
 {
-    constexpr int kThreads = 100;
+    constexpr int kThreads {100};
 
-    for (int iter = 0; iter < kIterations; iter++) {
-        std::set<std::string> expected;
-        std::set<std::string> received;
-        std::mutex receivedMtx;
+    for (int iter {}; iter < kIterations; iter++) {
+        std::set<std::string> expectedMessages;
+        std::set<std::string> receivedMessages;
+        std::mutex receivedMutex;
 
-        for (int i = 0; i < kThreads; i++)
-            expected.insert("T" + std::to_string(i));
+        for (int i {}; i < kThreads; i++)
+            expectedMessages.insert("T" + std::to_string(i));
 
         {
             DEFINE_MAIN_ALOGGER;
-            auto sink = std::make_shared<ALog::Sinks::Functor2>(
-                [&](const ALog::Buffer&, const ALog::Record& rec) {
-                    std::lock_guard<std::mutex> lk(receivedMtx);
-                    received.insert(std::string(rec.getMessage(), rec.getMessageLen()));
+            auto functor2 = std::make_shared<ALog::Sinks::Functor2>(
+                [&](const ALog::Buffer&, const ALog::Record& record) {
+                    std::lock_guard<std::mutex> lk(receivedMutex);
+                    receivedMessages.insert(std::string(record.getMessage(), record.getMessageLen()));
                 });
-            ALOGGER_DIRECT->pipeline().sinks().set(sink);
+            ALOGGER_DIRECT->pipeline().sinks().set(functor2);
             ALOGGER_DIRECT->setMode(ALog::Logger::Synchronous);
             MARK_ALOGGER_READY;
 
@@ -130,53 +133,53 @@ TEST(ALog_ThreadSafety, ConcurrentLog_Integrity_Sync)
             Barrier barrier(kThreads);
             std::vector<std::thread> threads;
 
-            for (int i = 0; i < kThreads; i++) {
+            for (int i {}; i < kThreads; i++) {
                 threads.emplace_back([&, i]() {
                     barrier.arrive_and_wait();
                     auto msg = "T" + std::to_string(i);
-                    ACCESS_ALOGGER_MODULE += ALog::Record::create(ALog::Severity::Debug, __LINE__, __FILE__, "", __func__) << msg.c_str();
+                    ACCESS_ALOGGER_MODULE +=
+                        ALog::Record::create(ALog::Severity::Debug, __LINE__, __FILE__, "", __func__) << msg.c_str();
                 });
             }
 
-            for (auto& t : threads)
-                t.join();
+            for (auto& workerThread : threads)
+                workerThread.join();
         }
 
-        ASSERT_EQ(received, expected) << "Iteration " << iter;
+        ASSERT_EQ(receivedMessages, expectedMessages) << "Iteration " << iter;
     }
 }
 
 
 // ---------------------------------------------------------------------------
 // 3. Master becomes available while threads are actively logging.
-//    Tests m_masterAvailable transition + markReady vs renew().
+//    Tests `m_masterAvailable` transition + `markReady` vs `renew()`.
 // ---------------------------------------------------------------------------
 TEST(ALog_ThreadSafety, MasterBecomesAvailable_DuringLogging)
 {
-    constexpr int kThreads = 16;
-    constexpr int kRecordsPerPhase = 50;
+    constexpr int kThreads {16};
+    constexpr int kRecordsPerPhase {50};
 
-    for (int iter = 0; iter < kIterations; iter++) {
+    for (int iter {}; iter < kIterations; iter++) {
         std::atomic<int> recordCount {};
 
         {
             DEFINE_MAIN_ALOGGER;
-            auto sink = std::make_shared<ALog::Sinks::Functor2>(
-                [&](const ALog::Buffer&, const ALog::Record&) {
-                    recordCount.fetch_add(1, std::memory_order_relaxed);
-                });
-            ALOGGER_DIRECT->pipeline().sinks().set(sink);
+            auto functor2 = std::make_shared<ALog::Sinks::Functor2>([&](const ALog::Buffer&, const ALog::Record&) {
+                recordCount.fetch_add(1, std::memory_order_relaxed);
+            });
+            ALOGGER_DIRECT->pipeline().sinks().set(functor2);
             // NOT marking ready yet
 
-            std::atomic<bool> phase2 { false };
+            std::atomic<bool> phase2 {};
             std::vector<std::thread> threads;
 
-            for (int i = 0; i < kThreads; i++) {
+            for (int i {}; i < kThreads; i++) {
                 threads.emplace_back([&]() {
                     DEFINE_ALOGGER_MODULE(MasterTransition);
 
                     // Phase 1: log before master is ready
-                    for (int j = 0; j < kRecordsPerPhase; j++)
+                    for (int j {}; j < kRecordsPerPhase; j++)
                         LOGD;
 
                     // Wait for phase 2
@@ -184,7 +187,7 @@ TEST(ALog_ThreadSafety, MasterBecomesAvailable_DuringLogging)
                         std::this_thread::yield();
 
                     // Phase 2: log after master became ready
-                    for (int j = 0; j < kRecordsPerPhase; j++)
+                    for (int j {}; j < kRecordsPerPhase; j++)
                         LOGD;
                 });
             }
@@ -196,8 +199,8 @@ TEST(ALog_ThreadSafety, MasterBecomesAvailable_DuringLogging)
             MARK_ALOGGER_READY;
             phase2.store(true, std::memory_order_release);
 
-            for (auto& t : threads)
-                t.join();
+            for (auto& workerThread : threads)
+                workerThread.join();
         }
 
         ASSERT_EQ(recordCount.load(), kThreads * kRecordsPerPhase * 2) << "Iteration " << iter;
@@ -210,19 +213,18 @@ TEST(ALog_ThreadSafety, MasterBecomesAvailable_DuringLogging)
 // ---------------------------------------------------------------------------
 TEST(ALog_ThreadSafety, ConcurrentLog_HighVolume_Async)
 {
-    constexpr int kThreads = 32;
-    constexpr int kRecordsPerThread = 50;
+    constexpr int kThreads {32};
+    constexpr int kRecordsPerThread {50};
 
-    for (int iter = 0; iter < kIterations; iter++) {
+    for (int iter {}; iter < kIterations; iter++) {
         std::atomic<int> recordCount {};
 
         {
             DEFINE_MAIN_ALOGGER;
-            auto sink = std::make_shared<ALog::Sinks::Functor2>(
-                [&](const ALog::Buffer&, const ALog::Record&) {
-                    recordCount.fetch_add(1, std::memory_order_relaxed);
-                });
-            ALOGGER_DIRECT->pipeline().sinks().set(sink);
+            auto functor2 = std::make_shared<ALog::Sinks::Functor2>([&](const ALog::Buffer&, const ALog::Record&) {
+                recordCount.fetch_add(1, std::memory_order_relaxed);
+            });
+            ALOGGER_DIRECT->pipeline().sinks().set(functor2);
             MARK_ALOGGER_READY;
 
             DEFINE_ALOGGER_MODULE(HighVolumeAsync);
@@ -230,16 +232,16 @@ TEST(ALog_ThreadSafety, ConcurrentLog_HighVolume_Async)
             Barrier barrier(kThreads);
             std::vector<std::thread> threads;
 
-            for (int i = 0; i < kThreads; i++) {
+            for (int i {}; i < kThreads; i++) {
                 threads.emplace_back([&]() {
                     barrier.arrive_and_wait();
-                    for (int j = 0; j < kRecordsPerThread; j++)
+                    for (int j {}; j < kRecordsPerThread; j++)
                         LOGD;
                 });
             }
 
-            for (auto& t : threads)
-                t.join();
+            for (auto& workerThread : threads)
+                workerThread.join();
         }
 
         ASSERT_EQ(recordCount.load(), kThreads * kRecordsPerThread) << "Iteration " << iter;
@@ -252,19 +254,18 @@ TEST(ALog_ThreadSafety, ConcurrentLog_HighVolume_Async)
 // ---------------------------------------------------------------------------
 TEST(ALog_ThreadSafety, ConcurrentLog_HighVolume_Sync)
 {
-    constexpr int kThreads = 32;
-    constexpr int kRecordsPerThread = 100;
+    constexpr int kThreads {32};
+    constexpr int kRecordsPerThread {100};
 
-    for (int iter = 0; iter < kIterations; iter++) {
+    for (int iter {}; iter < kIterations; iter++) {
         std::atomic<int> recordCount {};
 
         {
             DEFINE_MAIN_ALOGGER;
-            auto sink = std::make_shared<ALog::Sinks::Functor2>(
-                [&](const ALog::Buffer&, const ALog::Record&) {
-                    recordCount.fetch_add(1, std::memory_order_relaxed);
-                });
-            ALOGGER_DIRECT->pipeline().sinks().set(sink);
+            auto functor2 = std::make_shared<ALog::Sinks::Functor2>([&](const ALog::Buffer&, const ALog::Record&) {
+                recordCount.fetch_add(1, std::memory_order_relaxed);
+            });
+            ALOGGER_DIRECT->pipeline().sinks().set(functor2);
             ALOGGER_DIRECT->setMode(ALog::Logger::Synchronous);
             MARK_ALOGGER_READY;
 
@@ -273,16 +274,16 @@ TEST(ALog_ThreadSafety, ConcurrentLog_HighVolume_Sync)
             Barrier barrier(kThreads);
             std::vector<std::thread> threads;
 
-            for (int i = 0; i < kThreads; i++) {
+            for (int i {}; i < kThreads; i++) {
                 threads.emplace_back([&]() {
                     barrier.arrive_and_wait();
-                    for (int j = 0; j < kRecordsPerThread; j++)
+                    for (int j {}; j < kRecordsPerThread; j++)
                         LOGD;
                 });
             }
 
-            for (auto& t : threads)
-                t.join();
+            for (auto& workerThread : threads)
+                workerThread.join();
         }
 
         ASSERT_EQ(recordCount.load(), kThreads * kRecordsPerThread) << "Iteration " << iter;
@@ -295,33 +296,32 @@ TEST(ALog_ThreadSafety, ConcurrentLog_HighVolume_Sync)
 // ---------------------------------------------------------------------------
 TEST(ALog_ThreadSafety, FlushUnderConcurrentWrites)
 {
-    constexpr int kWriterThreads = 16;
-    constexpr int kRecordsPerWriter = 200;
-    constexpr int kFlushCount = 20;
+    constexpr int kWriterThreads {16};
+    constexpr int kRecordsPerWriter {200};
+    constexpr int kFlushCount {20};
 
-    for (int iter = 0; iter < kIterations; iter++) {
+    for (int iter {}; iter < kIterations; iter++) {
         std::atomic<int> recordCount {};
 
         {
             DEFINE_MAIN_ALOGGER;
-            auto sink = std::make_shared<ALog::Sinks::Functor2>(
-                [&](const ALog::Buffer&, const ALog::Record&) {
-                    recordCount.fetch_add(1, std::memory_order_relaxed);
-                });
-            ALOGGER_DIRECT->pipeline().sinks().set(sink);
+            auto functor2 = std::make_shared<ALog::Sinks::Functor2>([&](const ALog::Buffer&, const ALog::Record&) {
+                recordCount.fetch_add(1, std::memory_order_relaxed);
+            });
+            ALOGGER_DIRECT->pipeline().sinks().set(functor2);
             MARK_ALOGGER_READY;
 
             DEFINE_ALOGGER_MODULE(FlushStress);
 
-            std::atomic<bool> start { false };
+            std::atomic<bool> start {};
             std::vector<std::thread> threads;
 
             // Writer threads
-            for (int i = 0; i < kWriterThreads; i++) {
+            for (int i {}; i < kWriterThreads; i++) {
                 threads.emplace_back([&]() {
                     while (!start.load(std::memory_order_acquire))
                         std::this_thread::yield();
-                    for (int j = 0; j < kRecordsPerWriter; j++)
+                    for (int j {}; j < kRecordsPerWriter; j++)
                         LOGD;
                 });
             }
@@ -330,14 +330,14 @@ TEST(ALog_ThreadSafety, FlushUnderConcurrentWrites)
             threads.emplace_back([&]() {
                 while (!start.load(std::memory_order_acquire))
                     std::this_thread::yield();
-                for (int j = 0; j < kFlushCount; j++)
+                for (int j {}; j < kFlushCount; j++)
                     ACCESS_ALOGGER_MODULE.flush();
             });
 
             start.store(true, std::memory_order_release);
 
-            for (auto& t : threads)
-                t.join();
+            for (auto& workerThread : threads)
+                workerThread.join();
         }
 
         ASSERT_EQ(recordCount.load(), kWriterThreads * kRecordsPerWriter) << "Iteration " << iter;
@@ -351,19 +351,18 @@ TEST(ALog_ThreadSafety, FlushUnderConcurrentWrites)
 // ---------------------------------------------------------------------------
 TEST(ALog_ThreadSafety, HighContention_AsyncQueue)
 {
-    constexpr int kThreads = 64;
-    constexpr int kRecordsPerThread = 1000;
+    constexpr int kThreads {64};
+    constexpr int kRecordsPerThread {1000};
 
-    for (int iter = 0; iter < kIterations; iter++) {
+    for (int iter {}; iter < kIterations; iter++) {
         std::atomic<int> recordCount {};
 
         {
             DEFINE_MAIN_ALOGGER;
-            auto sink = std::make_shared<ALog::Sinks::Functor2>(
-                [&](const ALog::Buffer&, const ALog::Record&) {
-                    recordCount.fetch_add(1, std::memory_order_relaxed);
-                });
-            ALOGGER_DIRECT->pipeline().sinks().set(sink);
+            auto functor2 = std::make_shared<ALog::Sinks::Functor2>([&](const ALog::Buffer&, const ALog::Record&) {
+                recordCount.fetch_add(1, std::memory_order_relaxed);
+            });
+            ALOGGER_DIRECT->pipeline().sinks().set(functor2);
             MARK_ALOGGER_READY;
 
             DEFINE_ALOGGER_MODULE(HighContention);
@@ -371,16 +370,16 @@ TEST(ALog_ThreadSafety, HighContention_AsyncQueue)
             Barrier barrier(kThreads);
             std::vector<std::thread> threads;
 
-            for (int i = 0; i < kThreads; i++) {
+            for (int i {}; i < kThreads; i++) {
                 threads.emplace_back([&]() {
                     barrier.arrive_and_wait();
-                    for (int j = 0; j < kRecordsPerThread; j++)
+                    for (int j {}; j < kRecordsPerThread; j++)
                         LOGD;
                 });
             }
 
-            for (auto& t : threads)
-                t.join();
+            for (auto& workerThread : threads)
+                workerThread.join();
         }
 
         ASSERT_EQ(recordCount.load(), kThreads * kRecordsPerThread) << "Iteration " << iter;
@@ -394,37 +393,36 @@ TEST(ALog_ThreadSafety, HighContention_AsyncQueue)
 // ---------------------------------------------------------------------------
 TEST(ALog_ThreadSafety, MixedSyncAsyncModeSwitch)
 {
-    constexpr int kSwitchCycles = 5;
-    constexpr int kThreadsPerBatch = 8;
-    constexpr int kRecordsPerThread = 20;
+    constexpr int kSwitchCycles {5};
+    constexpr int kThreadsPerBatch {8};
+    constexpr int kRecordsPerThread {20};
 
-    for (int iter = 0; iter < kIterations; iter++) {
+    for (int iter {}; iter < kIterations; iter++) {
         std::atomic<int> recordCount {};
 
         {
             DEFINE_MAIN_ALOGGER;
-            auto sink = std::make_shared<ALog::Sinks::Functor2>(
-                [&](const ALog::Buffer&, const ALog::Record&) {
-                    recordCount.fetch_add(1, std::memory_order_relaxed);
-                });
-            ALOGGER_DIRECT->pipeline().sinks().set(sink);
+            auto functor2 = std::make_shared<ALog::Sinks::Functor2>([&](const ALog::Buffer&, const ALog::Record&) {
+                recordCount.fetch_add(1, std::memory_order_relaxed);
+            });
+            ALOGGER_DIRECT->pipeline().sinks().set(functor2);
             MARK_ALOGGER_READY;
 
             DEFINE_ALOGGER_MODULE(ModeSwitch);
 
-            for (int cycle = 0; cycle < kSwitchCycles; cycle++) {
+            for (int cycle {}; cycle < kSwitchCycles; cycle++) {
                 // Async batch
                 ALOGGER_DIRECT->setMode(ALog::Logger::AsynchronousSort);
                 {
                     std::vector<std::thread> threads;
-                    for (int i = 0; i < kThreadsPerBatch; i++) {
+                    for (int i {}; i < kThreadsPerBatch; i++) {
                         threads.emplace_back([&]() {
-                            for (int j = 0; j < kRecordsPerThread; j++)
+                            for (int j {}; j < kRecordsPerThread; j++)
                                 LOGD;
                         });
                     }
-                    for (auto& t : threads)
-                        t.join();
+                    for (auto& workerThread : threads)
+                        workerThread.join();
                 }
                 ALOGGER_DIRECT->flush();
 
@@ -432,14 +430,14 @@ TEST(ALog_ThreadSafety, MixedSyncAsyncModeSwitch)
                 ALOGGER_DIRECT->setMode(ALog::Logger::Synchronous);
                 {
                     std::vector<std::thread> threads;
-                    for (int i = 0; i < kThreadsPerBatch; i++) {
+                    for (int i {}; i < kThreadsPerBatch; i++) {
                         threads.emplace_back([&]() {
-                            for (int j = 0; j < kRecordsPerThread; j++)
+                            for (int j {}; j < kRecordsPerThread; j++)
                                 LOGD;
                         });
                     }
-                    for (auto& t : threads)
-                        t.join();
+                    for (auto& workerThread : threads)
+                        workerThread.join();
                 }
                 ALOGGER_DIRECT->flush();
             }
@@ -491,7 +489,7 @@ public:
 private:
     std::mutex m_eventsMutex;
     std::vector<std::string> m_events;
-    std::atomic<bool> m_blockNext { false };
+    std::atomic<bool> m_blockNext {};
     std::promise<void> m_blockedPromise;
     std::promise<void> m_gatePromise;
 };
@@ -515,8 +513,8 @@ TEST(ALog_ThreadSafety, ConcurrentFlushWaiters)
             {
                 DEFINE_MAIN_ALOGGER;
                 auto functor2 = std::make_shared<ALog::Sinks::Functor2>(
-                    [&](const ALog::Buffer&, const ALog::Record& rec) {
-                        written[std::stoi(std::string(rec.getMessage(), rec.getMessageLen()))].store(true);
+                    [&](const ALog::Buffer&, const ALog::Record& record) {
+                        written[std::stoi(std::string(record.getMessage(), record.getMessageLen()))].store(true);
                     });
                 ALOGGER_DIRECT->pipeline().sinks().set(functor2);
                 ALOGGER_DIRECT->setMode(mode);
@@ -543,8 +541,8 @@ TEST(ALog_ThreadSafety, ConcurrentFlushWaiters)
                     });
                 }
 
-                for (auto& t : threads)
-                    t.join();
+                for (auto& workerThread : threads)
+                    workerThread.join();
             }
 
             ASSERT_EQ(notWrittenOnReturn.load(), 0) << "Mode " << mode << ", iteration " << iter;
@@ -567,9 +565,10 @@ TEST(ALog_ThreadSafety, Autoflush_ConcurrentWriters)
 
         {
             DEFINE_MAIN_ALOGGER;
-            auto functor2 = std::make_shared<ALog::Sinks::Functor2>([&](const ALog::Buffer&, const ALog::Record& rec) {
-                written[std::stoi(std::string(rec.getMessage(), rec.getMessageLen()))].store(true);
-            });
+            auto functor2 = std::make_shared<ALog::Sinks::Functor2>(
+                [&](const ALog::Buffer&, const ALog::Record& record) {
+                    written[std::stoi(std::string(record.getMessage(), record.getMessageLen()))].store(true);
+                });
             ALOGGER_DIRECT->pipeline().sinks().set(functor2);
             ALOGGER_DIRECT->setAutoflush(true);
             MARK_ALOGGER_READY;
@@ -592,8 +591,8 @@ TEST(ALog_ThreadSafety, Autoflush_ConcurrentWriters)
                 });
             }
 
-            for (auto& t : threads)
-                t.join();
+            for (auto& workerThread : threads)
+                workerThread.join();
         }
 
         ASSERT_EQ(notWrittenOnReturn.load(), 0) << "Iteration " << iter;
