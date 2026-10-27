@@ -181,7 +181,7 @@ jobs:
         run: |
           QT_SEARCH_MODE=$([[ "${{ matrix.qt }}" == "qt_no" ]] && echo "Skip" || echo "Force")
           
-          cmake -DALOG_CI_SKIP_SORT_TEST=1 -DALOG_ENABLE_TESTS=ON -DALOG_ENABLE_BENCHMARK=ON -DALOG_QT_SEARCH_MODE:STRING=$QT_SEARCH_MODE -DCMAKE_BUILD_TYPE="${{matrix.build_type}}" -A "${{matrix.compiler_arch}}" -G "Visual Studio 17 2022" -S "./src" -B "./build"
+          cmake -DALOG_CI_SKIP_SORT_TEST=1 -DALOG_ENABLE_TESTS=ON -DALOG_ENABLE_BENCHMARK=ON -DALOG_QT_SEARCH_MODE:STRING=$QT_SEARCH_MODE -DCMAKE_BUILD_TYPE="${{matrix.build_type}}" -A "${{matrix.compiler_arch}}" -S "./src" -B "./build"
           cmake --build "./build" --config "${{matrix.build_type}}" -j "${{env.CORES}}"
           cd ./build/tests
           ctest --no-tests=error --rerun-failed --output-on-failure --timeout 30 -C "${{matrix.build_type}}"
